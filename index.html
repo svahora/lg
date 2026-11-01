@@ -33,8 +33,11 @@
     --low: #5cc56b; --low-tint: #183420; --medium: #e0b93a; --medium-tint: #3a3112;
     --high: #f0904a; --high-tint: #3d2615; --declined: #f06c6c; --declined-tint: #3d1b1b;
   }
-  .theme { width: 34px; height: 32px; padding: 0; display: grid; place-items: center; }
-  .theme svg { width: 18px; height: 18px; }
+  .ghost.theme { width: 34px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .ghost.theme svg { width: 18px; height: 18px; display: block; }
+  .modebar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; padding: 8px 10px; border-radius: 10px; background: var(--teal-tint); width: fit-content; }
+  .modebar .seglabel { color: var(--teal); }
+  #btn-map { margin-left: auto; }
   footer { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 28px 16px 36px; color: var(--muted); font-size: 14px; }
   footer b { color: var(--ink); }
   .draftcard { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; background: var(--bg); }
@@ -47,7 +50,7 @@
 
   /* Top bar */
   .topbar { position: sticky; top: 0; z-index: 20; background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
-  .brand { font-weight: 700; margin-right: auto; display: flex; align-items: center; gap: 8px; }
+  .brand { font-weight: 700; margin-right: 8px; display: flex; align-items: center; gap: 8px; }
   .logo { width: 24px; height: 24px; color: var(--primary); }
   .brand .ar { font-weight: 500; color: var(--muted); font-size: 16px; }
   .brand .sub { font-weight: 400; color: var(--muted); font-size: 12px; }
@@ -185,7 +188,6 @@
 <div class="topbar">
   <div class="brand">Onboarding prototype</div>
   <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
-  <div class="ctl" id="ctl-mode"><span class="seglabel">Verification</span><div class="seg" id="seg-mode"></div></div>
   <button class="ghost" id="btn-map">Path map</button>
   <button class="ghost" id="btn-admin">Admin view</button>
   <button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button>
@@ -474,8 +476,6 @@ function pathMap() {
 /* ---------- Render ---------- */
 function render() {
   seg('seg-app', [['org', 'Organization'], ['person', 'Person']], 'app');
-  seg('seg-mode', [['inhouse', 'In-house'], ['vendor', 'With vendor']], 'mode');
-  $('ctl-mode').hidden = !VENDOR_STEPS.includes(S.step);
   $('btn-admin').classList.toggle('on', S.admin);
   $('bar').style.width = ((S.step + 1) / STEPS.length * 100) + '%';
   $('steps').innerHTML = STEPS.map((s, k) => `<span class="${k === S.step ? 'cur' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0">${k + 1}. ${s}</span>`).join('');
@@ -484,7 +484,7 @@ function render() {
   const blocked = S.step === 4 && S.outcome === 'declined';
   const nav = u.nav || `<button class="btn2" data-act="back" ${S.step === 0 ? 'disabled' : ''}>Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
   $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}</div><h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+    <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}</div>${isV ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Verification</span><div class="seg">${[['inhouse', 'In-house'], ['vendor', 'With vendor']].map(([v, l]) => `<button class="${S.mode === v ? 'on' : ''}" data-k="mode" data-v="${v}">${l}</button>`).join('')}</div></div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
   if (S.admin) a.innerHTML = adminHead() + adminScreen(S.step);
