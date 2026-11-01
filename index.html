@@ -52,6 +52,8 @@
   .steps { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--muted); gap: 4px; }
   .steps span.cur { color: var(--ink); font-weight: 600; }
   .steps span.vend { color: var(--teal); }
+  .steps span { cursor: pointer; border-radius: 4px; padding: 1px 2px; }
+  .steps span:hover { text-decoration: underline; }
 
   /* Layout */
   .layout { display: flex; max-width: 1200px; margin: 0 auto; gap: 16px; padding: 16px; align-items: flex-start; }
@@ -74,6 +76,20 @@
   .opt.on { border: 2px solid var(--primary); padding: 11px; }
   .opt.on .dot { border: 5px solid var(--primary); }
   @media (max-width: 768px) { .opts { grid-template-columns: 1fr; } }
+  .fld { display: block; margin: 6px 0; }
+  .fld > span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  .fld small { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; }
+  input, select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; }
+  input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+  .people { border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .prow { display: grid; grid-template-columns: 1.4fr 1.2fr 0.9fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .own { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .own input { width: 70px; }
+  .rm { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 8px; width: 34px; height: 34px; }
+  .add { font-size: 13px; padding: 7px 12px; }
+  .warnline { color: var(--declined); font-size: 13px; margin: 8px 0 0; }
+  .admin .band { font-size: 11px; }
+  @media (max-width: 768px) { .prow { grid-template-columns: 1fr 1fr; } }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
   .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; gap: 10px; flex-wrap: wrap; }
   .btn { background: var(--primary); color: var(--primary-ink); border: 0; padding: 10px 18px; border-radius: 10px; font-weight: 600; }
@@ -81,7 +97,7 @@
   .btn2 { background: transparent; color: var(--ink); border: 1px solid var(--line); padding: 10px 16px; border-radius: 10px; }
   .notice { border-radius: 10px; padding: 12px 14px; margin: 12px 0; background: var(--bg); border: 1px solid var(--line); }
   .demo { border: 1px dashed var(--muted); border-radius: 10px; padding: 10px 12px; margin: 14px 0; font-size: 13px; }
-  .demo .seg { margin-top: 6px; }
+  .demo .seg { display: flex; width: fit-content; margin-top: 8px; flex-wrap: wrap; }
   .cover { height: 150px; border-radius: 10px; background: linear-gradient(135deg, #c9d6c4, #e9dcc3); display: flex; align-items: flex-end; padding: 12px; color: #2b2b2b; font-weight: 600; margin: 10px 0; }
   .check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
   .check:last-child { border-bottom: 0; }
@@ -194,6 +210,85 @@ function choice() {
   return `<div class="opts">${opt('org', 'An organization', 'A charity, mosque, school or group')}${opt('person', 'Myself', 'Fundraise from your personal account')}</div>`;
 }
 
+/* ---------- Risk form (step 4) ---------- */
+S.form = {
+  dob: '1988-03-14', nat: 'A', birth: 'A', res: 'A', email: 'amina.rahman@example.org', phone: '+1 555 0134',
+  inc: 'A', ops: 'A', entity: 'standalone', activity: 'registered', year: '2016', reg: '12-3456789', website: 'hopevalley.example.org',
+  people: [{ name: 'Amina Rahman', role: 'Director', own: '0' }, { name: 'Yusuf Khan', role: 'Authorized signatory', own: '0' }]
+};
+const COUNTRIES = [['A', 'Country A'], ['B', 'Country B'], ['C', 'Country C']];
+const CRISK = { A: 'Low', B: 'Medium', C: 'High' };
+const ENTITIES = [['standalone', 'Standalone charity or nonprofit', 'Low'], ['parent', 'Parent of other organizations', 'Medium'], ['subsidiary', 'Subsidiary of another organization', 'Medium'], ['trust', 'Trust', 'High'], ['foundation', 'Foundation', 'High'], ['nominee', 'Held through a nominee', 'High']];
+const ACTIVITIES = [['registered', 'Registered charity', 'Low'], ['new', 'Newly registered charity', 'Medium'], ['forprofit', 'For-profit business', 'High']];
+const ROLES = ['Director', 'Officer', 'Authorized signatory', 'Owner (no management role)'];
+const sel = (f, opts, val) => `<select data-f="${f}">${opts.map(([v, l]) => `<option value="${v}" ${val === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+const inp = (f, val, type) => `<input data-f="${f}" type="${type || 'text'}" value="${val}">`;
+const lbl = (k, ctl, hint) => `<label class="fld"><span>${k}</span>${ctl}${hint ? `<small>${hint}</small>` : ''}</label>`;
+
+function ratings() {
+  const F = S.form;
+  if (!isOrg()) return [
+    ['Date of birth', F.dob ? 'Low' : 'High', F.dob ? '' : 'Missing data scores as the highest risk'],
+    ['Address and country', CRISK[F.res], ''],
+    ['Nationality and country of birth', CRISK[F.nat] === 'High' || CRISK[F.birth] === 'High' ? 'High' : (CRISK[F.nat] === 'Medium' || CRISK[F.birth] === 'Medium' ? 'Medium' : 'Low'), ''],
+    ['Email and phone', F.email && F.phone ? 'Low' : 'High', ''],
+    ['Digital footprint', '-', 'Read in the background, not from the form']];
+  const managers = F.people.filter(p => !p.role.startsWith('Owner')).length;
+  const owners = F.people.filter(p => +p.own >= 25);
+  const ent = ENTITIES.find(e => e[0] === F.entity);
+  const act = ACTIVITIES.find(a => a[0] === F.activity);
+  return [
+    ['Jurisdiction', F.ops !== F.inc ? 'High' : CRISK[F.inc], F.ops !== F.inc ? 'Operates outside its country of incorporation' : ''],
+    ['Legal form', ent[2], ent[1]],
+    ['Business activity', act[2], act[1] + (F.activity === 'new' ? `, formed ${F.year}` : '')],
+    ['Directors and signatories', managers <= 2 ? 'Low' : managers <= 6 ? 'Medium' : 'High', `${managers} ${managers === 1 ? 'person' : 'people'}`],
+    ['Owners of 25% or more', '-', `${owners.length} listed. Not scored yet (to confirm)`],
+    ['Online presence', F.website ? 'Low' : 'High', F.website ? 'Domain age checked in the background' : 'No website or social links']];
+}
+function computedBand() {
+  const r = ratings().map(x => x[1]);
+  const highs = r.filter(x => x === 'High').length, meds = r.filter(x => x === 'Medium').length;
+  return highs >= 3 ? 'declined' : highs >= 1 ? 'high' : meds >= 1 ? 'medium' : 'low';
+}
+function peopleTable() {
+  const F = S.form;
+  const total = F.people.reduce((t, p) => t + (+p.own || 0), 0);
+  return `<div class="people">${F.people.map((p, k) => `<div class="prow">
+      <input data-pi="${k}" data-pf="name" value="${p.name}" placeholder="Full name">
+      <select data-pi="${k}" data-pf="role">${ROLES.map(r => `<option ${p.role === r ? 'selected' : ''}>${r}</option>`).join('')}</select>
+      <span class="own"><input data-pi="${k}" data-pf="own" type="number" min="0" max="100" value="${p.own}"><span>% owned</span></span>
+      <button class="rm" data-act="rmperson" data-i="${k}" aria-label="Remove">&times;</button></div>`).join('')}
+    <button class="btn2 add" data-act="addperson">+ Add a person</button>
+    ${total > 100 ? `<p class="warnline">Ownership adds up to ${total}%. It can't be more than 100%.</p>` : ''}</div>`;
+}
+function riskForm() {
+  const F = S.form;
+  return `<p class="muted">We use these answers to check your application in seconds. No documents or IDs yet. Try changing them, and open Admin view to see the effect.</p>
+  <h2>About you</h2>
+  <div class="grid">${lbl('Date of birth', inp('dob', F.dob, 'date'))}${lbl('Country of residence', sel('res', COUNTRIES, F.res))}
+  ${lbl('Nationality', sel('nat', COUNTRIES, F.nat))}${lbl('Country of birth', sel('birth', COUNTRIES, F.birth))}
+  ${lbl('Email', inp('email', F.email, 'email'))}${lbl('Mobile', inp('phone', F.phone, 'tel'))}</div>
+  ${isOrg() ? `<h2>About your organization</h2>
+  <div class="grid">${lbl('Country of incorporation', sel('inc', COUNTRIES, F.inc))}${lbl('Main country of operation', sel('ops', COUNTRIES, F.ops))}
+  ${lbl('Entity type', sel('entity', ENTITIES.map(e => [e[0], e[1]]), F.entity), 'Final list to come from compliance <span class="tag">to confirm</span>')}
+  ${lbl('Business activity', sel('activity', ACTIVITIES.map(a => [a[0], a[1]]), F.activity))}
+  ${F.activity === 'new' ? lbl('Year formed', inp('year', F.year, 'number')) : ''}
+  ${F.activity !== 'forprofit' ? lbl('Charity registration number', inp('reg', F.reg), 'Checked against the public registry') : ''}
+  ${lbl('Website or social links', inp('website', F.website))}</div>
+  <h2>People behind the organization</h2>
+  <p class="muted">List every director, officer and authorized signatory, and anyone who owns 25% or more.</p>
+  ${peopleTable()}` : ''}`;
+}
+function riskPreview() {
+  const b = computedBand();
+  const next = { low: 'Cleared, straight to verification.', medium: 'In review: a reviewer looks first.', high: 'In review: the compliance team looks first.', declined: 'Not approved, with a generic message.' }[b];
+  return `<h3>Live score preview</h3><p class="muted">Not visible to the user. Drafts aren't in any queue; this shows how the current answers would score.</p>
+  <p><b>${name()}</b><br><span class="band ${b}">${BAND[b]}</span></p>
+  <table><tr><th>Factor</th><th>Rating</th><th>Why</th></tr>${ratings().map(([f, r, n]) => `<tr><td>${f}</td><td>${r === '-' ? '<span class="muted">Not scored</span>' : `<span class="band ${r.toLowerCase()}">${r}</span>`}</td><td class="muted">${n || ''}</td></tr>`).join('')}</table>
+  <div class="notice" style="background:var(--card)"><b>What the user sees next:</b> ${next}</div>
+  <p class="muted" style="font-size:12px">Placeholder rule, since the real formula isn't decided: any three High ratings decline, any High goes to compliance, any Medium goes to a reviewer, otherwise Low. Countries A, B and C stand in for the internal risk list. Weights aren't shown.</p>`;
+}
+
 /* ---------- User screens ---------- */
 function userScreen(i) {
   switch (i) {
@@ -219,12 +314,7 @@ function userScreen(i) {
       ${S.draft ? `<div class="notice toast"><b>Draft saved.</b> No checks are needed until you go live. You can come back any time.</div>` : ''}`,
       nav: `<button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next">Continue to go live</button>` };
     case 3: return {
-      h: 'A few details before you go live', body: `
-      <p class="muted">We use these answers to check your application in seconds. No documents or IDs yet.</p>
-      <h2>About you</h2>
-      <div class="grid">${field('Date of birth', '14 March 1988')}${field('Nationality and country of birth', 'United States, United States')}${field('Address and country', '120 Oak Street, Springfield, United States')}${field('Email and mobile', 'amina.rahman@example.org, +1 555 0134')}</div>
-      ${isOrg() ? `<h2>About your organization</h2>
-      <div class="grid">${field('Country of incorporation and operation', 'United States, United States')}${field('Entity type', 'Registered charity')}${field('Business activity', 'Registered charity, formed 2016')}${field('Directors and signatories', 'Amina Rahman, Yusuf Khan')}${field('Owners of 25% or more', 'None')}${field('Website and social links', 'hopevalley.example.org')}</div>` : ''}`,
+      h: 'A few details before you go live', body: riskForm(),
       nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="submit">Submit for go-live</button>` };
     case 4: {
       const res = {
@@ -297,11 +387,8 @@ function userScreen(i) {
 
 /* ---------- Admin screens ---------- */
 function factors() {
-  const r = { low: ['Low', 'Low', 'Low'], medium: ['Low', 'Medium', 'Medium'], high: ['Medium', 'High', 'High'], declined: ['High', 'High', 'High'] }[S.outcome];
-  const list = isOrg()
-    ? [['Jurisdiction', r[0]], ['Legal form', r[1]], ['Owners', 'Low'], ['Directors and signatories', 'Low'], ['Business activity', r[2]], ['Online presence', r[1]]]
-    : [['Date of birth', 'Low'], ['Address and country', r[0]], ['Nationality', r[1]], ['Digital footprint', r[2]], ['Email and phone', 'Low']];
-  return `<table><tr><th>Factor</th><th>Rating</th></tr>${list.map(([f, v]) => `<tr><td>${f}</td><td>${v}</td></tr>`).join('')}</table>`;
+  const note = S.outcome !== computedBand() ? `<p class="muted" style="font-size:12px">The demo control overrides the result. The answers alone give ${BAND[computedBand()]}.</p>` : '';
+  return `<table><tr><th>Factor</th><th>Rating</th></tr>${ratings().map(([f, v]) => `<tr><td>${f}</td><td>${v === '-' ? 'Not scored' : v}</td></tr>`).join('')}</table>${note}`;
 }
 function caseHead() {
   return `<p><b>${name()}</b><br><span class="band ${S.outcome}">${BAND[S.outcome]}</span> &nbsp;<span class="muted">Score band and review state are shown separately.</span></p>`;
@@ -316,7 +403,8 @@ function audit(extra) {
   return `<div class="log">${items.map((t, k) => `<div><span class="muted">Day 1, 10:${String(2 + k * 7).padStart(2, '0')}</span> &nbsp;${t}</div>`).join('')}</div>`;
 }
 function adminScreen(i) {
-  if (i <= 3) return `<h3>Nothing to review</h3><p>${S.draft && i === 2 ? 'Draft saved. ' : ''}Drafts are not in any queue. Compliance starts when the user submits for go-live.</p>`;
+  if (i === 3) return riskPreview();
+  if (i <= 2) return `<h3>Nothing to review</h3><p>${S.draft && i === 2 ? 'Draft saved. ' : ''}Drafts are not in any queue. Compliance starts when the user submits for go-live.</p>`;
   if (i === 4) {
     const q = { low: ['Cleared automatically', 'No review needed. Sent to verification.'], medium: ['Reviewer queue', 'A reviewer checks the flagged items and can request information.'], high: ['Compliance review queue', 'Enhanced review by the compliance team.'], declined: ['Declined', 'The reason stays internal. The user sees a generic message.'] }[S.outcome];
     const acts = S.outcome === 'medium' ? ['Approve', 'Request information', 'Escalate to compliance', 'Decline']
@@ -366,7 +454,7 @@ function render() {
   seg('seg-mode', [['inhouse', 'In-house'], ['vendor', 'With vendor']], 'mode');
   $('btn-admin').classList.toggle('on', S.admin);
   $('bar').style.width = ((S.step + 1) / STEPS.length * 100) + '%';
-  $('steps').innerHTML = STEPS.map((s, k) => `<span class="${k === S.step ? 'cur' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}">${k + 1}. ${s}</span>`).join('');
+  $('steps').innerHTML = STEPS.map((s, k) => `<span class="${k === S.step ? 'cur' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0">${k + 1}. ${s}</span>`).join('');
   const u = userScreen(S.step);
   const isV = VENDOR_STEPS.includes(S.step);
   const blocked = S.step === 4 && S.outcome === 'declined';
@@ -375,7 +463,7 @@ function render() {
     <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}</div><h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
-  if (S.admin) a.innerHTML = `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>${adminScreen(S.step)}`;
+  if (S.admin) a.innerHTML = adminHead() + adminScreen(S.step);
   const o = $('overlay');
   o.hidden = !S.map;
   if (S.map) o.innerHTML = pathMap();
@@ -386,6 +474,7 @@ function go(step) {
   render(); window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'); if (g) { S.draft = false; go(+g.dataset.go); return; }
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.k) { let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
   if (b.dataset.set) { Object.assign(S, JSON.parse(b.dataset.set)); S.map = false; S.checking = false; render(); return; }
@@ -395,12 +484,25 @@ document.addEventListener('click', e => {
     case 'next': S.draft = false; go(S.step + 1); break;
     case 'back': go(S.step - 1); break;
     case 'draft': S.draft = true; render(); break;
-    case 'submit': go(4); break;
+    case 'submit': S.outcome = computedBand(); go(4); break;
+    case 'addperson': S.form.people.push({ name: '', role: 'Director', own: '0' }); render(); break;
+    case 'rmperson': S.form.people.splice(+b.dataset.i, 1); render(); break;
     case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass' }); go(0); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
 });
+const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>`;
+function onField(e, full) {
+  const t = e.target;
+  if (t.dataset.f) S.form[t.dataset.f] = t.value;
+  else if (t.dataset.pf) S.form.people[+t.dataset.pi][t.dataset.pf] = t.value;
+  else return;
+  S.outcome = computedBand();
+  if (full) render(); else if (S.admin) $('admin').innerHTML = adminHead() + adminScreen(S.step);
+}
+document.addEventListener('input', e => onField(e, e.target.tagName === 'SELECT'));
+document.addEventListener('change', e => onField(e, true));
 $('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') { S.map = false; render(); } });
 render();
 </script>
