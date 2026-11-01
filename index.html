@@ -319,8 +319,8 @@ function draftCard() {
 }
 
 function otherIds(what) {
-  const others = S.form.people.filter(p => p.name && p.name !== PERSON).map(p => p.name);
-  return `<div class="check opt-row">${tick('wait', '&middot;')}<div><b>${what} for each director and signatory <span class="tag">to discuss: IDV for each</span></b><div class="muted">Not required in this flow, which verifies only the person creating the organization.${others.length ? ' Would apply to: ' + others.join(', ') + '.' : ''}</div></div></div>`;
+  const owners = S.form.people.filter(p => p.name && +p.own >= 25).map(p => `${p.name} (${p.own}%)`);
+  return `<div class="check opt-row">${tick('wait', '&middot;')}<div><b>${what} for anyone owning 25% or more <span class="tag">to discuss: IDV for each</span></b><div class="muted">Not required in this flow, which verifies only the person creating the organization. The risk matrix asks for full KYC on owners of 25% or more (or a lower threshold) plus one control person. ${owners.length ? 'Would apply to: ' + owners.join(', ') + '.' : 'No one owns 25% or more in step 4.'}</div></div></div>`;
 }
 
 /* ---------- User screens ---------- */
