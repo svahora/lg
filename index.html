@@ -185,7 +185,7 @@
 <div class="topbar">
   <div class="brand">Onboarding prototype</div>
   <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
-  <div class="ctl"><span class="seglabel">Verification</span><div class="seg" id="seg-mode"></div></div>
+  <div class="ctl" id="ctl-mode"><span class="seglabel">Verification</span><div class="seg" id="seg-mode"></div></div>
   <button class="ghost" id="btn-map">Path map</button>
   <button class="ghost" id="btn-admin">Admin view</button>
   <button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button>
@@ -475,6 +475,7 @@ function pathMap() {
 function render() {
   seg('seg-app', [['org', 'Organization'], ['person', 'Person']], 'app');
   seg('seg-mode', [['inhouse', 'In-house'], ['vendor', 'With vendor']], 'mode');
+  $('ctl-mode').hidden = !VENDOR_STEPS.includes(S.step);
   $('btn-admin').classList.toggle('on', S.admin);
   $('bar').style.width = ((S.step + 1) / STEPS.length * 100) + '%';
   $('steps').innerHTML = STEPS.map((s, k) => `<span class="${k === S.step ? 'cur' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0">${k + 1}. ${s}</span>`).join('');
