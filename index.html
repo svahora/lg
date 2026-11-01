@@ -37,6 +37,7 @@
   .theme svg { width: 18px; height: 18px; }
   footer { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 28px 16px 36px; color: var(--muted); font-size: 14px; }
   footer b { color: var(--ink); }
+  .pair { display: flex; gap: 10px; flex-wrap: wrap; }
   footer .ar { font-size: 16px; }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -193,7 +194,7 @@
   <div class="user" id="user"></div>
   <div class="admin" id="admin" hidden></div>
 </div>
-<footer><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor"/><path d="M7 12.5l3.2 3.2L17 8.8" fill="none" stroke="var(--card)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Tamkeen</b><span class="ar" lang="ar" dir="rtl">تَمْكِين</span></footer>
+<footer><b>Tamkeen</b><span class="ar" lang="ar" dir="rtl">تَمْكِين</span></footer>
 <div class="overlay" id="overlay" hidden></div>
 
 <script>
@@ -327,7 +328,7 @@ function userScreen(i) {
       <div class="grid">${field('Title', 'Clean water for 300 families')}${field('Goal', '$25,000')}${field('Category', 'Water and sanitation')}${field('Fundraising as', name())}</div>
       ${field('Story', 'Families in our area walk over an hour each day for water. We are building three wells with local partners, so every household has safe water within a short walk.')}
       ${S.draft ? `<div class="notice toast"><b>Draft saved.</b> No checks are needed until you go live. You can come back any time.</div>` : ''}`,
-      nav: `<button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next">Continue to go live</button>` };
+      nav: `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next">Continue to go live</button></span>` };
     case 3: return {
       h: 'A few details before you go live', body: riskForm(),
       nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="submit">Submit for go-live</button>` };
