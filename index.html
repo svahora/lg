@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Itar · onboarding prototype</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --card: #ffffff; --ink: #161616; --muted: #6b6b6b; --line: #e3e3df;
+    --primary: #111111; --primary-ink: #ffffff;
+    --teal: #0f8f80; --teal-tint: #e6f5f2;
+    --admin: #eaf2fd; --admin-line: #c9dcf6;
+    --low: #2e8b3e; --low-tint: #e4f3e6;
+    --medium: #b88a00; --medium-tint: #fbf3d6;
+    --high: #d0661b; --high-tint: #fbe8da;
+    --declined: #c62f2f; --declined-tint: #f9e1e1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141414; --card: #1e1e1e; --ink: #ededed; --muted: #a3a3a3; --line: #333;
+      --primary: #f2f2f2; --primary-ink: #111;
+      --teal: #3cc2b0; --teal-tint: #12302c;
+      --admin: #16233a; --admin-line: #2b4269;
+      --low: #5cc56b; --low-tint: #183420; --medium: #e0b93a; --medium-tint: #3a3112;
+      --high: #f0904a; --high-tint: #3d2615; --declined: #f06c6c; --declined-tint: #3d1b1b;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  button { font: inherit; cursor: pointer; }
+
+  /* Top bar */
+  .topbar { position: sticky; top: 0; z-index: 20; background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+  .brand { font-weight: 700; margin-right: auto; display: flex; align-items: center; gap: 8px; }
+  .logo { width: 24px; height: 24px; color: var(--primary); }
+  .brand .ar { font-weight: 500; color: var(--muted); font-size: 16px; }
+  .brand .sub { font-weight: 400; color: var(--muted); font-size: 12px; }
+  @media (max-width: 768px) { .brand .sub { display: none; } }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--bg); }
+  .seg button { border: 0; background: transparent; color: var(--muted); padding: 5px 12px; border-radius: 999px; font-size: 13px; }
+  .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); font-weight: 600; }
+  .seglabel { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 6px; }
+  .ctl { display: flex; align-items: center; }
+  .ghost { border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
+  .ghost.on { background: var(--admin); border-color: var(--admin-line); font-weight: 600; }
+
+  /* Progress */
+  .progress { padding: 12px 16px 0; max-width: 1200px; margin: 0 auto; }
+  .bar { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--primary); transition: width .3s; }
+  .steps { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--muted); gap: 4px; }
+  .steps span.cur { color: var(--ink); font-weight: 600; }
+  .steps span.vend { color: var(--teal); }
+
+  /* Layout */
+  .layout { display: flex; max-width: 1200px; margin: 0 auto; gap: 16px; padding: 16px; align-items: flex-start; }
+  .user { flex: 1 1 60%; min-width: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; position: relative; }
+  .card.vendor { border: 2px solid var(--teal); padding: 21px; }
+  .pill { position: absolute; top: 14px; right: 14px; font-size: 11px; font-weight: 600; color: var(--teal); background: var(--teal-tint); border-radius: 999px; padding: 3px 10px; }
+  .eyebrow { font-size: 12px; color: var(--muted); }
+  h1 { font-size: 22px; margin: 2px 0 6px; line-height: 1.25; padding-right: 150px; }
+  h2 { font-size: 15px; margin: 18px 0 8px; }
+  p { margin: 6px 0; }
+  .muted { color: var(--muted); }
+  .tag { display: inline-block; border: 1px dashed var(--muted); color: var(--muted); border-radius: 6px; font-size: 11px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; font-weight: 500; }
+  .field { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; background: var(--bg); margin: 6px 0; }
+  .field b { display: block; font-size: 11px; color: var(--muted); font-weight: 500; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; gap: 10px; flex-wrap: wrap; }
+  .btn { background: var(--primary); color: var(--primary-ink); border: 0; padding: 10px 18px; border-radius: 10px; font-weight: 600; }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+  .btn2 { background: transparent; color: var(--ink); border: 1px solid var(--line); padding: 10px 16px; border-radius: 10px; }
+  .notice { border-radius: 10px; padding: 12px 14px; margin: 12px 0; background: var(--bg); border: 1px solid var(--line); }
+  .demo { border: 1px dashed var(--muted); border-radius: 10px; padding: 10px 12px; margin: 14px 0; font-size: 13px; }
+  .demo .seg { margin-top: 6px; }
+  .cover { height: 150px; border-radius: 10px; background: linear-gradient(135deg, #c9d6c4, #e9dcc3); display: flex; align-items: flex-end; padding: 12px; color: #2b2b2b; font-weight: 600; margin: 10px 0; }
+  .check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .check:last-child { border-bottom: 0; }
+  .tick { width: 20px; height: 20px; border-radius: 50%; background: var(--low); color: #fff; font-size: 12px; display: grid; place-items: center; flex: none; margin-top: 2px; }
+  .tick.wait { background: var(--line); color: var(--muted); }
+  .tick.warn { background: var(--medium); }
+  .vendorbox { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 10px; }
+  .vendorbox .vhead { background: var(--bg); padding: 8px 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .vendorbox .vbody { padding: 4px 12px; }
+  .spinner { width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; margin: 16px 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .band { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+  .band.low { color: var(--low); background: var(--low-tint); }
+  .band.medium { color: var(--medium); background: var(--medium-tint); }
+  .band.high { color: var(--high); background: var(--high-tint); }
+  .band.declined { color: var(--declined); background: var(--declined-tint); }
+  .mail { border: 1px solid var(--line); border-radius: 10px; margin-top: 10px; }
+  .mail .mh { padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .mail .mb { padding: 12px; }
+  .toast { border-left: 3px solid var(--primary); }
+  .live { display: inline-block; background: var(--low-tint); color: var(--low); font-weight: 700; font-size: 12px; padding: 2px 10px; border-radius: 999px; }
+  .meter { height: 8px; border-radius: 8px; background: var(--line); margin: 10px 0 4px; }
+
+  /* Admin drawer */
+  .admin { flex: 0 0 40%; background: var(--admin); border: 1px solid var(--admin-line); border-radius: 14px; padding: 18px; position: sticky; top: 120px; max-height: calc(100vh - 140px); overflow: auto; animation: slidein .25s ease-out; }
+  @keyframes slidein { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .admin .ahead { display: flex; justify-content: space-between; align-items: center; }
+  .admin .albl { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .admin h3 { margin: 6px 0 10px; font-size: 16px; }
+  .admin table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--card); border-radius: 10px; overflow: hidden; }
+  .admin td, .admin th { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .admin th { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+  .actions span { border: 1px solid var(--admin-line); background: var(--card); border-radius: 8px; padding: 5px 10px; font-size: 12px; }
+  .actions span.main { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+  .log { font-size: 13px; background: var(--card); border-radius: 10px; padding: 6px 12px; }
+  .log div { padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .log div:last-child { border-bottom: 0; }
+  .x { border: 0; background: transparent; font-size: 20px; color: var(--muted); }
+
+  /* Path map */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; display: flex; justify-content: center; align-items: flex-start; overflow: auto; padding: 24px 12px; }
+  .map { background: var(--card); border-radius: 14px; padding: 20px; max-width: 980px; width: 100%; }
+  .stage { display: flex; gap: 12px; align-items: stretch; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .stage:last-child { border-bottom: 0; }
+  .sname { flex: 0 0 120px; font-size: 12px; color: var(--muted); padding-top: 8px; }
+  .nodes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .node { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 7px 11px; font-size: 13px; text-align: left; }
+  .node small { display: block; color: var(--muted); font-size: 11px; }
+  .node.v { border: 2px solid var(--teal); }
+  .node.cur { outline: 3px solid var(--primary); outline-offset: 1px; }
+  .node.faded { opacity: .35; border-style: dashed; }
+  .node.end { border-style: dashed; }
+  .node.b-low { background: var(--low-tint); } .node.b-medium { background: var(--medium-tint); }
+  .node.b-high { background: var(--high-tint); } .node.b-declined { background: var(--declined-tint); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); margin: 6px 0 12px; }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--line); }
+
+  @media (max-width: 768px) {
+    .layout { display: block; padding: 12px 16px; }
+    .admin { position: fixed; inset: 0; top: 0; max-height: none; border-radius: 0; z-index: 30; }
+    .grid { grid-template-columns: 1fr; }
+    h1 { padding-right: 0; margin-top: 28px; }
+    .sname { flex-basis: 80px; }
+    .steps span { display: none; } .steps span.cur { display: inline; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/><rect x="9" y="9" width="6" height="6" fill="currentColor"/></svg>Itar <span class="ar" lang="ar" dir="rtl">إِطَار</span><span class="sub">onboarding prototype</span></div>
+  <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
+  <div class="ctl"><span class="seglabel">Verification</span><div class="seg" id="seg-mode"></div></div>
+  <button class="ghost" id="btn-map">Path map</button>
+  <button class="ghost" id="btn-admin">Admin view</button>
+</div>
+<div class="progress"><div class="bar"><div id="bar"></div></div><div class="steps" id="steps"></div></div>
+<div class="layout">
+  <div class="user" id="user"></div>
+  <div class="admin" id="admin" hidden></div>
+</div>
+<div class="overlay" id="overlay" hidden></div>
+
+<script>
+const S = { step: 0, app: 'org', mode: 'inhouse', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, checking: false, admin: false, map: false };
+const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live'];
+const VENDOR_STEPS = [5, 6, 7];
+const ORG = 'Hope Valley Community Center';
+const PERSON = 'Amina Rahman';
+const BAND = { low: 'Low risk', medium: 'Medium risk', high: 'High risk', declined: 'Declined' };
+const $ = id => document.getElementById(id);
+const isOrg = () => S.app === 'org';
+const vendor = () => S.mode === 'vendor';
+const name = () => isOrg() ? ORG : PERSON + ' (personal)';
+const field = (k, v) => `<div class="field"><b>${k}</b>${v}</div>`;
+const tick = (cls, t) => `<span class="tick ${cls || ''}">${t || '&#10003;'}</span>`;
+const row = (cls, title, sub, t) => `<div class="check">${tick(cls, t)}<div><b>${title}</b>${sub ? `<div class="muted">${sub}</div>` : ''}</div></div>`;
+function seg(id, opts, key) {
+  $(id).innerHTML = opts.map(([v, l]) => `<button class="${S[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}">${l}</button>`).join('');
+}
+function demoSeg(key, opts) {
+  return `<div class="seg">${opts.map(([v, l]) => `<button class="${S[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}">${l}</button>`).join('')}</div>`;
+}
+const reviewer = () => S.outcome === 'high' ? 'Compliance team' : 'Reviewer';
+const flagged = () => S.outcome === 'medium' || S.outcome === 'high';
+const vendorLow = () => vendor() && S.vendorResult === 'low';
+
+/* ---------- User screens ---------- */
+function userScreen(i) {
+  switch (i) {
+    case 0: return {
+      h: 'Create your account', body: `
+      <p class="muted">Start fundraising in minutes. No checks are needed to explore or draft.</p>
+      ${field('Email', 'amina.rahman@example.org')}${field('Password', '••••••••••')}
+      <div class="notice">Login only. Nothing is verified at this step.</div>` };
+    case 1: return isOrg() ? {
+      h: 'Who are you fundraising as?', tag: 'to discuss', body: `
+      <p><b>&#9673; An organization</b> &nbsp; <span class="muted">&#9675; Myself</span></p>
+      ${field('Search for your organization', ORG)}
+      <div class="notice">No match found. <b>Create "${ORG}"</b>. Anyone joining an existing organization would request access instead.</div>` } : {
+      h: 'Who are you fundraising as?', tag: 'to discuss', body: `
+      <p><span class="muted">&#9675; An organization</span> &nbsp; <b>&#9673; Myself</b></p>
+      <div class="notice">You'll fundraise from your personal account. No organization search or setup needed.</div>` };
+    case 2: return {
+      h: 'Your campaign', body: `
+      <p class="muted">Already filled in for this walkthrough.</p>
+      <div class="cover">Clean water for 300 families</div>
+      <div class="grid">${field('Title', 'Clean water for 300 families')}${field('Goal', '$25,000')}${field('Category', 'Water and sanitation')}${field('Fundraising as', name())}</div>
+      ${field('Story', 'Families in our area walk over an hour each day for water. We are building three wells with local partners, so every household has safe water within a short walk.')}
+      ${S.draft ? `<div class="notice toast"><b>Draft saved.</b> No checks are needed until you go live. You can come back any time.</div>` : ''}`,
+      nav: `<button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next">Continue to go live</button>` };
+    case 3: return {
+      h: 'A few details before you go live', body: `
+      <p class="muted">We use these answers to check your application in seconds. No documents or IDs yet.</p>
+      <h2>About you</h2>
+      <div class="grid">${field('Date of birth', '14 March 1988')}${field('Nationality and country of birth', 'United States, United States')}${field('Address and country', '120 Oak Street, Springfield, United States')}${field('Email and mobile', 'amina.rahman@example.org, +1 555 0134')}</div>
+      ${isOrg() ? `<h2>About your organization</h2>
+      <div class="grid">${field('Country of incorporation and operation', 'United States, United States')}${field('Entity type', 'Registered charity')}${field('Business activity', 'Registered charity, formed 2016')}${field('Directors and signatories', 'Amina Rahman, Yusuf Khan')}${field('Owners of 25% or more', 'None')}${field('Website and social links', 'hopevalley.example.org')}</div>` : ''}`,
+      nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="submit">Submit for go-live</button>` };
+    case 4: {
+      const res = {
+        low: `<p><span class="band low">Cleared</span></p><p>You're ready to verify your identity${isOrg() ? ' and organization' : ''}.</p>`,
+        medium: `<p><span class="band medium">In review</span></p><p>Thanks. A member of our team is taking a closer look. We'll let you know here when you can continue.</p>`,
+        high: `<p><span class="band high">In review</span></p><p>Thanks. Our compliance team is reviewing your application. We'll let you know here when you can continue.</p>`,
+        declined: `<p><span class="band declined">Not approved</span></p><p>We're unable to approve this application. Your drafts stay saved.</p><p class="muted">The user is never told why.</p>` }[S.outcome];
+      return {
+        h: 'Checking your details', body: S.checking
+          ? `<div class="spinner"></div><p class="muted">This takes a few seconds.</p>`
+          : `${res}<div class="demo"><b>Demo control:</b> pick the result of the check${demoSeg('outcome', [['low', 'Low'], ['medium', 'Medium'], ['high', 'High'], ['declined', 'Declined']])}</div>`,
+        nav: S.outcome === 'declined'
+          ? `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="restart">Start over</button>`
+          : null };
+    }
+    case 5: {
+      const pre = flagged() ? `<div class="notice">Review complete. You can now verify.</div>` : '';
+      if (!vendor()) return {
+        h: 'Verify your identity' + (isOrg() ? ' and organization' : ''), body: `${pre}
+        <p class="muted">Upload these in the product. They're kept in secure document storage.</p>
+        ${row('', 'Photo ID', 'passport.jpg uploaded')}
+        ${row('', 'Bank statement', 'From the last 3 months, uploaded')}
+        ${isOrg() ? row('', 'Registration document', 'IRS determination letter, uploaded') + row('', 'Formation documents', 'Articles of incorporation, uploaded') + row('', 'Board resolution', 'Uploaded') : ''}` };
+      const reg = S.registry
+        ? row('', 'Business lookup', 'Found in the company registry. No documents needed.')
+        : row('warn', 'Business lookup', 'The registry for this country can\'t be reached. Please upload: registration document, formation documents, board resolution.', '!');
+      return {
+        h: 'Verify your identity' + (isOrg() ? ' and organization' : ''), body: `${pre}
+        <div class="vendorbox"><div class="vhead">Secure verification by our vendor, inside the product</div><div class="vbody">
+        ${row('', 'Scan your ID', 'Passport scanned')}
+        ${row('', 'Selfie check', 'Matched to your ID')}
+        ${isOrg() ? reg : ''}</div></div>
+        ${isOrg() ? `<div class="demo"><b>Demo control:</b> company registry${demoSeg('registry', [[true, 'Reachable'], [false, 'Not reachable']])}</div>` : ''}
+        ${isOrg() && !S.registry ? '' : `<p class="muted" style="margin-top:10px">No documents to upload unless the vendor can't verify you.</p>`}` };
+    }
+    case 6: {
+      if (!vendor()) return {
+        h: 'We\'re reviewing your documents', body: `
+        ${row('', 'Documents received', '')}
+        ${row('wait', 'A reviewer is checking your documents', 'Nothing for you to do right now.', '&middot;')}
+        ${row('wait', 'Ready to go live', '', '&middot;')}` };
+      return {
+        h: vendorLow() ? 'We need a little more time' : 'You\'re verified', body: vendorLow() ? `
+        ${row('', 'Verification finished', '')}
+        ${row('wait', 'Our compliance team is reviewing', 'Nothing for you to do right now.', '&middot;')}` : `
+        ${row('', 'Identity verified', '')}${isOrg() ? row('', 'Organization verified', S.registry ? 'From the company registry' : 'From your uploaded documents') : ''}
+        ${row('', 'Ready to go live', '')}`
+        + `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` };
+    }
+    case 7: {
+      let inapp, mail;
+      if (!vendor()) { inapp = 'Your documents are under review. We\'ll tell you here when you can go live.'; mail = 'Documents received. Our team is reviewing them. Then: "You\'re approved. Your campaign can go live."'; }
+      else if (vendorLow()) { inapp = 'We need a little more time to review your application.'; mail = 'We\'re taking a little more time with your application. No action is needed from you.'; }
+      else { inapp = 'You\'re verified. Your campaign can go live now.'; mail = 'You\'re verified. Go live whenever you\'re ready.'; }
+      return {
+        h: 'What you hear from us', body: `
+        <div class="notice toast"><b>In the product:</b> ${inapp}</div>
+        <div class="mail"><div class="mh">Email preview</div><div class="mb">${mail}</div></div>
+        <p class="muted">Messages never say why something is under review.</p>` };
+    }
+    case 8: return {
+      h: 'Clean water for 300 families', body: `
+      <p><span class="live">LIVE</span> &nbsp;<span class="muted">by ${name()}</span></p>
+      <div class="cover">Clean water for 300 families</div>
+      <div class="meter"></div><p><b>$0</b> <span class="muted">raised of $25,000</span></p>
+      <div class="notice">We may ask for more documents later, depending on your campaign${isOrg() ? '' : ', for example if you raise money on behalf of someone else'}.</div>`,
+      nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="restart">Start over</button>` };
+  }
+}
+
+/* ---------- Admin screens ---------- */
+function factors() {
+  const r = { low: ['Low', 'Low', 'Low'], medium: ['Low', 'Medium', 'Medium'], high: ['Medium', 'High', 'High'], declined: ['High', 'High', 'High'] }[S.outcome];
+  const list = isOrg()
+    ? [['Jurisdiction', r[0]], ['Legal form', r[1]], ['Owners', 'Low'], ['Directors and signatories', 'Low'], ['Business activity', r[2]], ['Online presence', r[1]]]
+    : [['Date of birth', 'Low'], ['Address and country', r[0]], ['Nationality', r[1]], ['Digital footprint', r[2]], ['Email and phone', 'Low']];
+  return `<table><tr><th>Factor</th><th>Rating</th></tr>${list.map(([f, v]) => `<tr><td>${f}</td><td>${v}</td></tr>`).join('')}</table>`;
+}
+function caseHead() {
+  return `<p><b>${name()}</b><br><span class="band ${S.outcome}">${BAND[S.outcome]}</span> &nbsp;<span class="muted">Score band and review state are shown separately.</span></p>`;
+}
+function audit(extra) {
+  const items = ['Draft created', 'Risk form submitted', `Score: ${BAND[S.outcome]}`];
+  if (flagged()) items.push(`${reviewer()} approved after review`);
+  items.push(vendor() ? 'Vendor verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed') : 'Documents uploaded to secure document storage');
+  if (!vendor()) items.push('Reviewer approved documents');
+  if (vendorLow()) items.push('Compliance team approved');
+  items.push(...(extra || []));
+  return `<div class="log">${items.map((t, k) => `<div><span class="muted">Day 1, 10:${String(2 + k * 7).padStart(2, '0')}</span> &nbsp;${t}</div>`).join('')}</div>`;
+}
+function adminScreen(i) {
+  if (i <= 3) return `<h3>Nothing to review</h3><p>${S.draft && i === 2 ? 'Draft saved. ' : ''}Drafts are not in any queue. Compliance starts when the user submits for go-live.</p>`;
+  if (i === 4) {
+    const q = { low: ['Cleared automatically', 'No review needed. Sent to verification.'], medium: ['Reviewer queue', 'A reviewer checks the flagged items and can request information.'], high: ['Compliance review queue', 'Enhanced review by the compliance team.'], declined: ['Declined', 'The reason stays internal. The user sees a generic message.'] }[S.outcome];
+    const acts = S.outcome === 'medium' ? ['Approve', 'Request information', 'Escalate to compliance', 'Decline']
+      : S.outcome === 'high' ? ['Approve', 'Request information', 'Decline'] : [];
+    return `<h3>${q[0]}</h3>${caseHead()}<p>${q[1]}</p>${acts.length ? `<div class="actions">${acts.map((a, k) => `<span class="${k === 0 ? 'main' : ''}">${a}</span>`).join('')}</div>` : ''}
+      <h2>Risk form answers, rated</h2>${factors()}<p class="muted" style="font-size:12px">Weights and thresholds are not shown here.</p>`;
+  }
+  if (i === 5) {
+    const docs = !vendor()
+      ? `<table><tr><th>Document</th><th>Status</th></tr><tr><td>Photo ID</td><td>Uploaded</td></tr><tr><td>Bank statement</td><td>Uploaded</td></tr>${isOrg() ? '<tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr>' : ''}</table><p class="muted" style="font-size:12px">Files sit in secure document storage. Reads are logged.</p>`
+      : `<table><tr><th>Vendor check</th><th>Result</th></tr><tr><td>ID document</td><td>Passed</td></tr><tr><td>Selfie check</td><td>Passed</td></tr><tr><td>Sanctions screening</td><td>Clear</td></tr>${isOrg() ? `<tr><td>Company registry</td><td>${S.registry ? 'Found' : 'Not reachable, documents requested'}</td></tr>` : ''}</table><p class="muted" style="font-size:12px">We keep the vendor's references and results.</p>`;
+    return `<h3>Case detail</h3>${caseHead()}${docs}`;
+  }
+  if (i === 6) {
+    if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
+    if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Decline</span></div>`;
+    return `<h3>No action needed</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The case closes automatically.</p>`;
+  }
+  return `<h3>Audit log</h3>${caseHead()}${audit(i === 8 ? ['Campaign live'] : [])}`;
+}
+
+/* ---------- Path map ---------- */
+function mapNode(label, sub, set, extra) {
+  const cur = Object.keys(set).every(k => k === 'step' ? S.step === set.step : S[k] === set[k]);
+  return `<button class="node ${extra || ''} ${cur ? 'cur' : ''}" data-set='${JSON.stringify(set)}'>${label}${sub ? `<small>${sub}</small>` : ''}</button>`;
+}
+function pathMap() {
+  const p = isOrg() ? '' : 'faded';
+  const st = (n, nodes) => `<div class="stage"><div class="sname">${n}</div><div class="nodes">${nodes}</div></div>`;
+  return `<div class="map"><div style="display:flex;justify-content:space-between;align-items:center"><h1 style="padding:0;margin:0">All paths</h1><button class="x" data-act="closemap">&times;</button></div>
+  <div class="legend"><span><span class="sw" style="border:2px solid var(--teal)"></span>Changes with vendor</span><span><span class="sw" style="background:var(--low-tint)"></span><span class="sw" style="background:var(--medium-tint)"></span><span class="sw" style="background:var(--high-tint)"></span><span class="sw" style="background:var(--declined-tint)"></span>Score bands</span><span><span class="sw" style="border-style:dashed;opacity:.4"></span>Skipped on the person path</span><span>Outline = where you are. Click any step to jump there.</span></div>
+  ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
+  ${st('2. Applicant', mapNode('Organization', 'Create or join', { step: 1, app: 'org' }) + mapNode('Person', 'Personal account', { step: 1, app: 'person' }))}
+  ${st('3. Campaign', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
+  ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
+  ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Straight to verification', medium: 'Reviewer first', high: 'Compliance first', declined: 'Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
+  ${st('6. Verification', mapNode('In-house', 'Upload ID, bank statement' + (isOrg() ? ', company documents' : ''), { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Falls back to upload', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
+  ${st('7. Review', mapNode('Reviewer checks documents', 'In-house', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass' }, 'v') + mapNode('Back to compliance', 'With vendor, low result', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('8. Message', mapNode('Under review', 'In-house', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass' }, 'v') + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
+  </div>`;
+}
+
+/* ---------- Render ---------- */
+function render() {
+  seg('seg-app', [['org', 'Organization'], ['person', 'Person']], 'app');
+  seg('seg-mode', [['inhouse', 'In-house'], ['vendor', 'With vendor']], 'mode');
+  $('btn-admin').classList.toggle('on', S.admin);
+  $('bar').style.width = ((S.step + 1) / STEPS.length * 100) + '%';
+  $('steps').innerHTML = STEPS.map((s, k) => `<span class="${k === S.step ? 'cur' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}">${k + 1}. ${s}</span>`).join('');
+  const u = userScreen(S.step);
+  const isV = VENDOR_STEPS.includes(S.step);
+  const blocked = S.step === 4 && S.outcome === 'declined';
+  const nav = u.nav || `<button class="btn2" data-act="back" ${S.step === 0 ? 'disabled' : ''}>Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
+  $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
+    <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}</div><h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+  const a = $('admin');
+  a.hidden = !S.admin;
+  if (S.admin) a.innerHTML = `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>${adminScreen(S.step)}`;
+  const o = $('overlay');
+  o.hidden = !S.map;
+  if (S.map) o.innerHTML = pathMap();
+}
+function go(step) {
+  S.step = Math.max(0, Math.min(STEPS.length - 1, step));
+  if (S.step === 4) { S.checking = true; setTimeout(() => { S.checking = false; render(); }, 1200); }
+  render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.k) { let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
+  if (b.dataset.set) { Object.assign(S, JSON.parse(b.dataset.set)); S.map = false; S.checking = false; render(); return; }
+  if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
+  if (b.id === 'btn-map') { S.map = true; render(); return; }
+  switch (b.dataset.act) {
+    case 'next': S.draft = false; go(S.step + 1); break;
+    case 'back': go(S.step - 1); break;
+    case 'draft': S.draft = true; render(); break;
+    case 'submit': go(4); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass' }); go(0); break;
+    case 'closeadmin': S.admin = false; render(); break;
+    case 'closemap': S.map = false; render(); break;
+  }
+});
+$('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') { S.map = false; render(); } });
+render();
+</script>
+</body>
+</html>
