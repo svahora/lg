@@ -323,12 +323,7 @@ function draftCard() {
   <p class="muted" style="margin:14px 0 4px">Or start something new:</p>`;
 }
 
-// Step 6 items the user must finish before Continue unlocks
-function required() {
-  const co = ['reg', 'form', 'board'];
-  if (!vendor()) return ['id', 'bank', ...(isOrg() ? co : [])];
-  return ['scan', 'selfie', ...(isOrg() && !S.registry ? co : [])];
-}
+// Step 6 items: clicking is optional, Continue never waits on them
 function up(key, title, doneSub, reqSub, label) {
   if (S.done[key]) return row('', title, doneSub);
   return `<div class="check">${tick('wait', '&middot;')}<div style="flex:1"><b>${title}</b><div class="muted">Required${reqSub ? '. ' + reqSub : ''}</div></div><button class="btn2 sm" data-act="up" data-key="${key}">${label || 'Upload'}</button></div>`;
@@ -384,7 +379,7 @@ function userScreen(i) {
       const pre = (S.resumed ? `<div class="notice toast"><b>Draft restored.</b> Pick up where you left off.</div>` : '')
         + (flagged() ? `<div class="notice">Review complete. You can now verify.</div>` : '');
       const h = 'Verify your identity' + (isOrg() ? ' and organization' : '');
-      const nav = `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next" ${required().every(k => S.done[k]) ? '' : 'disabled'}>Continue</button></span>`;
+      const nav = `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next">Continue</button></span>`;
       const lock = `<p class="lock">&#128274; Your documents are encrypted and visible only to our trust and safety team.</p>`;
       const docs = up('reg', 'Registration document', 'IRS determination letter, uploaded') + up('form', 'Formation documents', 'Articles of incorporation, operating agreement, and partnership or trust deed, uploaded', 'Articles of incorporation, operating agreement, and partnership or trust deed <span class="tag">to confirm if all are required</span>') + up('board', 'Board resolution', 'Uploaded');
       if (!vendor()) return {
