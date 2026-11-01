@@ -37,6 +37,7 @@
   .theme svg { width: 18px; height: 18px; }
   footer { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 28px 16px 36px; color: var(--muted); font-size: 14px; }
   footer b { color: var(--ink); }
+  .draftcard { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; background: var(--bg); }
   .pair { display: flex; gap: 10px; flex-wrap: wrap; }
   footer .ar { font-size: 16px; }
   * { box-sizing: border-box; }
@@ -305,6 +306,12 @@ function riskPreview() {
   <p class="muted" style="font-size:12px">Placeholder rule, since the real formula isn't decided: any three High ratings decline, any High goes to compliance, any Medium goes to a reviewer, otherwise Low. Countries A, B and C stand in for the internal risk list. Weights aren't shown.</p>`;
 }
 
+function draftCard() {
+  if (!S.draft) return '';
+  return `<div class="draftcard"><div><span class="muted" style="font-size:12px">Draft saved. No checks are needed until you go live.</span><br><b>Clean water for 300 families</b><br><span class="muted">${name()} &middot; $25,000 goal</span></div><button class="btn" data-act="resume">Continue draft</button></div>
+  <p class="muted" style="margin:14px 0 4px">Or start something new:</p>`;
+}
+
 /* ---------- User screens ---------- */
 function userScreen(i) {
   switch (i) {
@@ -315,11 +322,11 @@ function userScreen(i) {
       <div class="notice">Login only. Nothing is verified at this step.</div>` };
     case 1: return isOrg() ? {
       h: 'Who are you fundraising as?', tag: 'to discuss', body: `
-      ${choice()}
+      ${draftCard()}${choice()}
       ${field('Search for your organization', ORG)}
       <div class="notice">No match found. <b>Create "${ORG}"</b>. Anyone joining an existing organization would request access instead.</div>` } : {
       h: 'Who are you fundraising as?', tag: 'to discuss', body: `
-      ${choice()}
+      ${draftCard()}${choice()}
       <div class="notice">You'll fundraise from your personal account. No organization search or setup needed.</div>` };
     case 2: return {
       h: 'Your campaign', body: `
@@ -327,7 +334,7 @@ function userScreen(i) {
       <div class="cover">Clean water for 300 families</div>
       <div class="grid">${field('Title', 'Clean water for 300 families')}${field('Goal', '$25,000')}${field('Category', 'Water and sanitation')}${field('Fundraising as', name())}</div>
       ${field('Story', 'Families in our area walk over an hour each day for water. We are building three wells with local partners, so every household has safe water within a short walk.')}
-      ${S.draft ? `<div class="notice toast"><b>Draft saved.</b> No checks are needed until you go live. You can come back any time.</div>` : ''}`,
+      ${S.resumed ? `<div class="notice toast"><b>Draft restored.</b> Pick up where you left off.</div>` : ''}`,
       nav: `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next">Continue to go live</button></span>` };
     case 3: return {
       h: 'A few details before you go live', body: riskForm(),
@@ -420,7 +427,7 @@ function audit(extra) {
 }
 function adminScreen(i) {
   if (i === 3) return riskPreview();
-  if (i <= 2) return `<h3>Nothing to review</h3><p>${S.draft && i === 2 ? 'Draft saved. ' : ''}Drafts are not in any queue. Compliance starts when the user submits for go-live.</p>`;
+  if (i <= 2) return `<h3>Nothing to review</h3><p>${S.draft ? 'A draft is saved. ' : ''}Drafts are not in any queue. Compliance starts when the user submits for go-live.</p>`;
   if (i === 4) {
     const q = { low: ['Cleared automatically', 'No review needed. Sent to verification.'], medium: ['Reviewer queue', 'A reviewer checks the flagged items and can request information.'], high: ['Compliance review queue', 'Enhanced review by the compliance team.'], declined: ['Declined', 'The reason stays internal. The user sees a generic message.'] }[S.outcome];
     const acts = S.outcome === 'medium' ? ['Approve', 'Request information', 'Escalate to compliance', 'Decline']
@@ -497,9 +504,10 @@ document.addEventListener('click', e => {
   if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
   if (b.id === 'btn-map') { S.map = true; render(); return; }
   switch (b.dataset.act) {
-    case 'next': S.draft = false; go(S.step + 1); break;
+    case 'next': if (S.step === 2) { S.draft = false; S.resumed = false; } go(S.step + 1); break;
     case 'back': go(S.step - 1); break;
-    case 'draft': S.draft = true; render(); break;
+    case 'draft': S.draft = true; S.resumed = false; go(1); break;
+    case 'resume': S.draft = false; S.resumed = true; go(2); break;
     case 'submit': S.outcome = computedBand(); go(4); break;
     case 'addperson': S.form.people.push({ name: '', role: 'Director', own: '0' }); render(); break;
     case 'rmperson': S.form.people.splice(+b.dataset.i, 1); render(); break;
