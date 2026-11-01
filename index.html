@@ -67,6 +67,13 @@
   .tag { display: inline-block; border: 1px dashed var(--muted); color: var(--muted); border-radius: 6px; font-size: 11px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; font-weight: 500; }
   .field { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; background: var(--bg); margin: 6px 0; }
   .field b { display: block; font-size: 11px; color: var(--muted); font-weight: 500; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+  .opt { display: flex; gap: 10px; align-items: flex-start; text-align: left; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 12px; padding: 12px; }
+  .opt small { display: block; color: var(--muted); font-size: 12px; }
+  .opt .dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--muted); flex: none; margin-top: 3px; }
+  .opt.on { border: 2px solid var(--primary); padding: 11px; }
+  .opt.on .dot { border: 5px solid var(--primary); }
+  @media (max-width: 768px) { .opts { grid-template-columns: 1fr; } }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
   .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; gap: 10px; flex-wrap: wrap; }
   .btn { background: var(--primary); color: var(--primary-ink); border: 0; padding: 10px 18px; border-radius: 10px; font-weight: 600; }
@@ -182,6 +189,11 @@ const reviewer = () => S.outcome === 'high' ? 'Compliance team' : 'Reviewer';
 const flagged = () => S.outcome === 'medium' || S.outcome === 'high';
 const vendorLow = () => vendor() && S.vendorResult === 'low';
 
+function choice() {
+  const opt = (v, t, d) => `<button class="opt ${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}"><span class="dot"></span><span><b>${t}</b><small>${d}</small></span></button>`;
+  return `<div class="opts">${opt('org', 'An organization', 'A charity, mosque, school or group')}${opt('person', 'Myself', 'Fundraise from your personal account')}</div>`;
+}
+
 /* ---------- User screens ---------- */
 function userScreen(i) {
   switch (i) {
@@ -192,11 +204,11 @@ function userScreen(i) {
       <div class="notice">Login only. Nothing is verified at this step.</div>` };
     case 1: return isOrg() ? {
       h: 'Who are you fundraising as?', tag: 'to discuss', body: `
-      <p><b>&#9673; An organization</b> &nbsp; <span class="muted">&#9675; Myself</span></p>
+      ${choice()}
       ${field('Search for your organization', ORG)}
       <div class="notice">No match found. <b>Create "${ORG}"</b>. Anyone joining an existing organization would request access instead.</div>` } : {
       h: 'Who are you fundraising as?', tag: 'to discuss', body: `
-      <p><span class="muted">&#9675; An organization</span> &nbsp; <b>&#9673; Myself</b></p>
+      ${choice()}
       <div class="notice">You'll fundraise from your personal account. No organization search or setup needed.</div>` };
     case 2: return {
       h: 'Your campaign', body: `
