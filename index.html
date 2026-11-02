@@ -124,6 +124,11 @@
   .rm.trash { display: inline-grid; place-items: center; flex: none; align-self: center; }
   .rm.trash:hover { color: var(--declined); }
   .lock { font-size: 12px; color: var(--muted); margin: 14px 0 0; }
+  .stmt { border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 16px 0 6px; background: var(--bg); }
+  .stmt h2 { margin: 0 0 4px; }
+  .stmt .file { display: flex; gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+  .stmt .file svg { width: 26px; height: 26px; flex: none; color: var(--muted); }
+  .stmt .drop { border: 2px dashed var(--line); border-radius: 10px; padding: 18px; margin-top: 10px; text-align: center; background: var(--card); }
   .notice { border-radius: 10px; padding: 12px 14px; margin: 12px 0; background: var(--bg); border: 1px solid var(--line); }
   .demo { border: 1px dashed var(--muted); border-radius: 10px; padding: 10px 12px; margin: 14px 0; font-size: 13px; }
   .demo .seg { display: flex; width: fit-content; margin-top: 8px; flex-wrap: wrap; }
@@ -331,6 +336,7 @@ function draftCard() {
 
 // Step 6 items start done; the trash icon removes one so it must be redone
 const TRASH = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>';
+const FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>';
 function required() {
   const co = ['reg', 'form', 'board'];
   if (!vendor()) return ['id', ...(isOrg() ? co : [])];
@@ -492,7 +498,11 @@ function payoutScreen() {
     ${pin('routing', 'Routing number', '9 digits', 'text')}<span></span>
     ${pin('acct', 'Account number')}${pin('acct2', 'Confirm account number')}</div>
     ${mismatch ? `<p class="warnline">Account numbers don't match.</p>` : ''}
-    ${up('stmt', 'Bank statement', 'From the last 3 months, in the account holder\'s name, uploaded', 'From the last 3 months, in the account holder\'s name')}
+    <div class="stmt"><h2>Bank statement <span class="tag">to confirm with compliance: when we capture it</span></h2>
+    <div class="muted">Required for accounts added by hand. From the last 3 months, in the account holder's name, showing the account number above.</div>
+    ${S.removed.stmt
+      ? `<div class="drop"><div class="muted" style="margin-bottom:10px">PDF, JPG or PNG</div><button class="btn" data-act="up" data-key="stmt">Upload bank statement</button></div>`
+      : `<div class="file">${FILE}<div style="flex:1"><b>bank-statement.pdf</b><div class="muted">Uploaded. Our compliance team reviews it before the first payout.</div></div>${S.paySaved ? '' : `<button class="rm trash" data-act="rmup" data-key="stmt" aria-label="Remove bank statement">${TRASH}</button>`}</div>`}</div>
     <p class="muted" style="font-size:12px">Outside the US we ask for IBAN and SWIFT/BIC instead. <span class="tag">to confirm: fields per country</span></p>
     ${S.paySaved ? done : ''}${lock}` };
 }
