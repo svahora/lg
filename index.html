@@ -199,8 +199,8 @@
 <div class="topbar">
   <div class="brand">Onboarding prototype</div>
   <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
-  <button class="ghost" id="btn-map">Path map</button>
-  <button class="ghost" id="btn-admin">Admin view</button>
+  <button class="ghost" id="btn-map">🗺️ Path map</button>
+  <button class="ghost" id="btn-admin">🛡️ Admin view</button>
   <button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button>
 </div>
 <div class="progress"><div class="bar"><div id="bar"></div></div><div class="steps" id="steps"></div></div>
@@ -468,7 +468,7 @@ function payoutScreen() {
   const pin = (f, k, hint, type) => lbl(k, `<input data-p="${f}" type="${type || 'text'}" value="${f === 'holder' ? holder() : P[f]}" ${S.paySaved ? 'disabled' : ''}>`, hint);
   const psel = (f, k, opts) => lbl(k, `<select data-p="${f}" ${S.paySaved ? 'disabled' : ''}>${opts.map(([v, l]) => `<option value="${v}" ${P[f] === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`);
   const lock = `<p class="lock">&#128274; Bank details are encrypted. Payouts only go to an account in ${isOrg() ? 'the organization\'s' : 'your'} name.</p>`;
-  const done = `<div class="notice toast"><b>Payout account added.</b> Donations pay out to ${P.type.toLowerCase()} account &bull;&bull;&bull;&bull;${last4()}.${S.payout === 'manual' ? ' We confirm the account before the first payout. <span class="tag">to confirm: how</span>' : ''}</div>`;
+  const done = `<div class="notice toast"><b>Payout account added.</b> Donations pay out to ${P.type.toLowerCase()} account &bull;&bull;&bull;&bull;${last4()}.</div>`;
   const nav = S.paySaved
     ? `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="restart">Start over</button>`
     : `<button class="btn2" data-act="back">Back</button><button class="btn" id="paysave" data-act="paysave" ${payOk() ? '' : 'disabled'}>Save payout account</button>`;
@@ -542,7 +542,7 @@ function adminScreen(i) {
     const rows = [['Method', v ? 'Bank connection through the vendor' : 'Entered manually'],
       ['Account', has ? `${S.pay.type} &bull;&bull;&bull;&bull;${last4()}` : 'Not connected yet'],
       ['Holder name', has ? (v ? `${isOrg() ? ORG : PERSON}, matched by the vendor` : holder()) : '-'],
-      ['Status', !S.paySaved ? 'Not submitted' : v ? 'Verified' : 'Pending verification <span class="tag">to confirm: how</span>']];
+      ['Status', !S.paySaved ? 'Not submitted' : v ? 'Verified by the vendor' : 'Added']];
     return `<h3>Payout account</h3>${caseHead()}<table>${rows.map(([k, val]) => `<tr><th>${k}</th><td>${val}</td></tr>`).join('')}</table>
       <p class="muted" style="font-size:12px">Full account numbers are never shown here.</p>
       <h2>Audit log</h2>${audit(['Campaign live', ...(S.paySaved ? ['Payout account added'] : [])])}`;
@@ -561,7 +561,7 @@ function pathMap() {
   return `<div class="map"><div style="display:flex;justify-content:space-between;align-items:center"><h1 style="padding:0;margin:0">All paths</h1><button class="x" data-act="closemap">&times;</button></div>
   <div class="legend"><span><span class="sw" style="border:2px solid var(--teal)"></span>Changes with vendor</span><span><span class="sw" style="background:var(--low-tint)"></span><span class="sw" style="background:var(--medium-tint)"></span><span class="sw" style="background:var(--high-tint)"></span><span class="sw" style="background:var(--declined-tint)"></span>Score bands</span><span><span class="sw" style="border-style:dashed;opacity:.4"></span>Skipped on the person path</span><span>Outline = where you are. Click any step to jump there.</span></div>
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
-  ${st('2. Applicant', `<div><div class="seg">${[['org', 'Organization'], ['person', 'Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create or join an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
+  ${st('2. Applicant', `<div><div class="seg">${[['org', '🏢 Organization'], ['person', '👤 Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create or join an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
   ${st('3. Campaign', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
   ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Straight to verification', medium: 'Reviewer first', high: 'Compliance first', declined: 'Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
@@ -575,7 +575,7 @@ function pathMap() {
 
 /* ---------- Render ---------- */
 function render() {
-  seg('seg-app', [['org', 'Organization'], ['person', 'Person']], 'app');
+  seg('seg-app', [['org', '🏢 Organization'], ['person', '👤 Person']], 'app');
   $('btn-admin').classList.toggle('on', S.admin);
   $('btn-admin').classList.toggle('pulse', S.step === 3 && !S.admin);
   $('bar').style.width = ((S.step + 1) / STEPS.length * 100) + '%';
