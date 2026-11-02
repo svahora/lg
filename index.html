@@ -421,7 +421,7 @@ function userScreen(i) {
         ${row('wait', 'A reviewer is checking your documents', 'Nothing for you to do right now.', '&middot;')}
         ${row('wait', 'Ready to go live', '', '&middot;')}` };
       return {
-        h: vendorLow() ? 'We need a little more time' : regDocs() ? 'We\'re reviewing your organization documents' : 'You\'re verified', body: vendorLow() ? `
+        h: vendorLow() ? 'We need a little more time' : regDocs() ? 'We\'re reviewing your organization documents' : 'You\'re verified', body: (vendorLow() ? `
         ${row('', 'Verification finished', '')}
         ${row('wait', 'Our compliance team is reviewing', 'Nothing for you to do right now.', '&middot;')}` : regDocs() ? `
         ${row('', 'Identity verified', 'By the vendor')}
@@ -430,7 +430,7 @@ function userScreen(i) {
         ${row('wait', 'Ready to go live', '', '&middot;')}` : `
         ${row('', 'Identity verified', '')}${isOrg() ? row('', 'Organization verified', 'From the company registry') : ''}
         ${row('', 'Ready to go live', '')}`
-        + `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` };
+        ) + `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` };
     }
     case 7: {
       let inapp, mail;
