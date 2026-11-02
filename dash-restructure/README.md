@@ -2,7 +2,7 @@
 
 A clickable prototype of a fundraising dashboard built around the fundraisers people run, not the payout accounts they own. Every fundraiser you created or help run is listed, with a "Pays out to" label, even when the donations go to another organization's account.
 
-Live: https://svahora.github.io/lg/my-fundraisers/
+Live: https://svahora.github.io/lg/dash-restructure/
 
 What to try:
 - Filter by status, role (Created by you, Team member) and payout recipient.
