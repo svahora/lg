@@ -217,7 +217,7 @@
 <div class="overlay" id="overlay" hidden></div>
 
 <script>
-const S = { step: 0, app: 'org', mode: 'inhouse', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false };
+const S = { step: 0, app: 'org', mode: 'inhouse', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false };
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
 const VENDOR_STEPS = [5, 6, 7, 9];
 // Test values only (standard test routing and account numbers)
@@ -241,9 +241,9 @@ function demoSeg(key, opts) {
 const reviewer = () => S.outcome === 'high' ? 'Compliance team' : 'Reviewer';
 const flagged = () => S.outcome === 'medium' || S.outcome === 'high';
 const vendorLow = () => vendor() && S.vendorResult === 'low';
-// Low band goes live straight after the check; verification runs while the campaign is live
-const liveEarly = () => S.outcome === 'low';
-const liveNote = () => liveEarly() ? `<div class="notice"><span class="live">LIVE</span> Your campaign is already live. Verification runs alongside. If it needs a closer look, the campaign stays live and payouts are held until it is reviewed.</div>` : '';
+// Manual document review: Low goes live on submit while it runs; everyone else waits as a draft
+const liveDuring = () => S.outcome === 'low' && (!vendor() || regDocs());
+const waits = () => !liveDuring() && (!vendor() || regDocs() || vendorLow());
 // Vendor verified the person, but the organization fell back to uploaded documents
 const regDocs = () => vendor() && isOrg() && !S.registry && !vendorLow();
 
@@ -323,7 +323,7 @@ function riskForm() {
 }
 function riskPreview() {
   const b = computedBand();
-  const next = { low: 'Cleared. The campaign goes live now and verification runs while it is live.', medium: 'In review: a reviewer looks first.', high: 'In review: the compliance team looks first.', declined: 'Not approved, with a generic message.' }[b];
+  const next = { low: 'Cleared, straight to verification.', medium: 'In review: a reviewer looks first.', high: 'In review: the compliance team looks first.', declined: 'Not approved, with a generic message.' }[b];
   return `<h3>Live score preview</h3><p class="muted">Not visible to the user. Drafts aren't in any queue; this shows how the current answers would score.</p>
   <p><b>${name()}</b><br><span class="band ${b}">${BAND[b]}</span></p>
   <table><tr><th>Factor</th><th>Rating</th><th>Why</th></tr>${ratings().map(([f, r, n]) => `<tr><td>${f}</td><td>${r === '-' ? '<span class="muted">Not scored</span>' : `<span class="band ${r.toLowerCase()}">${r}</span>`}</td><td class="muted">${n || ''}</td></tr>`).join('')}</table>
@@ -384,7 +384,7 @@ function userScreen(i) {
       nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="submit">Submit for go-live</button>` };
     case 4: {
       const res = {
-        low: `<p><span class="band low">Cleared</span></p><p>Your campaign can go live now. Verify your identity${isOrg() ? ' and organization' : ''} while it's live.</p>`,
+        low: `<p><span class="band low">Cleared</span></p><p>You're ready to verify your identity${isOrg() ? ' and organization' : ''}.</p>`,
         medium: `<p><span class="band medium">In review</span></p><p>Thanks. A member of our team is taking a closer look. We'll let you know here when you can continue.</p>`,
         high: `<p><span class="band high">In review</span></p><p>Thanks. Our compliance team is reviewing your application. We'll let you know here when you can continue.</p>`,
         declined: `<p><span class="band declined">Not approved</span></p><p>We're unable to approve this application. Your drafts stay saved.</p><p class="muted">The user is never told why.</p>` }[S.outcome];
@@ -398,10 +398,10 @@ function userScreen(i) {
     }
     case 5: {
       const pre = (S.resumed ? `<div class="notice toast"><b>Draft restored.</b> Pick up where you left off.</div>` : '')
-        + (flagged() ? `<div class="notice">Review complete. You can now verify.</div>` : '') + liveNote();
+        + (flagged() ? `<div class="notice">Review complete. You can now verify.</div>` : '');
       const h = 'Verify your identity' + (isOrg() ? ' and organization' : '');
       const missing = () => required().some(k => S.removed[k]);
-      const nav = `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next" ${missing() ? 'disabled' : ''}>Continue</button></span>`;
+      const nav = `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next" ${missing() ? 'disabled' : ''}>${liveDuring() ? 'Submit and go live' : 'Continue'}</button></span>`;
       const lock = `<p class="lock">&#128274; Your documents are encrypted and visible only to our trust and safety team.</p>`;
       const docs = up('reg', 'Registration document', 'IRS determination letter, uploaded') + up('form', 'Formation documents', 'Articles of incorporation, operating agreement, and partnership or trust deed, uploaded', 'Articles of incorporation, operating agreement, and partnership or trust deed <span class="tag">to confirm if all are required</span>') + up('board', 'Board resolution', 'Uploaded');
       if (!vendor()) return {
@@ -423,32 +423,25 @@ function userScreen(i) {
         ${isOrg() && !S.registry ? '' : `<p class="muted" style="margin-top:10px">No documents to upload unless the vendor can't verify you.</p>`}${lock}` };
     }
     case 6: {
-      if (!vendor()) return {
-        h: 'We\'re reviewing your documents', body: `${liveNote()}
-        ${row('', 'Documents received', '')}
-        ${row('wait', 'A reviewer is checking your documents', 'Nothing for you to do right now.', '&middot;')}
-        ${row('wait', 'Ready to go live', '', '&middot;')}` };
+      const nav = `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button>`;
+      const vdemo = vendor() ? `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` : '';
+      const who = vendorLow() ? 'Our compliance team is reviewing' : regDocs() ? 'A reviewer is checking your organization documents <span class="tag">to confirm: reviewer or compliance</span>' : 'A reviewer is checking your documents';
+      const got = !vendor() ? row('', 'Documents received', '') : vendorLow() ? row('', 'Verification finished', '') : row('', 'Identity verified', 'By the vendor') + (regDocs() ? row('', 'Organization documents received', 'The company registry couldn\'t be reached') : '');
+      if (liveDuring()) return {
+        h: 'Your campaign is live', nav, body: `<div class="notice"><span class="live">LIVE</span> &nbsp;Your campaign went live when you submitted. Payouts are held until your documents are approved.</div>
+        ${got}${row('', 'Campaign live', '')}${row('wait', who, 'Nothing for you to do right now.', '&middot;')}${row('wait', 'Payouts released', 'Once the review approves your documents', '&middot;')}${vdemo}` };
+      if (waits()) return {
+        h: S.approved ? 'You\'re approved' : vendorLow() ? 'We need a little more time' : 'We\'re reviewing your documents', nav, body: `${got}${row(S.approved ? '' : 'wait', who, S.approved ? 'Approved' : 'Nothing for you to do right now.', S.approved ? null : '&middot;')}${row(S.approved ? '' : 'wait', 'Ready to go live', '', S.approved ? null : '&middot;')}
+        ${S.approved ? `<div class="notice toast"><b>Approved.</b> Your campaign can go live.</div>` : `<div class="draftcard"><div><span class="muted" style="font-size:12px">Saved as a draft while we review</span><br><b>Clean water for 300 families</b><br><span class="muted">We'll let you know in the product and by email when you can go live.</span></div></div>`}
+        <div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>${vdemo}` };
       return {
-        h: vendorLow() ? 'We need a little more time' : regDocs() ? 'We\'re reviewing your organization documents' : 'You\'re verified', body: liveNote() + (vendorLow() ? `
-        ${row('', 'Verification finished', '')}
-        ${row('wait', 'Our compliance team is reviewing', 'Nothing for you to do right now.', '&middot;')}${liveEarly() ? row('wait', 'Payouts on hold', 'Until the review finishes. Your campaign stays live.', '&middot;') : ''}` : regDocs() ? `
-        ${row('', 'Identity verified', 'By the vendor')}
-        ${row('', 'Organization documents received', 'The company registry couldn\'t be reached')}
-        ${row('wait', 'A reviewer is checking your organization documents <span class="tag">to confirm: reviewer or compliance</span>', 'Nothing for you to do right now.', '&middot;')}
-        ${row('wait', 'Ready to go live', '', '&middot;')}` : `
-        ${row('', 'Identity verified', '')}${isOrg() ? row('', 'Organization verified', 'From the company registry') : ''}
-        ${row('', 'Ready to go live', '')}`
-        ) + `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` };
+        h: 'You\'re verified', nav, body: `${got}${isOrg() ? row('', 'Organization verified', 'From the company registry') : ''}${row('', 'Ready to go live', '')}${vdemo}` };
     }
     case 7: {
       let inapp, mail;
-      if (!vendor() && liveEarly()) { inapp = 'Your documents are under review. Your campaign stays live meanwhile.'; mail = 'Documents received. Our team is reviewing them. Your campaign stays live meanwhile.'; }
-      else if (!vendor()) { inapp = 'Your documents are under review. We\'ll tell you here when you can go live.'; mail = 'Documents received. Our team is reviewing them. Then: "You\'re approved. Your campaign can go live."'; }
-      else if (regDocs() && liveEarly()) { inapp = 'Your identity is verified. Your organization documents are under review. Your campaign stays live meanwhile.'; mail = 'Identity verified, organization documents received. Our team is reviewing them. Your campaign stays live meanwhile.'; }
-      else if (regDocs()) { inapp = 'Your identity is verified. Your organization documents are under review. We\'ll tell you here when you can go live.'; mail = 'Identity verified, organization documents received. Our team is reviewing them. Then: "You\'re approved. Your campaign can go live."'; }
-      else if (vendorLow() && liveEarly()) { inapp = 'We need a little more time to review your application. Your campaign stays live, and payouts are on hold until we finish.'; mail = 'We\'re taking a little more time with your application. Your campaign stays live, and payouts are on hold until we finish. No action is needed from you.'; }
-      else if (vendorLow()) { inapp = 'We need a little more time to review your application.'; mail = 'We\'re taking a little more time with your application. No action is needed from you.'; }
-      else if (liveEarly()) { inapp = 'You\'re verified. Your campaign stays live.'; mail = 'You\'re verified. Nothing else is needed for your live campaign.'; }
+      if (liveDuring()) { inapp = `${regDocs() ? 'Your identity is verified and your' : 'Your'} campaign is live. Your documents are under review, and payouts are held until they're approved.`; mail = 'Your campaign is live. Our team is reviewing your documents, and payouts are held until they\'re approved. Then: "You\'re approved. Payouts are on."'; }
+      else if (vendorLow()) { inapp = 'We need a little more time to review your application. Your campaign is saved as a draft until then.'; mail = 'We\'re taking a little more time with your application. Your campaign is saved as a draft, and we\'ll tell you when it can go live. No action is needed from you.'; }
+      else if (waits()) { inapp = 'Your campaign is saved as a draft while we review your documents. We\'ll tell you here when you can go live.'; mail = 'Documents received. Your campaign is saved as a draft while our team reviews them. Then: "You\'re approved. Your campaign can go live."'; }
       else { inapp = 'You\'re verified. Your campaign can go live now.'; mail = 'You\'re verified. Go live whenever you\'re ready.'; }
       return {
         h: 'What you hear from us', body: `
@@ -461,7 +454,7 @@ function userScreen(i) {
       <p><span class="live">LIVE</span> &nbsp;<span class="muted">by ${name()}</span></p>
       <div class="cover">Clean water for 300 families</div>
       <div class="meter"></div><p><b>$0</b> <span class="muted">raised of $25,000</span></p>
-      ${liveEarly() ? `<p class="muted">Live since your details were cleared in step 5. Verification finished while it was live.</p>` : ''}
+      ${liveDuring() ? `<p class="muted">Live since you submitted your documents. Payouts were held until the review approved them.</p>` : ''}
       <div class="notice">We may ask for more documents later, depending on your campaign${isOrg() ? '' : ', for example if you raise money on behalf of someone else'}.</div>
       <p class="muted">Next: add a payout account so you can receive donations.</p>` };
     case 9: return payoutScreen();
@@ -525,21 +518,21 @@ function caseHead() {
 }
 function audit(extra) {
   const items = ['Draft created', 'Risk form submitted', `Score: ${BAND[S.outcome]}`];
-  if (liveEarly()) items.push('Campaign live while verification runs');
   if (flagged()) items.push(`${reviewer()} approved after review`);
   items.push(vendor() ? 'Vendor verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed') : 'Documents uploaded to secure document storage');
   if (regDocs()) items.push('Company registry not reachable, organization documents uploaded');
-  if (!vendor() || regDocs()) items.push('Reviewer approved documents');
-  if (vendorLow() && liveEarly()) items.push('Payouts held while live, pending compliance review');
-  if (vendorLow()) items.push('Compliance team approved' + (liveEarly() ? ', payouts released' : ''));
-  items.push(...(extra || []).filter(t => !(liveEarly() && t === 'Campaign live')));
+  if (liveDuring()) items.push('Campaign live while documents are reviewed, payouts held');
+  if (waits()) items.push('Saved as draft until the review approves it');
+  if (!vendor() || regDocs()) items.push('Reviewer approved documents' + (liveDuring() ? ', payouts released' : ''));
+  if (vendorLow()) items.push('Compliance team approved');
+  items.push(...(extra || []).filter(t => !(liveDuring() && t === 'Campaign live')));
   return `<div class="log">${items.map((t, k) => `<div><span class="muted">Day 1, 10:${String(2 + k * 7).padStart(2, '0')}</span> &nbsp;${t}</div>`).join('')}</div>`;
 }
 function adminScreen(i) {
   if (i === 3) return riskPreview();
   if (i <= 2) return `<h3>Nothing to review</h3><p>${S.draft ? 'A draft is saved. ' : ''}Drafts are not in any queue. Compliance starts when the user submits for go-live.</p>`;
   if (i === 4) {
-    const q = { low: ['Cleared automatically', 'No review needed. The campaign goes live now and verification runs while it is live.'], medium: ['Reviewer queue', 'A reviewer checks the flagged items and can request information.'], high: ['Compliance review queue', 'Enhanced review by the compliance team.'], declined: ['Declined', 'The reason stays internal. The user sees a generic message.'] }[S.outcome];
+    const q = { low: ['Cleared automatically', 'No review needed. Sent to verification.'], medium: ['Reviewer queue', 'A reviewer checks the flagged items and can request information.'], high: ['Compliance review queue', 'Enhanced review by the compliance team.'], declined: ['Declined', 'The reason stays internal. The user sees a generic message.'] }[S.outcome];
     const acts = S.outcome === 'medium' ? ['Approve', 'Request information', 'Escalate to compliance', 'Decline']
       : S.outcome === 'high' ? ['Approve', 'Request information', 'Decline'] : [];
     return `<h3>${q[0]}</h3>${caseHead()}<p>${q[1]}</p>${acts.length ? `<div class="actions">${acts.map((a, k) => `<span class="${k === 0 ? 'main' : ''}">${a}</span>`).join('')}</div>` : ''}
@@ -552,9 +545,9 @@ function adminScreen(i) {
     return `<h3>Case detail</h3>${caseHead()}${docs}`;
   }
   if (i === 6) {
-    if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
-    if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Check the uploaded organization documents.</p><table><tr><th>Document</th><th>Status</th></tr><tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr></table><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
-    if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team.${liveEarly() ? ' The campaign is already live, so payouts are held until this review finishes.' : ''}</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Decline</span></div>`;
+    if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
+    if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Check the uploaded organization documents. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p><table><tr><th>Document</th><th>Status</th></tr><tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr></table><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
+    if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team. The campaign stays a draft until you approve.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Decline</span></div>`;
     return `<h3>No action needed</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The case closes automatically.</p>`;
   }
   if (i === 9) {
@@ -587,7 +580,7 @@ function pathMap() {
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
   ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Goes live now, verifies while live', medium: 'Reviewer first', high: 'Compliance first', declined: 'Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
   ${st('6. Verification', mapNode('In-house', 'Upload ID' + (isOrg() ? ', company documents' : ''), { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Falls back to upload', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
-  ${st('7. Review', mapNode('Reviewer checks documents', 'In-house', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('7. Review', mapNode('Reviewer checks documents', 'In-house. Low is live meanwhile, others wait as a draft', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable. Low is live meanwhile', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('8. Message', mapNode('Under review', 'In-house', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
   ${st('10. Payout', mapNode('Enter manually', 'Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect your bank', 'Log in through the vendor, approved automatically', { step: 9, payout: 'vendor' }, 'v'))}
@@ -627,7 +620,7 @@ document.addEventListener('click', e => {
   if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
   if (b.id === 'btn-map') { S.map = true; render(); return; }
   switch (b.dataset.act) {
-    case 'next': if (S.step === 2) S.draft = false; S.resumed = false; go(S.step + 1); break;
+    case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false; go(S.step + 1); break;
     case 'back': go(S.step - 1); break;
     case 'draft': S.draft = true; S.resumed = false; S.draftStep = S.step; go(1); break;
     case 'resume': S.draft = false; S.resumed = true; go(S.draftStep); break;
@@ -639,7 +632,7 @@ document.addEventListener('click', e => {
     case 'link': S.linked = true; render(); break;
     case 'unlink': S.linked = false; render(); break;
     case 'paysave': S.paySaved = true; render(); break;
-    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', removed: {}, draftStep: 2, linked: false, paySaved: false }); go(0); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false }); go(0); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
