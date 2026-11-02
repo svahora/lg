@@ -243,7 +243,7 @@ const flagged = () => S.outcome === 'medium' || S.outcome === 'high';
 const vendorLow = () => vendor() && S.vendorResult === 'low';
 // Low band goes live straight after the check; verification runs while the campaign is live
 const liveEarly = () => S.outcome === 'low';
-const liveNote = () => liveEarly() ? `<div class="notice"><span class="live">LIVE</span> Your campaign is already live. Verification runs alongside. <span class="tag">to confirm: what happens to a live campaign if verification fails</span></div>` : '';
+const liveNote = () => liveEarly() ? `<div class="notice"><span class="live">LIVE</span> Your campaign is already live. Verification runs alongside. If it needs a closer look, the campaign stays live and payouts are held until it is reviewed.</div>` : '';
 // Vendor verified the person, but the organization fell back to uploaded documents
 const regDocs = () => vendor() && isOrg() && !S.registry && !vendorLow();
 
@@ -431,7 +431,7 @@ function userScreen(i) {
       return {
         h: vendorLow() ? 'We need a little more time' : regDocs() ? 'We\'re reviewing your organization documents' : 'You\'re verified', body: liveNote() + (vendorLow() ? `
         ${row('', 'Verification finished', '')}
-        ${row('wait', 'Our compliance team is reviewing', 'Nothing for you to do right now.', '&middot;')}` : regDocs() ? `
+        ${row('wait', 'Our compliance team is reviewing', 'Nothing for you to do right now.', '&middot;')}${liveEarly() ? row('wait', 'Payouts on hold', 'Until the review finishes. Your campaign stays live.', '&middot;') : ''}` : regDocs() ? `
         ${row('', 'Identity verified', 'By the vendor')}
         ${row('', 'Organization documents received', 'The company registry couldn\'t be reached')}
         ${row('wait', 'A reviewer is checking your organization documents <span class="tag">to confirm: reviewer or compliance</span>', 'Nothing for you to do right now.', '&middot;')}
@@ -446,6 +446,7 @@ function userScreen(i) {
       else if (!vendor()) { inapp = 'Your documents are under review. We\'ll tell you here when you can go live.'; mail = 'Documents received. Our team is reviewing them. Then: "You\'re approved. Your campaign can go live."'; }
       else if (regDocs() && liveEarly()) { inapp = 'Your identity is verified. Your organization documents are under review. Your campaign stays live meanwhile.'; mail = 'Identity verified, organization documents received. Our team is reviewing them. Your campaign stays live meanwhile.'; }
       else if (regDocs()) { inapp = 'Your identity is verified. Your organization documents are under review. We\'ll tell you here when you can go live.'; mail = 'Identity verified, organization documents received. Our team is reviewing them. Then: "You\'re approved. Your campaign can go live."'; }
+      else if (vendorLow() && liveEarly()) { inapp = 'We need a little more time to review your application. Your campaign stays live, and payouts are on hold until we finish.'; mail = 'We\'re taking a little more time with your application. Your campaign stays live, and payouts are on hold until we finish. No action is needed from you.'; }
       else if (vendorLow()) { inapp = 'We need a little more time to review your application.'; mail = 'We\'re taking a little more time with your application. No action is needed from you.'; }
       else if (liveEarly()) { inapp = 'You\'re verified. Your campaign stays live.'; mail = 'You\'re verified. Nothing else is needed for your live campaign.'; }
       else { inapp = 'You\'re verified. Your campaign can go live now.'; mail = 'You\'re verified. Go live whenever you\'re ready.'; }
@@ -529,7 +530,8 @@ function audit(extra) {
   items.push(vendor() ? 'Vendor verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed') : 'Documents uploaded to secure document storage');
   if (regDocs()) items.push('Company registry not reachable, organization documents uploaded');
   if (!vendor() || regDocs()) items.push('Reviewer approved documents');
-  if (vendorLow()) items.push('Compliance team approved');
+  if (vendorLow() && liveEarly()) items.push('Payouts held while live, pending compliance review');
+  if (vendorLow()) items.push('Compliance team approved' + (liveEarly() ? ', payouts released' : ''));
   items.push(...(extra || []).filter(t => !(liveEarly() && t === 'Campaign live')));
   return `<div class="log">${items.map((t, k) => `<div><span class="muted">Day 1, 10:${String(2 + k * 7).padStart(2, '0')}</span> &nbsp;${t}</div>`).join('')}</div>`;
 }
@@ -552,7 +554,7 @@ function adminScreen(i) {
   if (i === 6) {
     if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
     if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Check the uploaded organization documents.</p><table><tr><th>Document</th><th>Status</th></tr><tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr></table><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
-    if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Decline</span></div>`;
+    if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team.${liveEarly() ? ' The campaign is already live, so payouts are held until this review finishes.' : ''}</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Decline</span></div>`;
     return `<h3>No action needed</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The case closes automatically.</p>`;
   }
   if (i === 9) {
