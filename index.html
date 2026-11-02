@@ -399,9 +399,10 @@ function userScreen(i) {
         ${up('id', 'Photo ID', 'passport.jpg uploaded')}
         ${up('bank', 'Bank statement', 'From the last 3 months, uploaded', 'From the last 3 months')}
         ${isOrg() ? docs + otherIds('Photo ID') : ''}${lock}` };
+      const regDemo = `<div class="demo" style="margin:8px 0 0"><b>Demo control:</b> company registry${demoSeg('registry', [[true, 'Reachable'], [false, 'Not reachable']])}</div>`;
       const reg = S.registry
-        ? row('', 'Business lookup', 'Found in the company registry. No documents needed.')
-        : row('warn', 'Business lookup', 'The registry for this country can\'t be reached, so we need these documents instead.', '!') + docs;
+        ? row('', 'Business lookup', 'Found in the company registry. No documents needed.' + regDemo)
+        : row('warn', 'Business lookup', 'The registry for this country can\'t be reached, so we need these documents instead.' + regDemo, '!') + docs;
       return {
         h, nav, body: `${pre}
         <div class="vendorbox"><div class="vhead">Secure verification by our vendor, inside the product</div><div class="vbody">
@@ -409,7 +410,6 @@ function userScreen(i) {
         ${up('selfie', 'Selfie check', 'Matched to your ID', 'Takes a few seconds', 'Take selfie')}
         ${isOrg() ? reg : ''}</div></div>
         ${isOrg() ? otherIds('ID scan and selfie') : ''}
-        ${isOrg() ? `<div class="demo"><b>Demo control:</b> company registry${demoSeg('registry', [[true, 'Reachable'], [false, 'Not reachable']])}</div>` : ''}
         ${isOrg() && !S.registry ? '' : `<p class="muted" style="margin-top:10px">No documents to upload unless the vendor can't verify you.</p>`}${lock}` };
     }
     case 6: {
