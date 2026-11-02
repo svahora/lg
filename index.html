@@ -609,6 +609,8 @@ function render() {
   if (S.map) o.innerHTML = pathMap();
 }
 function go(step) {
+  // Open the admin view on arriving at the risk form so viewers see the live score
+  if (step === 3 && S.step !== 3) S.admin = true;
   S.step = Math.max(0, Math.min(STEPS.length - 1, step));
   if (S.step === 4) { S.checking = true; setTimeout(() => { S.checking = false; render(); }, 1200); }
   render(); window.scrollTo({ top: 0, behavior: 'smooth' });
