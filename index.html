@@ -212,9 +212,11 @@
 <div class="overlay" id="overlay" hidden></div>
 
 <script>
-const S = { step: 0, app: 'org', mode: 'inhouse', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2 };
-const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live'];
-const VENDOR_STEPS = [5, 6, 7];
+const S = { step: 0, app: 'org', mode: 'inhouse', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false };
+const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
+const VENDOR_STEPS = [5, 6, 7, 9];
+// Test values only (standard test routing and account numbers)
+S.pay = { country: 'US', bank: 'Community Bank', type: 'Checking', routing: '110000000', acct: '000123456789', acct2: '000123456789' };
 const ORG = 'Hope Valley Community Center';
 const PERSON = 'Amina Rahman';
 const BAND = { low: 'Low risk', medium: 'Medium risk', high: 'High risk', declined: 'Declined' };
@@ -440,9 +442,52 @@ function userScreen(i) {
       <p><span class="live">LIVE</span> &nbsp;<span class="muted">by ${name()}</span></p>
       <div class="cover">Clean water for 300 families</div>
       <div class="meter"></div><p><b>$0</b> <span class="muted">raised of $25,000</span></p>
-      <div class="notice">We may ask for more documents later, depending on your campaign${isOrg() ? '' : ', for example if you raise money on behalf of someone else'}.</div>`,
-      nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="restart">Start over</button>` };
+      <div class="notice">We may ask for more documents later, depending on your campaign${isOrg() ? '' : ', for example if you raise money on behalf of someone else'}.</div>
+      <p class="muted">Next: add a payout account so you can receive donations.</p>` };
+    case 9: return payoutScreen();
   }
+}
+
+/* ---------- Payout account (step 10) ---------- */
+const holder = () => S.pay.holder ?? (isOrg() ? ORG : PERSON);
+const last4 = () => S.payout === 'vendor' ? '6789' : S.pay.acct.slice(-4);
+function payOk() {
+  if (S.payout === 'vendor') return S.linked;
+  const P = S.pay;
+  return !!(holder() && P.bank && /^\d{9}$/.test(P.routing) && P.acct && P.acct === P.acct2);
+}
+function payoutScreen() {
+  const P = S.pay, who = isOrg() ? ORG : PERSON;
+  const pin = (f, k, hint, type) => lbl(k, `<input data-p="${f}" type="${type || 'text'}" value="${f === 'holder' ? holder() : P[f]}" ${S.paySaved ? 'disabled' : ''}>`, hint);
+  const psel = (f, k, opts) => lbl(k, `<select data-p="${f}" ${S.paySaved ? 'disabled' : ''}>${opts.map(([v, l]) => `<option value="${v}" ${P[f] === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`);
+  const lock = `<p class="lock">&#128274; Bank details are encrypted. Payouts only go to an account in ${isOrg() ? 'the organization\'s' : 'your'} name.</p>`;
+  const done = `<div class="notice toast"><b>Payout account added.</b> Donations pay out to ${P.type.toLowerCase()} account &bull;&bull;&bull;&bull;${last4()}.${S.payout === 'manual' ? ' We confirm the account before the first payout. <span class="tag">to confirm: how</span>' : ''}</div>`;
+  const nav = S.paySaved
+    ? `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="restart">Start over</button>`
+    : `<button class="btn2" data-act="back">Back</button><button class="btn" id="paysave" data-act="paysave" ${payOk() ? '' : 'disabled'}>Save payout account</button>`;
+  if (S.payout === 'vendor') return {
+    h: 'Add a payout account', nav, body: `
+    <p class="muted">Log in to your bank to connect the account where donations are paid out.</p>
+    <div class="vendorbox"><div class="vhead">Secure bank connection by our vendor, inside the product</div><div class="vbody">
+    ${S.linked
+      ? `<div class="check">${tick()}<div style="flex:1"><b>${P.bank}, checking &bull;&bull;&bull;&bull;6789</b><div class="muted">Account holder: ${who}. Name matches.</div></div>${S.paySaved ? '' : `<button class="rm trash" data-act="unlink" aria-label="Remove bank account">${TRASH}</button>`}</div>`
+      : row('wait', 'Choose your bank', '', '1') + row('wait', 'Log in through the vendor', 'We never see your bank username or password.', '2') + row('wait', 'Pick the account for payouts', 'Account ownership is checked automatically.', '3')
+        + `<div style="padding:10px 0"><button class="btn" data-act="link">Connect your bank</button></div>`}
+    </div></div>
+    <p class="muted" style="margin-top:10px">Can't find your bank? Switch to <b>Enter manually</b> above.</p>
+    ${S.paySaved ? done : ''}${lock}` };
+  const mismatch = P.acct2 && P.acct !== P.acct2;
+  return {
+    h: 'Add a payout account', nav, body: `
+    <p class="muted">Enter the bank account where donations are paid out. Already filled in with test values.</p>
+    <div class="grid">${pin('holder', 'Account holder name', `Must match ${isOrg() ? 'the organization\'s legal name' : 'the name on your ID'}`)}
+    ${psel('country', 'Bank country', [['US', 'United States']])}
+    ${pin('bank', 'Bank name')}${psel('type', 'Account type', [['Checking', 'Checking'], ['Savings', 'Savings']])}
+    ${pin('routing', 'Routing number', '9 digits', 'text')}<span></span>
+    ${pin('acct', 'Account number')}${pin('acct2', 'Confirm account number')}</div>
+    ${mismatch ? `<p class="warnline">Account numbers don't match.</p>` : ''}
+    <p class="muted" style="font-size:12px">Outside the US we ask for IBAN and SWIFT/BIC instead. <span class="tag">to confirm: fields per country</span></p>
+    ${S.paySaved ? done : ''}${lock}` };
 }
 
 /* ---------- Admin screens ---------- */
@@ -483,6 +528,16 @@ function adminScreen(i) {
     if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Decline</span></div>`;
     return `<h3>No action needed</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The case closes automatically.</p>`;
   }
+  if (i === 9) {
+    const v = S.payout === 'vendor', has = v ? S.linked : true;
+    const rows = [['Method', v ? 'Bank connection through the vendor' : 'Entered manually'],
+      ['Account', has ? `${S.pay.type} &bull;&bull;&bull;&bull;${last4()}` : 'Not connected yet'],
+      ['Holder name', has ? (v ? `${isOrg() ? ORG : PERSON}, matched by the vendor` : holder()) : '-'],
+      ['Status', !S.paySaved ? 'Not submitted' : v ? 'Verified' : 'Pending verification <span class="tag">to confirm: how</span>']];
+    return `<h3>Payout account</h3>${caseHead()}<table>${rows.map(([k, val]) => `<tr><th>${k}</th><td>${val}</td></tr>`).join('')}</table>
+      <p class="muted" style="font-size:12px">Full account numbers are never shown here.</p>
+      <h2>Audit log</h2>${audit(['Campaign live', ...(S.paySaved ? ['Payout account added'] : [])])}`;
+  }
   return `<h3>Audit log</h3>${caseHead()}${audit(i === 8 ? ['Campaign live'] : [])}`;
 }
 
@@ -505,6 +560,7 @@ function pathMap() {
   ${st('7. Review', mapNode('Reviewer checks documents', 'In-house', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass' }, 'v') + mapNode('Back to compliance', 'With vendor, low result', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('8. Message', mapNode('Under review', 'In-house', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass' }, 'v') + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
+  ${st('10. Payout', mapNode('Enter manually', 'Bank details form', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect your bank', 'Log in through the vendor', { step: 9, payout: 'vendor' }, 'v'))}
   </div>`;
 }
 
@@ -520,7 +576,7 @@ function render() {
   const blocked = S.step === 4 && S.outcome === 'declined';
   const nav = u.nav || `<button class="btn2" data-act="back" ${S.step === 0 ? 'disabled' : ''}>Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
   $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}</div>${isV ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Verification</span><div class="seg">${[['inhouse', 'In-house'], ['vendor', 'With vendor']].map(([v, l]) => `<button class="${S.mode === v ? 'on' : ''}" data-k="mode" data-v="${v}">${l}</button>`).join('')}</div></div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+    <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}</div>${isV ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">${S.step === 9 ? 'Payout account' : 'Verification'}</span>${S.step === 9 ? demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect your bank']]) : demoSeg('mode', [['inhouse', 'In-house'], ['vendor', 'With vendor']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
   if (S.admin) a.innerHTML = adminHead() + adminScreen(S.step);
@@ -536,7 +592,7 @@ function go(step) {
 document.addEventListener('click', e => {
   const g = e.target.closest('[data-go]'); if (g) { S.draft = false; go(+g.dataset.go); return; }
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.k) { let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
+  if (b.dataset.k) { if (b.dataset.k === 'payout') S.paySaved = false; let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
   if (b.dataset.set) { Object.assign(S, JSON.parse(b.dataset.set)); S.map = false; S.checking = false; render(); return; }
   if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
   if (b.id === 'btn-map') { S.map = true; render(); return; }
@@ -550,7 +606,10 @@ document.addEventListener('click', e => {
     case 'submit': S.outcome = computedBand(); go(4); break;
     case 'addperson': S.form.people.push({ name: '', role: 'Director', own: '0' }); render(); break;
     case 'rmperson': S.form.people.splice(+b.dataset.i, 1); render(); break;
-    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', removed: {}, draftStep: 2 }); go(0); break;
+    case 'link': S.linked = true; render(); break;
+    case 'unlink': S.linked = false; render(); break;
+    case 'paysave': S.paySaved = true; render(); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', removed: {}, draftStep: 2, linked: false, paySaved: false }); go(0); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
@@ -570,6 +629,7 @@ paintTheme();
 const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>`;
 function onField(e, full) {
   const t = e.target;
+  if (t.dataset.p) { S.pay[t.dataset.p] = t.value; if (full) render(); else $('paysave').disabled = !payOk(); return; }
   if (t.dataset.f) S.form[t.dataset.f] = t.value;
   else if (t.dataset.pf) S.form.people[+t.dataset.pi][t.dataset.pf] = t.value;
   else return;
