@@ -1,4 +1,4 @@
-# My Fundraisers
+# Dash restructure
 
 A clickable prototype of a fundraising dashboard built around the fundraisers people run, not the payout accounts they own. Every fundraiser you created or help run is listed, with a "Pays out to" label, even when the donations go to another organization's account.
 
