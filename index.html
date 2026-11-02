@@ -236,6 +236,8 @@ function demoSeg(key, opts) {
 const reviewer = () => S.outcome === 'high' ? 'Compliance team' : 'Reviewer';
 const flagged = () => S.outcome === 'medium' || S.outcome === 'high';
 const vendorLow = () => vendor() && S.vendorResult === 'low';
+// Vendor verified the person, but the organization fell back to uploaded documents
+const regDocs = () => vendor() && isOrg() && !S.registry && !vendorLow();
 
 function choice() {
   const opt = (v, t, d) => `<button class="opt ${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}"><span class="dot"></span><span><b>${t}</b><small>${d}</small></span></button>`;
@@ -419,16 +421,21 @@ function userScreen(i) {
         ${row('wait', 'A reviewer is checking your documents', 'Nothing for you to do right now.', '&middot;')}
         ${row('wait', 'Ready to go live', '', '&middot;')}` };
       return {
-        h: vendorLow() ? 'We need a little more time' : 'You\'re verified', body: vendorLow() ? `
+        h: vendorLow() ? 'We need a little more time' : regDocs() ? 'We\'re reviewing your organization documents' : 'You\'re verified', body: vendorLow() ? `
         ${row('', 'Verification finished', '')}
-        ${row('wait', 'Our compliance team is reviewing', 'Nothing for you to do right now.', '&middot;')}` : `
-        ${row('', 'Identity verified', '')}${isOrg() ? row('', 'Organization verified', S.registry ? 'From the company registry' : 'From your uploaded documents') : ''}
+        ${row('wait', 'Our compliance team is reviewing', 'Nothing for you to do right now.', '&middot;')}` : regDocs() ? `
+        ${row('', 'Identity verified', 'By the vendor')}
+        ${row('', 'Organization documents received', 'The company registry couldn\'t be reached')}
+        ${row('wait', 'A reviewer is checking your organization documents <span class="tag">to confirm: reviewer or compliance</span>', 'Nothing for you to do right now.', '&middot;')}
+        ${row('wait', 'Ready to go live', '', '&middot;')}` : `
+        ${row('', 'Identity verified', '')}${isOrg() ? row('', 'Organization verified', 'From the company registry') : ''}
         ${row('', 'Ready to go live', '')}`
         + `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` };
     }
     case 7: {
       let inapp, mail;
       if (!vendor()) { inapp = 'Your documents are under review. We\'ll tell you here when you can go live.'; mail = 'Documents received. Our team is reviewing them. Then: "You\'re approved. Your campaign can go live."'; }
+      else if (regDocs()) { inapp = 'Your identity is verified. Your organization documents are under review. We\'ll tell you here when you can go live.'; mail = 'Identity verified, organization documents received. Our team is reviewing them. Then: "You\'re approved. Your campaign can go live."'; }
       else if (vendorLow()) { inapp = 'We need a little more time to review your application.'; mail = 'We\'re taking a little more time with your application. No action is needed from you.'; }
       else { inapp = 'You\'re verified. Your campaign can go live now.'; mail = 'You\'re verified. Go live whenever you\'re ready.'; }
       return {
@@ -502,7 +509,8 @@ function audit(extra) {
   const items = ['Draft created', 'Risk form submitted', `Score: ${BAND[S.outcome]}`];
   if (flagged()) items.push(`${reviewer()} approved after review`);
   items.push(vendor() ? 'Vendor verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed') : 'Documents uploaded to secure document storage');
-  if (!vendor()) items.push('Reviewer approved documents');
+  if (regDocs()) items.push('Company registry not reachable, organization documents uploaded');
+  if (!vendor() || regDocs()) items.push('Reviewer approved documents');
   if (vendorLow()) items.push('Compliance team approved');
   items.push(...(extra || []));
   return `<div class="log">${items.map((t, k) => `<div><span class="muted">Day 1, 10:${String(2 + k * 7).padStart(2, '0')}</span> &nbsp;${t}</div>`).join('')}</div>`;
@@ -525,6 +533,7 @@ function adminScreen(i) {
   }
   if (i === 6) {
     if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
+    if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Check the uploaded organization documents.</p><table><tr><th>Document</th><th>Status</th></tr><tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr></table><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
     if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Decline</span></div>`;
     return `<h3>No action needed</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The case closes automatically.</p>`;
   }
@@ -557,8 +566,8 @@ function pathMap() {
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
   ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Straight to verification', medium: 'Reviewer first', high: 'Compliance first', declined: 'Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
   ${st('6. Verification', mapNode('In-house', 'Upload ID, bank statement' + (isOrg() ? ', company documents' : ''), { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Falls back to upload', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
-  ${st('7. Review', mapNode('Reviewer checks documents', 'In-house', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass' }, 'v') + mapNode('Back to compliance', 'With vendor, low result', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
-  ${st('8. Message', mapNode('Under review', 'In-house', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass' }, 'v') + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('7. Review', mapNode('Reviewer checks documents', 'In-house', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('8. Message', mapNode('Under review', 'In-house', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
   ${st('10. Payout', mapNode('Enter manually', 'Bank details form', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect your bank', 'Log in through the vendor', { step: 9, payout: 'vendor' }, 'v'))}
   </div>`;
