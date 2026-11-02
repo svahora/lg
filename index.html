@@ -333,7 +333,7 @@ function riskPreview() {
 
 function draftCard() {
   if (!S.draft) return '';
-  return `<div class="draftcard"><div><span class="muted" style="font-size:12px">${S.draftStep === 5 ? 'Draft saved. Finish verifying to go live.' : 'Draft saved. No checks are needed until you go live.'}</span><br><b>Clean water for 300 families</b><br><span class="muted">${name()} &middot; $25,000 goal</span></div><button class="btn" data-act="resume">Continue draft</button></div>
+  return `<div class="draftcard"><div><span class="muted" style="font-size:12px">${S.draftStep === 6 ? 'Draft saved. We\'re reviewing it and will let you know when it can go live.' : S.draftStep === 5 ? 'Draft saved. Finish verifying to go live.' : 'Draft saved. No checks are needed until you go live.'}</span><br><b>Clean water for 300 families</b><br><span class="muted">${name()} &middot; $25,000 goal</span></div><button class="btn" data-act="resume">Continue draft</button></div>
   <p class="muted" style="margin:14px 0 4px">Or start something new:</p>`;
 }
 
@@ -423,7 +423,7 @@ function userScreen(i) {
         ${isOrg() && !S.registry ? '' : `<p class="muted" style="margin-top:10px">No documents to upload unless the vendor can't verify you.</p>`}${lock}` };
     }
     case 6: {
-      const nav = `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button>`;
+      const nav = `<button class="btn2" data-act="back">Back</button><span class="pair">${waits() ? '<button class="btn2" data-act="draft">Save as draft</button>' : ''}<button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button></span>`;
       const vdemo = vendor() ? `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` : '';
       const who = vendorLow() ? 'Our compliance team is reviewing' : regDocs() ? 'A reviewer is checking your organization documents <span class="tag">to confirm: reviewer or compliance</span>' : 'A reviewer is checking your documents';
       const got = !vendor() ? row('', 'Documents received', '') : vendorLow() ? row('', 'Verification finished', '') : row('', 'Identity verified', 'By the vendor') + (regDocs() ? row('', 'Organization documents received', 'The company registry couldn\'t be reached') : '');
