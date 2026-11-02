@@ -333,7 +333,7 @@ function draftCard() {
 const TRASH = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>';
 function required() {
   const co = ['reg', 'form', 'board'];
-  if (!vendor()) return ['id', 'bank', ...(isOrg() ? co : [])];
+  if (!vendor()) return ['id', ...(isOrg() ? co : [])];
   return ['scan', 'selfie', ...(isOrg() && !S.registry ? co : [])];
 }
 function up(key, title, doneSub, reqSub, label) {
@@ -399,7 +399,6 @@ function userScreen(i) {
         h, nav, body: `${pre}
         <p class="muted">Upload these in the product. They're kept in secure document storage.</p>
         ${up('id', 'Photo ID', 'passport.jpg uploaded')}
-        ${up('bank', 'Bank statement', 'From the last 3 months, uploaded', 'From the last 3 months')}
         ${isOrg() ? docs + otherIds('Photo ID') : ''}${lock}` };
       const regDemo = `<div class="demo" style="margin:8px 0 0"><b>Demo control:</b> company registry${demoSeg('registry', [[true, 'Reachable'], [false, 'Not reachable']])}</div>`;
       const reg = S.registry
@@ -461,14 +460,14 @@ const last4 = () => S.payout === 'vendor' ? '6789' : S.pay.acct.slice(-4);
 function payOk() {
   if (S.payout === 'vendor') return S.linked;
   const P = S.pay;
-  return !!(holder() && P.bank && /^\d{9}$/.test(P.routing) && P.acct && P.acct === P.acct2);
+  return !!(holder() && P.bank && /^\d{9}$/.test(P.routing) && P.acct && P.acct === P.acct2 && !S.removed.stmt);
 }
 function payoutScreen() {
   const P = S.pay, who = isOrg() ? ORG : PERSON;
   const pin = (f, k, hint, type) => lbl(k, `<input data-p="${f}" type="${type || 'text'}" value="${f === 'holder' ? holder() : P[f]}" ${S.paySaved ? 'disabled' : ''}>`, hint);
   const psel = (f, k, opts) => lbl(k, `<select data-p="${f}" ${S.paySaved ? 'disabled' : ''}>${opts.map(([v, l]) => `<option value="${v}" ${P[f] === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`);
   const lock = `<p class="lock">&#128274; Bank details are encrypted. Payouts only go to an account in ${isOrg() ? 'the organization\'s' : 'your'} name.</p>`;
-  const done = `<div class="notice toast"><b>Payout account added.</b> Donations pay out to ${P.type.toLowerCase()} account &bull;&bull;&bull;&bull;${last4()}.</div>`;
+  const done = `<div class="notice toast"><b>Payout account added.</b> Donations pay out to ${P.type.toLowerCase()} account &bull;&bull;&bull;&bull;${last4()}.${S.payout === 'manual' ? ' Our compliance team reviews it, with your bank statement, before the first payout.' : ''}</div>`;
   const nav = S.paySaved
     ? `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="restart">Start over</button>`
     : `<button class="btn2" data-act="back">Back</button><button class="btn" id="paysave" data-act="paysave" ${payOk() ? '' : 'disabled'}>Save payout account</button>`;
@@ -493,6 +492,7 @@ function payoutScreen() {
     ${pin('routing', 'Routing number', '9 digits', 'text')}<span></span>
     ${pin('acct', 'Account number')}${pin('acct2', 'Confirm account number')}</div>
     ${mismatch ? `<p class="warnline">Account numbers don't match.</p>` : ''}
+    ${up('stmt', 'Bank statement', 'From the last 3 months, in the account holder\'s name, uploaded', 'From the last 3 months, in the account holder\'s name')}
     <p class="muted" style="font-size:12px">Outside the US we ask for IBAN and SWIFT/BIC instead. <span class="tag">to confirm: fields per country</span></p>
     ${S.paySaved ? done : ''}${lock}` };
 }
@@ -527,7 +527,7 @@ function adminScreen(i) {
   }
   if (i === 5) {
     const docs = !vendor()
-      ? `<table><tr><th>Document</th><th>Status</th></tr><tr><td>Photo ID</td><td>Uploaded</td></tr><tr><td>Bank statement</td><td>Uploaded</td></tr>${isOrg() ? '<tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr>' : ''}</table><p class="muted" style="font-size:12px">Files sit in secure document storage. Reads are logged.</p>`
+      ? `<table><tr><th>Document</th><th>Status</th></tr><tr><td>Photo ID</td><td>Uploaded</td></tr>${isOrg() ? '<tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr>' : ''}</table><p class="muted" style="font-size:12px">Files sit in secure document storage. Reads are logged.</p>`
       : `<table><tr><th>Vendor check</th><th>Result</th></tr><tr><td>ID document</td><td>Passed</td></tr><tr><td>Selfie check</td><td>Passed</td></tr><tr><td>Sanctions screening</td><td>Clear</td></tr>${isOrg() ? `<tr><td>Company registry</td><td>${S.registry ? 'Found' : 'Not reachable, documents requested'}</td></tr>` : ''}</table><p class="muted" style="font-size:12px">We keep the vendor's references and results.</p>`;
     return `<h3>Case detail</h3>${caseHead()}${docs}`;
   }
@@ -542,10 +542,11 @@ function adminScreen(i) {
     const rows = [['Method', v ? 'Bank connection through the vendor' : 'Entered manually'],
       ['Account', has ? `${S.pay.type} &bull;&bull;&bull;&bull;${last4()}` : 'Not connected yet'],
       ['Holder name', has ? (v ? `${isOrg() ? ORG : PERSON}, matched by the vendor` : holder()) : '-'],
-      ['Status', !S.paySaved ? 'Not submitted' : v ? 'Verified by the vendor' : 'Added']];
+      ...(v ? [] : [['Bank statement', S.removed.stmt ? 'Missing' : 'Uploaded']]),
+      ['Status', !S.paySaved ? 'Not submitted' : v ? 'Approved automatically' : 'In compliance review']];
     return `<h3>Payout account</h3>${caseHead()}<table>${rows.map(([k, val]) => `<tr><th>${k}</th><td>${val}</td></tr>`).join('')}</table>
       <p class="muted" style="font-size:12px">Full account numbers are never shown here.</p>
-      <h2>Audit log</h2>${audit(['Campaign live', ...(S.paySaved ? ['Payout account added'] : [])])}`;
+      <h2>Audit log</h2>${audit(['Campaign live', ...(S.paySaved ? [S.payout === 'vendor' ? 'Payout account connected, approved automatically' : 'Payout account added, sent to compliance review'] : [])])}`;
   }
   return `<h3>Audit log</h3>${caseHead()}${audit(i === 8 ? ['Campaign live'] : [])}`;
 }
@@ -565,11 +566,11 @@ function pathMap() {
   ${st('3. Campaign', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
   ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Straight to verification', medium: 'Reviewer first', high: 'Compliance first', declined: 'Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
-  ${st('6. Verification', mapNode('In-house', 'Upload ID, bank statement' + (isOrg() ? ', company documents' : ''), { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Falls back to upload', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
+  ${st('6. Verification', mapNode('In-house', 'Upload ID' + (isOrg() ? ', company documents' : ''), { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Falls back to upload', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
   ${st('7. Review', mapNode('Reviewer checks documents', 'In-house', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('8. Message', mapNode('Under review', 'In-house', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
-  ${st('10. Payout', mapNode('Enter manually', 'Bank details form', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect your bank', 'Log in through the vendor', { step: 9, payout: 'vendor' }, 'v'))}
+  ${st('10. Payout', mapNode('Enter manually', 'Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect your bank', 'Log in through the vendor, approved automatically', { step: 9, payout: 'vendor' }, 'v'))}
   </div>`;
 }
 
