@@ -204,7 +204,7 @@
 <body>
 <div class="topbar">
   <div class="brand">Onboarding prototype</div>
-  <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
+  <div class="ctl" style="margin-left:auto"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
   <button class="ghost" id="btn-map">🗺️ Path map</button>
   <button class="ghost" id="btn-admin">🛡️ Admin view</button>
   <button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button>
@@ -218,7 +218,7 @@
 <div class="overlay" id="overlay" hidden></div>
 
 <script>
-const S = { step: 0, app: 'org', mode: 'inhouse', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false };
+const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false };
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
 const VENDOR_STEPS = [5, 6, 7, 9];
 // Test values only (standard test routing and account numbers)
@@ -247,6 +247,14 @@ const liveDuring = () => S.outcome === 'low' && (!vendor() || regDocs());
 const waits = () => !liveDuring() && (!vendor() || regDocs() || vendorLow());
 // Vendor verified the person, but the organization fell back to uploaded documents
 const regDocs = () => vendor() && isOrg() && !S.registry && !vendorLow();
+// Entry path: 'org' registers the organization only, 'fund' starts a fundraiser
+const orgEntry = () => S.entry === 'org';
+const fund = () => S.entry === 'fund';
+// In-house upload isn't in v1 for fundraisers: vendor down or registry unreachable skips to the message
+const noUpload = () => fund() && (!vendor() || regDocs());
+const notV1 = () => fund() && S.step === 5 && !vendor();
+const orgManual = () => !vendor() || regDocs() || vendorLow();
+const orgApproved = () => !orgManual() || S.approved;
 
 function choice() {
   const opt = (v, t, d) => `<button class="opt ${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}"><span class="dot"></span><span><b>${t}</b><small>${d}</small></span></button>`;
@@ -344,7 +352,7 @@ const FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 function required() {
   const co = ['reg', 'form', 'board'];
   if (!vendor()) return ['id', ...(isOrg() ? co : [])];
-  return ['scan', 'selfie', ...(isOrg() && !S.registry ? co : [])];
+  return ['scan', 'selfie', ...(isOrg() && !S.registry && !fund() ? co : [])];
 }
 function up(key, title, doneSub, reqSub, label) {
   if (!S.removed[key]) return `<div class="check">${tick()}<div style="flex:1"><b>${title}</b><div class="muted">${doneSub}</div></div><button class="rm trash" data-act="rmup" data-key="${key}" aria-label="Remove ${title}">${TRASH}</button></div>`;
@@ -359,6 +367,14 @@ function otherIds(what) {
 /* ---------- User screens ---------- */
 function userScreen(i) {
   switch (i) {
+    case -1: {
+      const opt = (v, t, d) => `<button class="opt ${S.entry === v ? 'on' : ''}" data-k="entry" data-v="${v}"><span class="dot"></span><span><b>${t}</b><small>${d}</small></span></button>`;
+      return {
+        h: 'Welcome to LaunchGood', body: `
+        <p class="muted">What would you like to do?</p>
+        <div class="opts">${opt('org', 'Register as an organization', 'Create your account and get your organization approved. Start a fundraiser after.')}${opt('fund', 'Start a fundraiser', 'Create your account and your first campaign.')}</div>`,
+        nav: `<span></span><button class="btn" data-act="start">Continue</button>` };
+    }
     case 0: return {
       h: 'Create your account', body: `
       <p class="muted">Start fundraising in minutes. No checks are needed to explore or draft.</p>
@@ -378,11 +394,14 @@ function userScreen(i) {
       <div class="cover">Clean water for 300 families</div>
       <div class="grid">${field('Title', 'Clean water for 300 families')}${field('Goal', '$25,000')}${field('Category', 'Water and sanitation')}${field('Fundraising as', name())}</div>
       ${field('Story', 'Families in our area walk over an hour each day for water. We are building three wells with local partners, so every household has safe water within a short walk.')}
-      ${S.resumed ? `<div class="notice toast"><b>Draft restored.</b> Pick up where you left off.</div>` : ''}`,
-      nav: `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next">Continue to go live</button></span>` };
+      ${S.resumed ? `<div class="notice toast"><b>Draft restored.</b> Pick up where you left off.</div>` : ''}
+      ${S.orgDone && !orgApproved() ? `<div class="notice">Your organization is under review. You can save this as a draft and go live once it's approved.</div>` : ''}`,
+      nav: S.orgDone
+        ? `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="golive" ${orgApproved() ? '' : 'disabled'}>Go live</button></span>`
+        : `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next">Continue to go live</button></span>` };
     case 3: return {
-      h: 'A few details before you go live', body: riskForm(),
-      nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="submit">Submit for go-live</button>` };
+      h: orgEntry() ? 'Tell us about your organization' : 'A few details before you go live', body: riskForm(),
+      nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="submit">${orgEntry() ? 'Submit for review' : 'Submit for go-live'}</button>` };
     case 4: {
       const res = {
         low: `<p><span class="band low">Cleared</span></p><p>You're ready to verify your identity${isOrg() ? ' and organization' : ''}.</p>`,
@@ -402,7 +421,7 @@ function userScreen(i) {
         + (flagged() ? `<div class="notice">Review complete. You can now verify.</div>` : '');
       const h = 'Verify your identity' + (isOrg() ? ' and organization' : '');
       const missing = () => required().some(k => S.removed[k]);
-      const nav = `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next" ${missing() ? 'disabled' : ''}>${liveDuring() ? 'Submit and go live' : 'Continue'}</button></span>`;
+      const nav = `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next" ${missing() ? 'disabled' : ''}>${liveDuring() && fund() ? 'Submit and go live' : 'Continue'}</button></span>`;
       const lock = `<p class="lock">&#128274; Your documents are encrypted and visible only to our trust and safety team.</p>`;
       const docs = up('reg', 'Registration document', 'IRS determination letter, uploaded') + up('form', 'Formation documents', 'Articles of incorporation, operating agreement, and partnership or trust deed, uploaded', 'Articles of incorporation, operating agreement, and partnership or trust deed <span class="tag">to confirm if all are required</span>') + up('board', 'Board resolution', 'Uploaded');
       if (!vendor()) return {
@@ -413,6 +432,7 @@ function userScreen(i) {
       const regDemo = `<div class="demo" style="margin:8px 0 0"><b>Demo control:</b> company registry${demoSeg('registry', [[true, 'Reachable'], [false, 'Not reachable']])}</div>`;
       const reg = S.registry
         ? row('', 'Business lookup', 'Found in the company registry. No documents needed.' + regDemo)
+        : fund() ? row('warn', 'Business lookup', 'The registry for this country can\'t be reached. We\'ll be in touch for any documents we need.' + regDemo, '!')
         : row('warn', 'Business lookup', 'The registry for this country can\'t be reached, so we need these documents instead.' + regDemo, '!') + docs;
       return {
         h, nav, body: `${pre}
@@ -421,9 +441,18 @@ function userScreen(i) {
         ${up('selfie', 'Selfie check', 'Matched to your ID', 'Takes a few seconds', 'Take selfie')}
         ${isOrg() ? reg : ''}</div></div>
         ${isOrg() ? otherIds('ID scan and selfie') : ''}
-        ${isOrg() && !S.registry ? '' : `<p class="muted" style="margin-top:10px">No documents to upload unless the vendor can't verify you.</p>`}${lock}` };
+        ${isOrg() && !S.registry && !fund() ? '' : `<p class="muted" style="margin-top:10px">No documents to upload unless the vendor can't verify you.</p>`}${lock}` };
     }
-    case 6: {
+    case 6: if (orgEntry()) {
+      const ok = orgApproved();
+      const why = !vendor() ? 'The vendor isn\'t available, so our team is reviewing your registration by hand.' : regDocs() ? 'We couldn\'t look up your organization in the company registry, so our team is reviewing your registration by hand.' : vendorLow() ? 'We need a little more time to review your registration.' : '';
+      return {
+        h: ok ? 'Your organization is approved' : 'Your organization is under review',
+        body: `${row(ok ? '' : 'wait', ok ? 'Approved' : 'Under review', ok ? 'You can start a fundraiser and go live.' : why + ' We\'ll be in touch soon for any required documents.', ok ? null : '&middot;')}
+        <div class="notice">${ok ? 'Start a fundraiser whenever you\'re ready. It can go live right away.' : 'You can start a fundraiser now and save it as a draft. It can go live once your organization is approved.'}</div>
+        ${orgManual() ? `<div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>` : ''}`,
+        nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="startfund">Start a fundraiser</button>` };
+    } else {
       const nav = `<button class="btn2" data-act="back">Back</button><span class="pair">${waits() ? '<button class="btn2" data-act="draft">Save as draft</button>' : ''}<button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button></span>`;
       const vdemo = vendor() ? `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` : '';
       const who = vendorLow() ? 'Our compliance team is reviewing' : regDocs() ? 'A reviewer is checking your organization documents <span class="tag">to confirm: reviewer or compliance</span>' : 'A reviewer is checking your documents';
@@ -440,7 +469,10 @@ function userScreen(i) {
     }
     case 7: {
       let inapp, mail;
-      if (liveDuring()) { inapp = `${regDocs() ? 'Your identity is verified and your' : 'Your'} campaign is live. Your documents are under review, and payouts are held until they're approved.`; mail = 'Your campaign is live. Our team is reviewing your documents, and payouts are held until they\'re approved. Then: "You\'re approved. Payouts are on."'; }
+      const docsLine = ' We\'ll be in touch soon for any required documents.';
+      if (noUpload() && liveDuring()) inapp = mail = 'Your campaign is live and your registration is under review. Payouts will be held until approved.' + docsLine;
+      else if (noUpload()) inapp = mail = 'Your campaign has been saved as a draft while we review your information. We\'ll let you know when you can go live and begin accepting donations.' + docsLine;
+      else if (liveDuring()) { inapp = `${regDocs() ? 'Your identity is verified and your' : 'Your'} campaign is live. Your documents are under review, and payouts are held until they're approved.`; mail = 'Your campaign is live. Our team is reviewing your documents, and payouts are held until they\'re approved. Then: "You\'re approved. Payouts are on."'; }
       else if (vendorLow()) { inapp = 'We need a little more time to review your application. Your campaign is saved as a draft until then.'; mail = 'We\'re taking a little more time with your application. Your campaign is saved as a draft, and we\'ll tell you when it can go live. No action is needed from you.'; }
       else if (waits()) { inapp = 'Your campaign is saved as a draft while we review your documents. We\'ll tell you here when you can go live.'; mail = 'Documents received. Your campaign is saved as a draft while our team reviews them. Then: "You\'re approved. Your campaign can go live."'; }
       else { inapp = 'You\'re verified. Your campaign can go live now.'; mail = 'You\'re verified. Go live whenever you\'re ready.'; }
@@ -575,6 +607,7 @@ function pathMap() {
   const st = (n, nodes) => `<div class="stage"><div class="sname">${n}</div><div class="nodes">${nodes}</div></div>`;
   return `<div class="map"><div style="display:flex;justify-content:space-between;align-items:center"><h1 style="padding:0;margin:0">All paths</h1><button class="x" data-act="closemap">&times;</button></div>
   <div class="legend"><span><span class="sw" style="border:2px solid var(--teal)"></span>Changes with vendor</span><span><span class="sw" style="background:var(--low-tint)"></span><span class="sw" style="background:var(--medium-tint)"></span><span class="sw" style="background:var(--high-tint)"></span><span class="sw" style="background:var(--declined-tint)"></span>Score bands</span><span><span class="sw" style="border-style:dashed;opacity:.4"></span>Skipped on the person path</span><span>Outline = where you are. Click any step to jump there.</span></div>
+  ${st('Start', mapNode('Register as an organization', 'Sign up, then straight to the risk form', { step: 0, entry: 'org', app: 'org' }) + mapNode('Start a fundraiser', 'Sign up, then every step below', { step: 0, entry: 'fund' }))}
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
   ${st('2. Applicant', `<div><div class="seg">${[['org', '🏢 Organization'], ['person', '👤 Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create or join an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
   ${st('3. Campaign', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
@@ -582,7 +615,8 @@ function pathMap() {
   ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Goes live now, verifies while live', medium: 'Reviewer first', high: 'Compliance first', declined: 'Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
   ${st('6. Verification', mapNode('In-house', 'Upload ID' + (isOrg() ? ', company documents' : ''), { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Falls back to upload', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
   ${st('7. Review', mapNode('Reviewer checks documents', 'In-house. Low is live meanwhile, others wait as a draft', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable. Low is live meanwhile', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
-  ${st('8. Message', mapNode('Under review', 'In-house', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('7. Organization result', mapNode('Under review or approved', 'Registering an organization only. Then start a fundraiser', { step: 6, entry: 'org', app: 'org' }))}
+  ${st('8. Message', mapNode('Vendor not available', 'Not in V1 for fundraisers. Low is live, others draft', { step: 7, mode: 'inhouse', entry: 'fund' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
   ${st('10. Payout', mapNode('Enter manually', 'Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect your bank', 'Log in through the vendor, approved automatically', { step: 9, payout: 'vendor' }, 'v'))}
   </div>`;
@@ -598,20 +632,24 @@ function render() {
   const u = userScreen(S.step);
   const isV = VENDOR_STEPS.includes(S.step);
   const blocked = S.step === 4 && S.outcome === 'declined';
-  const nav = u.nav || `<button class="btn2" data-act="back" ${S.step === 0 ? 'disabled' : ''}>Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
+  const nav = u.nav || `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
   $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}</div>${isV ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">${S.step === 9 ? 'Payout account' : 'Verification'}</span>${S.step === 9 ? demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect your bank']]) : demoSeg('mode', [['inhouse', 'In-house'], ['vendor', 'With vendor']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+    ${S.step < 0 ? '' : `<div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}${orgEntry() ? ' &middot; Registering an organization' : ''}</div>`}${isV ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">${S.step === 9 ? 'Payout account' : 'Verification'}</span>${S.step === 9 ? demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect your bank']]) : demoSeg('mode', [['inhouse', 'In-house'], ['vendor', 'With vendor']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
   if (S.admin) a.innerHTML = adminHead() + adminScreen(S.step);
   const o = $('overlay');
-  o.hidden = !S.map;
+  o.hidden = !S.map && !notV1();
   if (S.map) o.innerHTML = pathMap();
+  else if (notV1()) o.innerHTML = `<div class="map" style="max-width:460px;margin-top:12vh"><h1 style="padding:0;margin:0 0 8px">Not in V1</h1>
+    <p>In-house verification isn't available in the first version. Fundraisers verify with the vendor.</p>
+    <p class="muted">Continue to see what happens when the vendor isn't available.</p>
+    <div class="nav"><button class="btn2" data-k="mode" data-v="vendor">Back to vendor</button><button class="btn" data-act="novendor">Continue</button></div></div>`;
 }
 function go(step) {
   // Open the admin view on arriving at the risk form so viewers see the live score
   if (step === 3 && S.step !== 3) S.admin = true;
-  S.step = Math.max(0, Math.min(STEPS.length - 1, step));
+  S.step = Math.max(-1, Math.min(STEPS.length - 1, step));
   if (S.step === 4) { S.checking = true; setTimeout(() => { S.checking = false; render(); }, 1200); }
   render(); window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -623,8 +661,13 @@ document.addEventListener('click', e => {
   if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
   if (b.id === 'btn-map') { S.map = true; render(); return; }
   switch (b.dataset.act) {
-    case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false; go(S.step + 1); break;
-    case 'back': go(S.step - 1); break;
+    case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false;
+      go(S.step === 0 && orgEntry() ? 3 : S.step === 5 && noUpload() ? 7 : S.step + 1); break;
+    case 'back': go(S.step === 3 && orgEntry() ? 0 : S.step === 7 && noUpload() ? 5 : S.step - 1); break;
+    case 'start': if (orgEntry()) S.app = 'org'; else S.mode = 'vendor'; S.orgDone = false; go(0); break;
+    case 'novendor': S.approved = false; go(7); break;
+    case 'startfund': S.orgDone = true; S.entry = 'fund'; S.draft = false; go(2); break;
+    case 'golive': go(8); break;
     case 'draft': S.draft = true; S.resumed = false; S.draftStep = S.step; go(1); break;
     case 'resume': S.draft = false; S.resumed = true; go(S.draftStep); break;
     case 'up': delete S.removed[b.dataset.key]; render(); break;
@@ -635,7 +678,7 @@ document.addEventListener('click', e => {
     case 'link': S.linked = true; render(); break;
     case 'unlink': S.linked = false; render(); break;
     case 'paysave': S.paySaved = true; render(); break;
-    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false }); go(0); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor' }); go(-1); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
