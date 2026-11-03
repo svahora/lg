@@ -110,9 +110,9 @@
   <div class="head-left">
     <span class="brand"><span class="brand-mark" aria-hidden="true"><svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg></span>LaunchGood</span>
     <label class="field" id="orgSelector">Organization
-      <select class="pill-select" aria-label="Organization">
-        <option>Amina Rahman (personal)</option>
-        <option>Bright Futures Collective</option>
+      <select class="pill-select" id="orgSelect" aria-label="Organization">
+        <option value="personal">Amina Rahman (personal)</option>
+        <option value="bfc">Bright Futures Collective</option>
       </select>
     </label>
   </div>
@@ -158,10 +158,15 @@
     you: 'You (Amina Rahman)',
     hope: 'Hope Relief Foundation',
     water: 'Water for All Trust',
-    masjid: 'Al-Noor Community Masjid'
+    masjid: 'Al-Noor Community Masjid',
+    bfcUsd: 'Bright Futures Collective · USD',
+    bfcGbp: 'Bright Futures Collective · GBP'
   };
+  // Payout accounts the signed-in user can access, per organization.
+  const ORG_ACCOUNTS = { personal: ['you'], bfc: ['bfcUsd', 'bfcGbp'] };
+  const ORG_NAMES = { personal: 'Amina Rahman (personal)', bfc: 'Bright Futures Collective' };
   const STATUS = { live: ['Live', 'b-green'], draft: ['Draft', 'b-neutral'], closed: ['Closed', 'b-neutral'] };
-  const ROLE = { creator: ['Creator', 'b-indigo'], team: ['Team member', 'b-purple'] };
+  const ROLE = { creator: ['Creator', 'b-indigo'], team: ['Team member', 'b-purple'], member: ['Organization', 'b-neutral'] };
   const ALL = [
     { id: 1, title: 'Winter warmth for refugee families', role: 'creator', payee: 'hope', status: 'live', raised: 8420, goal: 10000, donations: 96 },
     { id: 2, title: 'Ramadan iftar drive for our neighborhood', role: 'creator', payee: 'you', status: 'live', raised: 2150, goal: 5000, donations: 41 },
@@ -169,22 +174,33 @@
     { id: 4, title: 'Masjid roof repair before winter', role: 'team', payee: 'masjid', status: 'closed', raised: 45000, goal: 40000, donations: 820 },
     { id: 5, title: 'Back-to-school kits for orphans', role: 'creator', payee: 'you', status: 'draft', raised: 0, goal: 3000, donations: 0 }
   ];
+  // Fundraisers owned by the organization. None of the personal or peer-to-peer ones above appear here.
+  const ORG = [
+    { id: 11, title: 'Scholarships for first-generation students', role: 'creator', payee: 'bfcUsd', status: 'live', raised: 18250, goal: 25000, donations: 214 },
+    { id: 12, title: 'Youth mentoring circles in East London', role: 'member', payee: 'bfcGbp', status: 'live', raised: 6400, goal: 12000, donations: 88 },
+    { id: 13, title: 'Summer reading camp 2027', role: 'member', payee: 'bfcUsd', status: 'draft', raised: 0, goal: 8000, donations: 0 },
+    { id: 14, title: 'Laptops for students, spring term', role: 'team', payee: 'bfcUsd', status: 'closed', raised: 15200, goal: 15000, donations: 301 }
+  ];
   const MONEY = {
     payouts: { title: 'Payouts', body: 'Sample payouts for this account.', rows: [['Available to pay out', '$1,240.00'], ['Last payout, Oct 15', '$910.00']] },
     donors: { title: 'Donors', body: 'Donors to fundraisers that pay out to this account.', rows: [['Donors this month', '38'], ['Returning donors', '12']] },
     reports: { title: 'Reports', body: 'Reports for this account, unchanged from today.', rows: [['Financial summary', 'Download'], ['Gift Aid', 'Download']] }
   };
 
-  const state = { view: 'list', status: 'all', role: 'all', payee: 'all', selectedId: null, ownAccount: true };
+  const state = { view: 'list', status: 'all', role: 'all', payee: 'all', selectedId: null, ownAccount: true, org: 'personal' };
   const set = (patch) => { Object.assign(state, patch); render(); };
 
-  const fundraisers = () => state.ownAccount ? ALL : ALL.filter((f) => f.payee !== 'you');
+  const isPersonal = () => state.org === 'personal';
+  const fundraisers = () => !isPersonal() ? ORG : state.ownAccount ? ALL : ALL.filter((f) => f.payee !== 'you');
+  const accessibleAccounts = () => isPersonal() ? (state.ownAccount ? ORG_ACCOUNTS.personal : []) : ORG_ACCOUNTS[state.org];
+  const canSeeMoney = (f) => accessibleAccounts().includes(f.payee);
+  const listTitle = () => isPersonal() ? 'My fundraisers' : 'Fundraisers';
   const badges = (f) =>
     `<div class="badges"><span class="badge ${STATUS[f.status][1]}"><span class="dot"></span>${STATUS[f.status][0]}</span><span class="badge ${ROLE[f.role][1]}">${ROLE[f.role][0]}</span></div>`;
   const donationsLabel = (n) => n === 1 ? '1 donation' : `${n} donations`;
 
   function renderNav() {
-    const items = [['list', 'My fundraisers', 'grid'], ['payouts', 'Payouts', 'banknotes'], ['donors', 'Donors', 'users'], ['reports', 'Reports', 'chart']];
+    const items = [['list', listTitle(), 'grid'],['payouts', 'Payouts', 'banknotes'], ['donors', 'Donors', 'users'], ['reports', 'Reports', 'chart']];
     const active = state.view === 'detail' ? 'list' : state.view;
     document.getElementById('nav').innerHTML = items.map(([id, label, ic]) =>
       `<button type="button" class="nav-btn" data-go="${id}"${active === id ? ' aria-current="page"' : ''}>${icon(ic)}<span>${label}</span></button>`
@@ -201,9 +217,9 @@
 
     const tabs = [['all', 'All'], ['live', 'Live'], ['draft', 'Draft'], ['closed', 'Closed']].map(([id, label]) =>
       `<button type="button" role="tab" class="tab" data-status="${id}" aria-selected="${state.status === id}">${label}<span class="count">${count(id)}</span></button>`).join('');
-    const chips = [['all', 'All roles'], ['creator', 'Created by you'], ['team', 'Team member']].map(([id, label]) =>
-      `<button type="button" class="chip" data-role="${id}" aria-pressed="${state.role === id}">${label}</button>`).join('');
-    const options = [['all', 'Anyone'], ...payeeKeys.map((k) => [k, PAYEES[k]])].map(([v, l]) =>
+    const chips = isPersonal() ? [['all', 'All roles'], ['creator', 'Created by you'], ['team', 'Team member']].map(([id, label]) =>
+      `<button type="button" class="chip" data-role="${id}" aria-pressed="${state.role === id}">${label}</button>`).join('') : '';
+    const options = [['all', isPersonal() ? 'Anyone' : 'All accounts'],...payeeKeys.map((k) => [k, PAYEES[k]])].map(([v, l]) =>
       `<option value="${v}"${state.payee === v ? ' selected' : ''}>${esc(l)}</option>`).join('');
 
     const list = rows.length ? rows.map((f) => {
@@ -224,8 +240,10 @@
 
     return `
       <div>
-        <h1>My fundraisers</h1>
-        <p class="lede">Every fundraiser you created or help run, wherever the donations go.</p>
+        <h1>${listTitle()}</h1>
+        <p class="lede">${isPersonal()
+          ? 'Every fundraiser you created or help run, wherever the donations go.'
+          : `Fundraisers run by ${esc(ORG_NAMES[state.org])}. Your personal fundraisers, and the ones you run for other organizations, stay in your personal dashboard.`}</p>
       </div>
       <div class="tabs" role="tablist" aria-label="Status">${tabs}</div>
       <div class="filters">
@@ -238,7 +256,7 @@
   function renderDetail() {
     const base = fundraisers();
     const f = base.find((x) => x.id === state.selectedId) || base[0];
-    const other = f.payee !== 'you';
+    const other = !canSeeMoney(f);
     const name = esc(PAYEES[f.payee]);
     const banner = other ? `
       <div class="banner" role="note">${icon('info')}<div>
@@ -250,7 +268,7 @@
       : [['Yusuf K.', '$100 · 2 days ago'], ['Anonymous', '$25 · 3 days ago'], ['Sara M.', '$50 · 1 week ago']]
           .map(([n, v]) => `<div class="line"><strong>${n}</strong><span class="muted">${v}</span></div>`).join('');
     return `
-      <button type="button" class="back" data-go="list">${icon('arrowLeft', 'icon-sm')}My fundraisers</button>
+      <button type="button" class="back" data-go="list">${icon('arrowLeft', 'icon-sm')}${listTitle()}</button>
       <div style="display:flex;flex-direction:column;gap:10px">${badges(f)}<h1>${esc(f.title)}</h1></div>
       ${banner}
       <div class="stats">
@@ -270,9 +288,11 @@
 
   function renderMoney() {
     const m = MONEY[state.view];
-    const picker = state.ownAccount
-      ? `<label class="field">Payout account <select class="pill-select"><option>Amina Rahman · USD</option></select></label>` : '';
-    const body = state.ownAccount
+    const accounts = accessibleAccounts();
+    const accountLabel = (k) => k === 'you' ? 'Amina Rahman · USD' : PAYEES[k];
+    const picker = accounts.length
+      ? `<label class="field">Payout account <select class="pill-select">${accounts.map((k) => `<option>${esc(accountLabel(k))}</option>`).join('')}</select></label>` : '';
+    const body = accounts.length
       ? `<div class="card"><span class="muted" style="font-size:14px">${m.body}</span>${m.rows.map(([l, v]) => `<div class="line"><strong>${l}</strong><span class="muted">${v}</span></div>`).join('')}</div>`
       : `<div class="card" style="align-items:flex-start;padding:32px 24px">
           <h2>You don't have a payout account yet</h2>
@@ -303,9 +323,14 @@
     else if (t.dataset.role) set({ role: t.dataset.role });
     else if (t.dataset.open) { set({ view: 'detail', selectedId: Number(t.dataset.open) }); window.scrollTo(0, 0); }
   });
+  const orgSelect = document.getElementById('orgSelect');
+  const switchOrg = (org) => set({ org, view: 'list', status: 'all', role: 'all', payee: 'all', selectedId: null });
+  orgSelect.addEventListener('change', (e) => switchOrg(e.target.value));
   document.getElementById('ownAccount').addEventListener('change', (e) => set({ ownAccount: e.target.checked }));
   document.getElementById('orgToggle').addEventListener('change', (e) => {
     document.getElementById('orgSelector').style.display = e.target.checked ? '' : 'none';
+    // Phase 1 has no organization selector, so the dashboard is always the personal one.
+    if (!e.target.checked) { orgSelect.value = 'personal'; switchOrg('personal'); }
   });
 
   render();

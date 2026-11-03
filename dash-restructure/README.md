@@ -9,5 +9,6 @@ What to try:
 - Open "Winter warmth for refugee families" to see a fundraiser that pays out to a charity: manage actions stay, donor details are locked.
 - Open Payouts, Donors or Reports: these stay scoped to payout accounts you can access.
 - Untick "User has their own payout account" to see a volunteer with no payout account.
+- Switch the organization to Bright Futures Collective: only its fundraisers and payout accounts show. Personal and peer-to-peer fundraisers stay in the personal view.
 
 All names and amounts are sample data.
