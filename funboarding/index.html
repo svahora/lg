@@ -253,7 +253,8 @@ const orgEntry = () => S.entry === 'org';
 const fund = () => S.entry === 'fund';
 // In-house upload isn't in v1 for fundraisers: vendor down or registry unreachable skips to the message
 const noUpload = () => fund() && (!vendor() || regDocs());
-const notV1 = () => fund() && S.step === 5 && !vendor();
+// Any vendor step on the fundraiser path, until Continue acknowledges it
+const notV1 = () => fund() && [5, 6, 7].includes(S.step) && !vendor() && !S.v1ok;
 const orgManual = () => !vendor() || regDocs() || vendorLow();
 const orgApproved = () => !orgManual() || S.approved;
 
@@ -657,7 +658,7 @@ function go(step) {
 document.addEventListener('click', e => {
   const g = e.target.closest('[data-go]'); if (g) { S.draft = false; go(+g.dataset.go); return; }
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.k) { if (b.dataset.k === 'payout') S.paySaved = false; let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
+  if (b.dataset.k) { if (b.dataset.k === 'payout') S.paySaved = false; let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; if (b.dataset.k === 'mode') S.v1ok = false; render(); return; }
   if (b.dataset.set) { Object.assign(S, JSON.parse(b.dataset.set)); S.map = false; S.checking = false; render(); return; }
   if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
   if (b.id === 'btn-map') { S.map = true; render(); return; }
@@ -665,8 +666,8 @@ document.addEventListener('click', e => {
     case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false;
       go(S.step === 0 && orgEntry() ? 3 : S.step === 5 && noUpload() ? 7 : S.step + 1); break;
     case 'back': go(S.step === 3 && orgEntry() ? 0 : S.step === 7 && noUpload() ? 5 : S.step - 1); break;
-    case 'start': if (orgEntry()) S.app = 'org'; else S.mode = 'vendor'; S.orgDone = false; go(0); break;
-    case 'novendor': S.approved = false; go(7); break;
+    case 'start': if (orgEntry()) S.app = 'org'; else S.mode = 'vendor'; S.v1ok = false; S.orgDone = false; go(0); break;
+    case 'novendor': S.approved = false; S.v1ok = true; go(7); break;
     case 'startfund': S.orgDone = true; S.entry = 'fund'; S.draft = false; go(2); break;
     case 'golive': go(8); break;
     case 'draft': S.draft = true; S.resumed = false; S.draftStep = S.step; go(1); break;
@@ -679,7 +680,7 @@ document.addEventListener('click', e => {
     case 'link': S.linked = true; render(); break;
     case 'unlink': S.linked = false; render(); break;
     case 'paysave': S.paySaved = true; render(); break;
-    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor' }); go(-1); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor', v1ok: false }); go(-1); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
