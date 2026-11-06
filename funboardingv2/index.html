@@ -87,15 +87,29 @@
   .layout { display: grid; grid-template-columns: 172px minmax(0, 1fr) auto; gap: 24px; max-width: 1320px; margin: 0 auto; padding: 28px 20px; align-items: start; }
   .user { min-width: 0; max-width: 700px; }
 
-  /* Step rail: the star marks each step */
-  .rail { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
-  .rail [data-go] { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 12px; color: var(--muted); cursor: pointer; }
-  .rail [data-go]:hover { color: var(--ink); }
-  .rail .star { width: 14px; height: 14px; flex: none; background: var(--line); clip-path: var(--star); transition: background .3s, transform .3s; }
-  .rail .done .star { background: var(--green); }
-  .rail .cur { color: var(--ink); font-weight: 700; background: var(--card); }
-  .rail .cur .star { background: var(--ink); transform: scale(1.3); }
-  .rail .vend .sn::after { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--saffron); margin-left: 6px; vertical-align: 2px; }
+  /* Step rail: the star marks each step. Mobile first: a sticky summary with a star track, the full list on demand. */
+  .rail { position: sticky; top: 0; z-index: 15; background: var(--page); margin: 0 -16px 14px; padding: 10px 16px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .rail-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .rail-head b { display: block; font-size: 15px; }
+  .rail-head .muted { font-size: 12px; }
+  .track { position: relative; display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .track::before, .track::after { content: ''; position: absolute; left: 7px; top: 50%; height: 2px; margin-top: -1px; background: var(--line); width: calc(100% - 14px); }
+  .track::after { background: var(--green); width: calc((100% - 14px) * var(--p, 0)); transition: width .4s cubic-bezier(.22, 1, .36, 1); }
+  .track [data-go] { position: relative; z-index: 1; width: 28px; height: 28px; margin: -7px; border: 0; background: none; padding: 7px; cursor: pointer; }
+  .star { display: block; width: 14px; height: 14px; flex: none; background: var(--line); clip-path: var(--star); transition: background .3s, transform .3s; }
+  .done .star { background: var(--green); }
+  .cur .star { background: var(--ink); transform: scale(1.35); }
+  .rail-list { display: none; flex-direction: column; gap: 2px; margin-top: 10px; }
+  .rail.open .rail-list { display: flex; animation: dropin .35s cubic-bezier(.22, 1, .36, 1); }
+  .rail-list [data-go] { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; color: var(--muted); cursor: pointer; }
+  .rail-list [data-go]:hover { color: var(--ink); }
+  .rail-list .cur { color: var(--ink); font-weight: 700; background: var(--card); }
+  .rail-list .vend .sn::after { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--saffron); margin-left: 6px; vertical-align: 2px; }
+  @media (min-width: 761px) {
+    .rail { position: sticky; top: 96px; margin: 0; padding: 0; border: 0; background: none; }
+    .rail-head, .track { display: none; }
+    .rail-list, .rail.open .rail-list { display: flex; margin: 0; animation: none; }
+  }
 
   /* Applicant screen */
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 28px; position: relative; }
@@ -237,9 +251,7 @@
   }
   @media (max-width: 760px) {
     .layout { display: block; padding: 14px 16px; }
-    .rail { position: static; flex-direction: row; overflow-x: auto; gap: 4px; margin-bottom: 14px; padding-bottom: 4px; }
-    .rail [data-go] { padding: 6px; }
-    .rail [data-go]:not(.cur) .sn { display: none; }
+    .topbar { position: static; }
     .card { padding: 20px; }
     .card.vendor { padding: 19px; }
     .card.vendor h1 { padding-right: 0; margin-top: 30px; }
@@ -811,7 +823,12 @@ function render() {
   $('btn-admin').classList.toggle('pulse', S.step === 3 && !S.admin);
   $('seg-app').parentElement.hidden = orgEntry();
   const at = pos();
-  $('steps').innerHTML = (S.orgDone ? '' : `<span class="${S.step < 0 ? 'cur' : 'done'}" data-go="-1" role="button" tabindex="0"><i class="star"></i><span class="sn">Start</span></span>`) + FLOW().map((k, i) => `<span class="${k === S.step ? 'cur' : i < at ? 'done' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0" ${VENDOR_STEPS.includes(k) ? 'title="Changes with the vendor"' : ''}><i class="star"></i><span class="sn">${label(k)}</span></span>`).join('');
+  const flow = (S.orgDone ? [] : [-1]).concat(FLOW()), idx = flow.indexOf(S.step);
+  const cls = k => k === S.step ? 'cur' : flow.indexOf(k) < idx ? 'done' : '';
+  $('steps').classList.toggle('open', !!S.stepsOpen);
+  $('steps').innerHTML = `<div class="rail-head"><div><b>${S.step < 0 ? 'Start' : idx < 0 ? 'Action hub' : label(S.step)}</b><span class="muted">${S.step < 0 ? 'Choose what you want to do' : idx < 0 ? 'Payout account' : `Step ${pos() + 1} of ${FLOW().length}`}</span></div><button class="btn2 sm" data-act="steps" aria-expanded="${!!S.stepsOpen}">${S.stepsOpen ? 'Hide steps' : 'All steps'}</button></div>
+    <div class="track" style="--p:${Math.max(0, idx) / (flow.length - 1)}">${flow.map(k => `<button class="${cls(k)}" data-go="${k}" aria-label="${k < 0 ? 'Start' : label(k)}"><i class="star"></i></button>`).join('')}</div>
+    <div class="rail-list">` + (S.orgDone ? '' : `<span class="${S.step < 0 ? 'cur' : 'done'}" data-go="-1" role="button" tabindex="0"><i class="star"></i><span class="sn">Start</span></span>`) + FLOW().map((k, i) => `<span class="${k === S.step ? 'cur' : i < at ? 'done' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0" ${VENDOR_STEPS.includes(k) ? 'title="Changes with the vendor"' : ''}><i class="star"></i><span class="sn">${label(k)}</span></span>`).join('') + '</div>';
   const u = S.hub ? hubScreen() : userScreen(S.step);
   const isV = VENDOR_STEPS.includes(S.step);
   const blocked = S.step === 4 && S.outcome === 'declined';
@@ -836,8 +853,9 @@ function render() {
 }
 function go(step) {
   // Open the admin view on arriving at the risk form so viewers see the live score
-  if (step === 3 && S.step !== 3) S.admin = true;
-  S.hub = false;
+  // Only where it fits beside the form; on smaller screens it would cover the page
+  if (step === 3 && S.step !== 3 && matchMedia('(min-width: 1101px)').matches) S.admin = true;
+  S.hub = false; S.stepsOpen = false;
   S.step = Math.max(-1, Math.min(STEPS.length - 1, step));
   if (S.step !== 9) S.payBack = null;
   if (S.step !== 10) S.hubBack = null;
@@ -880,6 +898,7 @@ document.addEventListener('click', e => {
       if (S.step !== 10 && FLOW()[pos() + 1] !== 10) S.hubBack = S.step; go(10); break;
     case 'closehub': S.hub = false; render(); break;
     case 'rolehelp': S.roleHelp = !S.roleHelp; render(); break;
+    case 'steps': S.stepsOpen = !S.stepsOpen; render(); break;
     case 'closetoast': S.toast = null; S.push = null; render(); break;
     case 'startfund': S.orgDone = true; S.entry = 'fund'; S.draft = false; go(2); break;
     case 'golive': go(8); break;
