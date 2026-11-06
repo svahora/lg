@@ -67,6 +67,8 @@
   .seg button { border: 0; background: transparent; color: var(--muted); padding: 5px 12px; border-radius: 999px; font-size: 13px; }
   .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); font-weight: 600; }
   #seg-app button.on { background: #4aa567; color: #fff; }
+  #seg-mode button.on { background: #f5c518; color: #1a1a1a; }
+  .ctls { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
   .seglabel { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 6px; }
   .ctl { display: flex; align-items: center; }
   .ghost { border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
@@ -205,7 +207,10 @@
 <body>
 <div class="topbar">
   <div class="brand">Onboarding prototype</div>
-  <div class="ctl" style="margin-left:auto"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
+  <div class="ctls">
+    <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
+    <div class="ctl"><span class="seglabel">KYC/KYB vendor</span><div class="seg" id="seg-mode"></div></div>
+  </div>
   <button class="ghost" id="btn-map">🗺️ Path map</button>
   <button class="ghost" id="btn-admin">🛡️ Admin view</button>
   <button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button>
@@ -627,6 +632,7 @@ function pathMap() {
 /* ---------- Render ---------- */
 function render() {
   seg('seg-app', [['org', '🏢 Organization'], ['person', '👤 Person']], 'app');
+  seg('seg-mode', [['vendor', 'With vendor'], ['inhouse', 'In-house']], 'mode');
   $('btn-admin').classList.toggle('on', S.admin);
   $('btn-admin').classList.toggle('pulse', S.step === 3 && !S.admin);
   $('bar').style.width = ((S.step + 1) / STEPS.length * 100) + '%';
@@ -636,7 +642,7 @@ function render() {
   const blocked = S.step === 4 && S.outcome === 'declined';
   const nav = u.nav || `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
   $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}${S.step >= 0 && orgEntry() ? ' &middot; Registering an organization' : ''}</div>${isV ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">${S.step === 9 ? 'Payout account' : 'Verification'}</span>${S.step === 9 ? demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect your bank']]) : demoSeg('mode', [['inhouse', 'In-house'], ['vendor', 'With vendor']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+    <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}${S.step >= 0 && orgEntry() ? ' &middot; Registering an organization' : ''}</div>${S.step === 9 ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect your bank']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
   if (S.admin) a.innerHTML = adminHead() + adminScreen(S.step);
