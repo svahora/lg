@@ -91,7 +91,7 @@
   .help { border: 0; background: transparent; font-size: 15px; font-weight: 800; color: var(--declined); padding: 0 4px; }
 
   /* Layout: rail, applicant screen, admin drawer */
-  .layout { display: grid; grid-template-columns: 172px minmax(0, 1fr) auto; gap: 24px; max-width: 1320px; margin: 0 auto; padding: 28px 20px; align-items: start; }
+  .layout { display: grid; grid-template-columns: 172px minmax(0, 1fr) auto; gap: 24px; max-width: 1320px; margin: 0 auto; padding: 28px 20px 96px; align-items: start; }
   .user { min-width: 0; max-width: 700px; }
 
   /* Step rail: the star marks each step. Mobile first: a sticky summary with a star track, the full list on demand. */
@@ -103,6 +103,10 @@
   .track::before, .track::after { content: ''; position: absolute; left: 7px; top: 50%; height: 2px; margin-top: -1px; background: var(--line); width: calc(100% - 14px); }
   .track::after { background: var(--green); width: calc((100% - 14px) * var(--p, 0)); transition: width .4s cubic-bezier(.22, 1, .36, 1); }
   .track [data-go] { position: relative; z-index: 1; width: 28px; height: 28px; margin: -7px; border: 0; background: none; padding: 7px; cursor: pointer; }
+  /* Step name on hover or focus, kept inside the screen at either end of the track */
+  .track [data-name]:hover::after, .track [data-name]:focus-visible::after { content: attr(data-name); position: absolute; top: 30px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--ink); color: var(--page); font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 8px; z-index: 2; pointer-events: none; }
+  .track [data-name]:first-child:hover::after, .track [data-name]:first-child:focus-visible::after { left: 0; transform: none; }
+  .track [data-name]:last-child:hover::after, .track [data-name]:last-child:focus-visible::after { left: auto; right: 0; transform: none; }
   .star { display: block; width: 14px; height: 14px; flex: none; background: var(--line); clip-path: var(--star); transition: background .3s, transform .3s; }
   .done .star { background: var(--green); }
   .cur .star { background: var(--ink); transform: scale(1.35); }
@@ -250,14 +254,13 @@
   .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin: 6px 0 12px; }
   .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--line); }
 
-  footer { display: flex; justify-content: center; padding: 28px 16px 96px; color: var(--muted); font-size: 13px; }
 
   @media (max-width: 1100px) {
     .layout { grid-template-columns: 172px minmax(0, 1fr); }
     .admin { position: fixed; top: 0; right: 0; bottom: 0; width: min(390px, 100%); max-height: none; border-radius: 0; z-index: 30; }
   }
   @media (max-width: 760px) {
-    .layout { display: block; padding: 14px 16px; }
+    .layout { display: block; padding: 14px 16px 96px; }
     .topbar { position: static; }
     .card { padding: 20px; }
     .card.vendor { padding: 19px; }
@@ -293,12 +296,11 @@
   <div class="user" id="user"></div>
   <div class="admin" id="admin" hidden></div>
 </div>
-<footer>Funboarding v2, a LaunchGood prototype</footer>
 <div class="overlay" id="overlay" hidden></div>
 <div class="ntoast" id="ntoast" hidden></div>
 
 <script>
-const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'vendor', linked: false, paySaved: false, role: 'analyst', atab: 'case', roleHelp: false, hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
+const S = { step: -1, settings: true, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'vendor', linked: false, paySaved: false, role: 'analyst', atab: 'case', roleHelp: false, hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
 // Smart document types: the first request defines a type, later requests reuse it
 S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
 const STEPS = ['Sign up', 'Person or organization', 'Fundraiser', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account', 'Action hub'];
@@ -508,7 +510,9 @@ function userScreen(i) {
         <svg class="hero-star" viewBox="-2 -2 104 104" aria-hidden="true"><polygon pathLength="1" points="50,0 64.64,14.64 85.36,14.64 85.36,35.36 100,50 85.36,64.64 85.36,85.36 64.64,85.36 50,100 35.36,85.36 14.64,85.36 14.64,64.64 0,50 14.64,35.36 14.64,14.64 35.36,14.64"/></svg>
         <p class="muted">What would you like to do first?</p>
         <div class="opts">${opt('org', 'Register as an organization', 'Create your account and get your organization approved. Start a fundraiser after.')}${opt('fund', 'Start a fundraiser', 'Create your account and your first fundraiser.')}</div>`,
-        nav: `<span></span><button class="btn" data-act="start">Continue</button>` };
+        nav: S.entry === 'org'
+          ? `<span></span><span class="pair"><button class="btn2" data-act="start" data-mode="inhouse">Continue in-house</button><button class="btn" data-act="start" data-mode="vendor">Continue with vendor</button></span>`
+          : `<span></span><button class="btn" data-act="start">Continue</button>` };
     }
     case 0: return {
       h: 'Create your account', body: `
@@ -839,7 +843,7 @@ function render() {
   const cls = k => k === S.step ? 'cur' : flow.indexOf(k) < idx ? 'done' : '';
   $('steps').classList.toggle('open', !!S.stepsOpen);
   $('steps').innerHTML = `<div class="rail-head"><div><b>${S.step < 0 ? 'Start' : idx < 0 ? 'Action hub' : label(S.step)}</b><span class="muted">${S.step < 0 ? 'Choose what you want to do' : idx < 0 ? 'Payout account' : `Step ${pos() + 1} of ${FLOW().length}`}</span></div><button class="btn2 sm" data-act="steps" aria-expanded="${!!S.stepsOpen}">${S.stepsOpen ? 'Hide steps' : 'All steps'}</button></div>
-    <div class="track" style="--p:${Math.max(0, idx) / (flow.length - 1)}">${flow.map(k => `<button class="${cls(k)}" data-go="${k}" aria-label="${k < 0 ? 'Start' : label(k)}"><i class="star"></i></button>`).join('')}</div>
+    <div class="track" style="--p:${Math.max(0, idx) / (flow.length - 1)}">${flow.map(k => `<button class="${cls(k)}" data-go="${k}" data-name="${k < 0 ? 'Start' : label(k)}" aria-label="${k < 0 ? 'Start' : label(k)}"><i class="star"></i></button>`).join('')}</div>
     <div class="rail-list">` + (S.orgDone ? '' : `<span class="${S.step < 0 ? 'cur' : 'done'}" data-go="-1" role="button" tabindex="0"><i class="star"></i><span class="sn">Start</span></span>`) + FLOW().map((k, i) => `<span class="${k === S.step ? 'cur' : i < at ? 'done' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0" ${VENDOR_STEPS.includes(k) ? 'title="Changes with the vendor"' : ''}><i class="star"></i><span class="sn">${label(k)}</span></span>`).join('') + '</div>';
   const u = S.hub ? hubScreen() : userScreen(S.step);
   const isV = VENDOR_STEPS.includes(S.step);
@@ -897,7 +901,7 @@ document.addEventListener('click', e => {
       go(FLOW()[pos() + 1] ?? S.step); break;
     case 'back': go(S.payBack ?? S.hubBack ?? (pos() > 0 ? FLOW()[pos() - 1] : -1)); break;
     case 'payfromhub': S.payBack = 10; go(9); break;
-    case 'start': if (orgEntry()) S.app = 'org'; S.orgDone = false; S.hubSeeded = false; S.pushed = false; S.push = null; go(0); break;
+    case 'start': if (b.dataset.mode) S.mode = b.dataset.mode; if (orgEntry()) S.app = 'org'; S.orgDone = false; S.hubSeeded = false; S.pushed = false; S.push = null; go(0); break;
     case 'sendreq': {
       const type = (S.req.type === '__new' ? S.req.newType : S.req.type).trim();
       if (!type) break;
