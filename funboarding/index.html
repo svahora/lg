@@ -876,7 +876,7 @@ $('btn-theme').addEventListener('click', () => {
 });
 paintTheme();
 const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>
-  <div class="panel"><span class="seglabel">Viewing as</span><button class="help" data-act="rolehelp" aria-label="What this role can do" aria-expanded="${S.roleHelp}">❓</button>${demoSeg('role', Object.entries(ROLE))}${S.roleHelp ? `<div class="muted" style="font-size:12px;margin-top:6px"><span class="tag">roles from compliance</span> ${ROLE_NOTE[S.role]}</div>` : ''}</div>`;
+  <div class="panel"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="seglabel">Viewing as</span>${demoSeg('role', Object.entries(ROLE))}<button class="help" data-act="rolehelp" aria-label="What this role can do" aria-expanded="${S.roleHelp}">❓</button></div>${S.roleHelp ? `<div class="muted" style="font-size:12px;margin-top:6px"><span class="tag">roles from compliance</span> ${ROLE_NOTE[S.role]}</div>` : ''}</div>`;
 const TAB_NAMES = { case: 'Case', documents: 'Request documents', notes: 'Notes', audit: 'Audit log', manager: 'Manager tools' };
 function adminBody() {
   const tabs = adminTabs();
