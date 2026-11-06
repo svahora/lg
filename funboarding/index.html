@@ -427,11 +427,11 @@ function hubRows() {
   return rows + S.requests.map((q, k) => up('req' + k, esc(q.type), 'Uploaded', esc(q.msg))).join('');
 }
 // Required actions still waiting: hand-verification uploads plus requested documents
-function hubPending() {
+function hubPending(docsOnly) {
   const keys = S.requests.map((q, k) => 'req' + k);
   if (S.step >= 5 && !vendor()) keys.push('id', ...(isOrg() ? ORG_DOCS().map(d => d[0]) : []));
   else if (S.step >= 5 && regDocs()) keys.push(...ORG_DOCS().map(d => d[0]));
-  return keys.filter(k => S.removed[k]).length + (S.step >= 6 && !S.paySaved ? 1 : 0);
+  return keys.filter(k => S.removed[k]).length + (!docsOnly && S.step >= 6 && !S.paySaved ? 1 : 0);
 }
 function hubScreen() {
   const rows = hubRows();
@@ -565,13 +565,22 @@ function userScreen(i) {
       <p class="muted">Next: add a payout account in your action hub so you can receive donations.</p>` };
     case 9: return payoutScreen();
     case 10: {
+      // Once the documents are in, the review decides: approval unlocks go-live (or releases payouts if already live)
+      const review = orgEntry() ? orgManual() : waits() || liveDuring();
+      const docsLeft = hubPending(true);
+      const done = orgEntry() ? 'Your organization is approved. Start a fundraiser and go live whenever you\'re ready.' : liveDuring() ? 'Approved. Payouts are released.' : 'Approved. Your campaign can go live.';
+      const status = !review ? '' : `<h2>Review</h2>${docsLeft
+        ? row('wait', 'Waiting for your documents', 'Complete the required actions above and we\'ll start the review.', '&middot;')
+        : S.approved ? `<div class="notice toast"><b>${done}</b></div>`
+        : row('wait', 'Under review', `Our team is reviewing your information. ${liveDuring() ? 'Your campaign stays live, with payouts held until approved.' : 'We\'ll let you know here and by email.'}`, '&middot;')}
+        ${docsLeft ? '' : `<div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>`}`;
       const pay = S.paySaved ? row('', 'Payout account', `Added, ${S.pay.type.toLowerCase()} &bull;&bull;&bull;&bull;${last4()}`)
         : `<div class="check">${tick('wait', '&middot;')}<div style="flex:1"><b>Add a payout account</b><div class="muted">Required before your first payout. Connect with Plaid or enter it by hand.</div></div><button class="btn2 sm" data-act="payfromhub">Add</button></div>`;
       return {
         h: 'Your action hub', body: `<p class="muted">Everything we need from you, in one place. Come back here any time from the bell.</p>
-        <h2>Required actions</h2>${hubRows()}${pay}
+        <h2>Required actions</h2>${hubRows()}${pay}${status}
         <p class="lock">&#128274; Your documents are encrypted and visible only to our trust and safety and compliance teams.</p>`,
-        nav: `<button class="btn2" data-act="back">Back</button>${orgEntry() ? '<button class="btn" data-act="startfund">Start a fundraiser</button>' : ''}` };
+        nav: `<button class="btn2" data-act="back">Back</button>${orgEntry() ? '<button class="btn" data-act="startfund">Start a fundraiser</button>' : review && !liveDuring() ? `<button class="btn" data-act="golive" ${S.approved && !docsLeft ? '' : 'disabled'}>Go live</button>` : ''}` };
     }
   }
 }
