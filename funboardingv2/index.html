@@ -69,8 +69,8 @@
   /* Settings panel: the prototype's own controls, dropping from the gear in the top bar */
   .settings-panel { position: absolute; top: calc(100% + 8px); right: 20px; z-index: 36; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
   .settings-panel .ctl { justify-content: space-between; }
-  .tool-list { display: flex; flex-direction: column; gap: 6px; }
-  .tool-list .ghost { text-align: left; padding: 8px 12px; }
+  .tool-list { display: flex; gap: 6px; }
+  .tool-list .ghost { flex: 1; padding: 8px 12px; white-space: nowrap; }
   @keyframes rise { from { transform: translateY(-10px); opacity: 0; } }
   .ctl { display: flex; align-items: center; gap: 8px; }
   .seglabel { font-size: 12px; color: var(--muted); }
@@ -81,7 +81,6 @@
   #seg-mode button.on { background: var(--saffron); color: #2a1d00; }
   .ghost { border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 6px 12px; border-radius: 12px; font-size: 13px; }
   .ghost.on { background: var(--lapis); border-color: var(--lapis); color: var(--lapis-ink); font-weight: 600; }
-  .ghost.theme { width: 34px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
   .ghost.theme svg { width: 18px; height: 18px; display: block; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(35, 57, 95, .5); } 70% { box-shadow: 0 0 0 10px rgba(35, 57, 95, 0); } 100% { box-shadow: 0 0 0 0 rgba(35, 57, 95, 0); } }
   .ghost.pulse { border-color: var(--lapis); animation: pulse 1.6s ease-out infinite; }
@@ -280,13 +279,14 @@
 <div class="topbar">
   <div class="brand">Funboarding</div>
   <div class="tools">
-    <button class="ghost icon" id="btn-settings" aria-label="Prototype settings" title="Prototype settings" aria-expanded="false">⚙️</button>
     <button class="ghost icon bell" id="btn-hub" data-act="hub" aria-label="Action hub" title="Action hub">🔔<span class="badge" id="hub-badge" hidden></span></button>
+    <button class="ghost icon" id="btn-settings" aria-label="Prototype settings" title="Prototype settings" aria-expanded="false">⚙️</button>
+    <button class="ghost icon theme" id="btn-theme" aria-label="Switch light or dark mode"></button>
   </div>
   <div class="settings-panel" id="settings" role="dialog" aria-label="Prototype settings" hidden>
     <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
     <div class="ctl"><span class="seglabel">KYC/KYB vendor</span><div class="seg" id="seg-mode"></div></div>
-    <div class="tool-list"><button class="ghost" id="btn-admin">🛡️ Admin view</button><button class="ghost" id="btn-map">🗺️ Path map</button><button class="ghost" id="btn-theme"></button></div>
+    <div class="tool-list"><button class="ghost" id="btn-admin">🛡️ Admin view</button><button class="ghost" id="btn-map">🗺️ Path map</button></div>
   </div>
 </div>
 <div class="layout">
@@ -934,7 +934,7 @@ document.addEventListener('click', e => {
 const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
 const isDark = () => (document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
-function paintTheme() { $('btn-theme').textContent = isDark() ? '☀️ Light mode' : '🌙 Dark mode'; }
+function paintTheme() { const d = isDark(); $('btn-theme').innerHTML = d ? SUN : MOON; $('btn-theme').title = d ? 'Switch to light mode' : 'Switch to dark mode'; }
 try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 $('btn-theme').addEventListener('click', () => {
   const t = isDark() ? 'light' : 'dark';
