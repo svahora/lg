@@ -236,6 +236,11 @@ const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low',
 S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
 const VENDOR_STEPS = [5, 6, 7, 9];
+// Two separate flows over the same screens. A registered organization starting a fundraiser only needs the campaign and go-live.
+const FLOW = () => S.entry === 'org' ? [0, 3, 4, 5, 6, 9] : S.orgDone ? [2, 8] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const ORG_LABELS = { 3: 'Risk form', 6: 'Organization result' };
+const label = k => (S.entry === 'org' && ORG_LABELS[k]) || STEPS[k];
+const pos = () => FLOW().indexOf(S.step);
 // Test values only (standard test routing and account numbers)
 S.pay = { country: 'US', bank: 'Community Bank', type: 'Checking', routing: '110000000', acct: '000123456789', acct2: '000123456789' };
 const ORG = 'Hope Valley Community Center';
@@ -502,7 +507,7 @@ function userScreen(i) {
         body: `${row(ok ? '' : 'wait', ok ? 'Approved' : 'Under review', ok ? 'You can start a fundraiser and go live.' : why + ' We\'ll be in touch soon for any required documents.', ok ? null : '&middot;')}
         <div class="notice">${ok ? 'Start a fundraiser whenever you\'re ready. It can go live right away.' : 'You can start a fundraiser now and save it as a draft. It can go live once your organization is approved.'}</div>
         ${orgManual() ? `<div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>` : ''}`,
-        nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="startfund">Start a fundraiser</button>` };
+        nav: `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="next">Add a payout account</button><button class="btn" data-act="startfund">Start a fundraiser</button></span>` };
     } else {
       const nav = `<button class="btn2" data-act="back">Back</button><span class="pair">${waits() ? '<button class="btn2" data-act="draft">Save as draft</button>' : ''}<button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button></span>`;
       const vdemo = vendor() ? `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` : '';
@@ -689,20 +694,34 @@ function mapNode(label, sub, set, extra) {
 function pathMap() {
   const p = isOrg() ? '' : 'faded';
   const st = (n, nodes) => `<div class="stage"><div class="sname">${n}</div><div class="nodes">${nodes}</div></div>`;
-  return `<div class="map"><div style="display:flex;justify-content:space-between;align-items:center"><h1 style="padding:0;margin:0">All paths</h1><button class="x" data-act="closemap">&times;</button></div>
-  <div class="legend"><span><span class="sw" style="border:2px solid var(--teal)"></span>Changes with vendor</span><span><span class="sw" style="background:var(--low-tint)"></span><span class="sw" style="background:var(--medium-tint)"></span><span class="sw" style="background:var(--high-tint)"></span><span class="sw" style="background:var(--declined-tint)"></span>Score bands</span><span><span class="sw" style="border-style:dashed;opacity:.4"></span>Skipped on the person path</span><span>Outline = where you are. Click any step to jump there.</span></div>
-  ${st('Start', mapNode('Register as an organization', 'Sign up, then straight to the risk form', { step: 0, entry: 'org', app: 'org' }) + mapNode('Start a fundraiser', 'Sign up, then every step below', { step: 0, entry: 'fund' }))}
+  const org = orgEntry();
+  const tabs = `<div class="seg" style="margin:8px 0">${[['org', '🏢 Register an organization'], ['fund', '🎯 Start a fundraiser']].map(([v, l]) => `<button class="${S.entry === v ? 'on' : ''}" data-set='${JSON.stringify(v === 'org' ? { entry: 'org', app: 'org', orgDone: false, step: 0, map: true } : { entry: 'fund', orgDone: false, step: 0, map: true })}'>${l}</button>`).join('')}</div>`;
+  const check = ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Score 85+. To the vendor', medium: '70 to 84. Vendor, trust and safety in parallel', high: '40 to 69. Vendor, compliance in parallel', declined: 'Below 40. Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join('');
+  const verify = mapNode('Action hub', 'No vendor: ID' + (isOrg() ? ' and company documents' : '') + ' as required actions', { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Documents added to the action hub', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p);
+  const payout = mapNode('Enter manually', 'Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect with Plaid', 'Log in through Plaid, approved automatically', { step: 9, payout: 'vendor' }, 'v');
+  const stages = org ? `
+  ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
+  ${st('2. Risk form', mapNode('About you and your organization', 'Straight after sign-up', { step: 3 }))}
+  ${st('3. Check', check)}
+  ${st('4. Verification', verify)}
+  ${st('5. Organization result', mapNode('Approved', 'With vendor, pass, Low. Fundraisers can go live', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Under review', 'Medium or High, vendor low result, registry or vendor down. Fundraisers are drafts until approved', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v'))}
+  ${st('6. Payout account', payout)}
+  ${st('Then', mapNode('Start a fundraiser', 'Campaign, then go live once the organization is approved', { step: 2, entry: 'fund', orgDone: true }, 'end'))}`
+  : `
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
   ${st('2. Applicant', `<div><div class="seg">${[['org', '🏢 Organization'], ['person', '👤 Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
   ${st('3. Campaign', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
-  ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Score 85+. To the vendor', medium: '70 to 84. Vendor, trust and safety in parallel', high: '40 to 69. Vendor, compliance in parallel', declined: 'Below 40. Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
-  ${st('6. Verification', mapNode('Action hub', 'No vendor: ID' + (isOrg() ? ' and company documents' : '') + ' as required actions', { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Documents added to the action hub', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
+  ${st('5. Check', check)}
+  ${st('6. Verification', verify)}
   ${st('7. Review', mapNode('Reviewer checks documents', 'No vendor. Low in a level 1 country is live meanwhile, others draft', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass, Low', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Trust and safety or compliance review', 'With vendor, pass, Medium or High. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable. Low is live meanwhile', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
-  ${st('7. Organization result', mapNode('Under review or approved', 'Registering an organization only. Then start a fundraiser', { step: 6, entry: 'org', app: 'org' }))}
-  ${st('8. Message', mapNode('Verified by hand', 'No vendor. Low in a level 1 country is live, others draft', { step: 7, mode: 'inhouse', entry: 'fund' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('8. Message', mapNode('Verified by hand', 'No vendor. Low in a level 1 country is live, others draft', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Draft while we review', 'With vendor, Medium or High', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
-  ${st('10. Payout', mapNode('Enter manually', 'Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect with Plaid', 'Log in through Plaid, approved automatically', { step: 9, payout: 'vendor' }, 'v'))}
+  ${st('10. Payout', payout)}`;
+  return `<div class="map"><div style="display:flex;justify-content:space-between;align-items:center"><h1 style="padding:0;margin:0">All paths</h1><button class="x" data-act="closemap">&times;</button></div>
+  ${tabs}
+  <div class="legend"><span><span class="sw" style="border:2px solid var(--teal)"></span>Changes with vendor</span><span><span class="sw" style="background:var(--low-tint)"></span><span class="sw" style="background:var(--medium-tint)"></span><span class="sw" style="background:var(--high-tint)"></span><span class="sw" style="background:var(--declined-tint)"></span>Score bands</span>${org ? '' : '<span><span class="sw" style="border-style:dashed;opacity:.4"></span>Skipped on the person path</span>'}<span>Outline = where you are. Click any step to jump there.</span></div>
+  ${stages}
   </div>`;
 }
 
@@ -712,14 +731,15 @@ function render() {
   seg('seg-mode', [['vendor', 'With vendor'], ['inhouse', 'In-house']], 'mode');
   $('btn-admin').classList.toggle('on', S.admin);
   $('btn-admin').classList.toggle('pulse', S.step === 3 && !S.admin);
-  $('bar').style.width = ((S.step + 1) / STEPS.length * 100) + '%';
-  $('steps').innerHTML = `<span class="${S.step < 0 ? 'cur' : ''}" data-go="-1" role="button" tabindex="0">0. Start</span>` + STEPS.map((s, k) => `<span class="${k === S.step ? 'cur' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0">${k + 1}. ${s}</span>`).join('');
+  $('seg-app').parentElement.hidden = orgEntry();
+  $('bar').style.width = ((pos() + 1) / FLOW().length * 100) + '%';
+  $('steps').innerHTML = (S.orgDone ? '' : `<span class="${S.step < 0 ? 'cur' : ''}" data-go="-1" role="button" tabindex="0">0. Start</span>`) + FLOW().map((k, i) => `<span class="${k === S.step ? 'cur' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0">${i + 1}. ${label(k)}</span>`).join('');
   const u = S.hub ? hubScreen() : userScreen(S.step);
   const isV = VENDOR_STEPS.includes(S.step);
   const blocked = S.step === 4 && S.outcome === 'declined';
   const nav = u.nav || `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
   $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">${S.hub ? 'Action hub' : `Step ${S.step + 1} of ${STEPS.length}${S.step >= 0 && orgEntry() ? ' &middot; Registering an organization' : ''}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect with Plaid']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+    <div class="eyebrow">${S.hub ? 'Action hub' : S.step < 0 ? 'Step 0 &middot; Start' : `${orgEntry() ? 'Registering an organization' : S.orgDone ? 'Starting a fundraiser for your organization' : 'Starting a fundraiser'} &middot; Step ${pos() + 1} of ${FLOW().length}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect with Plaid']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
   if (S.admin) a.innerHTML = adminBody();
@@ -742,13 +762,13 @@ document.addEventListener('click', e => {
   const g = e.target.closest('[data-go]'); if (g) { S.draft = false; go(+g.dataset.go); return; }
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.k) { if (b.dataset.k === 'payout') S.paySaved = false; let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
-  if (b.dataset.set) { Object.assign(S, JSON.parse(b.dataset.set)); S.map = false; S.checking = false; render(); return; }
+  if (b.dataset.set) { const set = JSON.parse(b.dataset.set); Object.assign(S, set); S.map = !!set.map; S.checking = false; render(); return; }
   if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
   if (b.id === 'btn-map') { S.map = true; render(); return; }
   switch (b.dataset.act) {
     case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false;
-      go(S.step === 0 && orgEntry() ? 3 : S.step + 1); break;
-    case 'back': go(S.step === 3 && orgEntry() ? 0 : S.step - 1); break;
+      go(FLOW()[pos() + 1] ?? S.step); break;
+    case 'back': go(pos() > 0 ? FLOW()[pos() - 1] : -1); break;
     case 'start': if (orgEntry()) S.app = 'org'; S.orgDone = false; go(0); break;
     case 'sendreq': {
       const type = (S.req.type === '__new' ? S.req.newType : S.req.type).trim();
