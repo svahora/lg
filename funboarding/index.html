@@ -231,7 +231,7 @@
 <div class="ntoast" id="ntoast" hidden></div>
 
 <script>
-const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false, role: 'analyst', scoreAdj: null, adj: { score: '', reason: '' }, hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
+const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false, role: 'analyst', hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
 // Smart document types: the first request defines a type, later requests reuse it
 S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
@@ -336,10 +336,10 @@ function rawScore() {
   const r = ratings().filter(x => x[3][x[1]] !== undefined);
   return Math.round(r.reduce((t, x) => t + x[3][x[1]], 0) / r.reduce((t, x) => t + x[3].Low, 0) * 100);
 }
-const score = () => S.scoreAdj ?? rawScore();
+const score = rawScore;
 const tier = n => n >= 85 ? 'low' : n >= 70 ? 'medium' : n >= 40 ? 'high' : 'declined';
 function computedBand() {
-  if (S.scoreAdj == null && ratings().some(x => x[1] === 'Not supported')) return 'declined';
+  if (ratings().some(x => x[1] === 'Not supported')) return 'declined';
   return tier(score());
 }
 function peopleTable() {
@@ -597,7 +597,7 @@ function payoutScreen() {
 // Roles from compliance (OQ-37)
 const ROLE = { analyst: 'Analyst', manager: 'Manager', director: 'Director' };
 const ROLE_NOTE = {
-  analyst: 'Trust and safety or compliance analyst. Decides on accounts and campaigns, changes bank accounts and entity information, adjusts scores.',
+  analyst: 'Trust and safety or compliance analyst. Decides on accounts and campaigns and changes bank accounts and entity information.',
   manager: 'Everything an analyst does, plus scoring rule updates, data pulls, reporting, permission changes and account deletion.',
   director: 'Everything a manager does.' };
 const acts = list => `<div class="actions">${list.map((a, k) => `<span class="${k === 0 ? 'main' : ''}">${a}</span>`).join('')}</div>`;
@@ -621,22 +621,18 @@ function adminExtras() {
     ${lbl('Message to the user', `<textarea data-r="msg" rows="2">${esc(S.req.msg)}</textarea>`)}
     <button class="btn sm" data-act="sendreq">Send request</button>
     <p class="muted" style="font-size:12px;margin:8px 0 0">Any file type for now, with size and security limits. Later, compliance picks the allowed file types.</p></div>`;
-  const adj = `<h2>Adjust score</h2><div class="panel"><div class="muted" style="font-size:12px">Only trust and safety and compliance can adjust a score. It's logged in the audit trail.${S.scoreAdj != null ? ` Adjusted from ${rawScore()} to ${S.scoreAdj}.` : ''}</div>
-    <div class="grid">${lbl('New score (0 to 100)', `<input data-a="score" type="number" min="0" max="100" value="${esc(S.adj.score)}">`)}${lbl('Reason', `<input data-a="reason" value="${esc(S.adj.reason)}" placeholder="Required">`)}</div>
-    <button class="btn sm" data-act="adjust">Adjust score</button></div>`;
   const mgr = S.role === 'analyst' ? '' : `<h2>Manager tools</h2>${acts(['Edit scoring rules', 'Export data', 'Reporting', 'Change permissions', 'Delete account'])}`;
-  return `${adj}${req}<h2>Internal notes</h2>${notes}${mgr}`;
+  return `${req}<h2>Internal notes</h2>${notes}${mgr}`;
 }
 function factors() {
   const note = S.outcome !== computedBand() ? `<p class="muted" style="font-size:12px">The demo control overrides the result. The answers alone give ${BAND[computedBand()]}.</p>` : '';
   return `<table><tr><th>Factor</th><th>Rating</th><th>Points</th></tr>${ratings().map(x => `<tr><td>${x[0]}</td><td>${x[1] === '-' ? '' : x[1]}</td><td>${ptsCell(x)}</td></tr>`).join('')}</table>${note}`;
 }
 function caseHead() {
-  return `<p><b>${name()}</b><br><span class="band ${S.outcome}">${BAND[S.outcome]}</span> &nbsp;<b>Score ${score()}</b>${S.scoreAdj != null ? ' <span class="muted">(adjusted)</span>' : ''}</p>`;
+  return `<p><b>${name()}</b><br><span class="band ${S.outcome}">${BAND[S.outcome]}</span> &nbsp;<b>Score ${score()}</b></p>`;
 }
 function audit(extra) {
   const items = ['Draft created', 'Risk form submitted', `Score: ${rawScore()}, ${BAND[S.outcome]}`];
-  if (S.scoreAdj != null) items.push(`${S.adjBy} adjusted the score from ${rawScore()} to ${S.scoreAdj}: ${esc(S.adjWhy)}`);
   items.push(vendor() ? 'Vendor verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed') : 'Documents uploaded to secure document storage');
   if (flagged() && vendor() && !vendorLow()) items.push(`${reviewer()} approved after review`);
   if (regDocs()) items.push('Company registry not reachable, organization documents uploaded');
@@ -774,16 +770,11 @@ document.addEventListener('click', e => {
     case 'rmup': S.removed[b.dataset.key] = true; render(); break;
     case 'submit': S.outcome = computedBand(); go(4); break;
     case 'addperson': S.form.people.push({ name: '', role: 'Director', dob: '' }); render(); break;
-    case 'adjust': {
-      const n = Math.round(+S.adj.score);
-      if (S.adj.score === '' || !(n >= 0 && n <= 100) || !S.adj.reason.trim()) break;
-      Object.assign(S, { scoreAdj: n, adjBy: ROLE[S.role], adjWhy: S.adj.reason.trim(), outcome: tier(n), adj: { score: '', reason: '' } }); render(); break;
-    }
     case 'rmperson': S.form.people.splice(+b.dataset.i, 1); render(); break;
     case 'link': S.linked = true; render(); break;
     case 'unlink': S.linked = false; render(); break;
     case 'paysave': S.paySaved = true; render(); break;
-    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor', requests: [], toast: null, scoreAdj: null }); go(-1); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor', requests: [], toast: null }); go(-1); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
@@ -805,14 +796,12 @@ const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; co
 const adminBody = () => adminHead() + adminScreen(S.step) + adminExtras();
 function onField(e, full) {
   const t = e.target;
-  if (t.dataset.a) { S.adj[t.dataset.a] = t.value; return; }
-  if (t.dataset.f === 'impact') { S.form.impact = [...t.selectedOptions].map(o => o.value); S.scoreAdj = null; S.outcome = computedBand(); if (full) render(); return; }
+  if (t.dataset.f === 'impact') { S.form.impact = [...t.selectedOptions].map(o => o.value); S.outcome = computedBand(); if (full) render(); return; }
   if (t.dataset.r) { S.req[t.dataset.r] = t.value; if (full && t.tagName === 'SELECT') render(); return; }
   if (t.dataset.p) { S.pay[t.dataset.p] = t.value; if (full) render(); else $('paysave').disabled = !payOk(); return; }
   if (t.dataset.f) S.form[t.dataset.f] = t.value;
   else if (t.dataset.pf) S.form.people[+t.dataset.pi][t.dataset.pf] = t.value;
   else return;
-  S.scoreAdj = null;
   S.outcome = computedBand();
   if (full) render(); else if (S.admin) $('admin').innerHTML = adminBody();
 }
