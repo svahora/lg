@@ -1,6 +1,6 @@
 # Funboarding: design plan
 
-**Subject:** LaunchGood onboarding for people and organizations raising donations, along with the compliance checks behind it.
+**Subject:** onboarding for people and organizations raising donations, along with the compliance checks behind it.
 **Audience:** the product, compliance and engineering reviewers who walk the prototype, and the fundraisers it simulates.
 **Primary job:** let reviewers walk every path, from the risk score through verification to the action hub, and see the admin side next to it.
 
@@ -50,5 +50,5 @@ Everything is left aligned. The rail is a real sequence, so its markers carry or
 ## Review against the brief (what changed)
 
 - **Dropped a tessellated geometric background on every page.** It was the generic "Islamic pattern" move and decoration, not information. The star now lives only where it means progress.
-- **Dropped cream paper.** It's a common default, and it fights LaunchGood green. Sage keeps the palette inside the brand.
+- **Dropped cream paper.** It's a common default, and it fights the brand green. Sage keeps the palette close to it.
 - **Dropped a horizontal progress bar and step strip.** Those come from the SaaS kit. A vertical rail reads as a path and leaves the measure for content.

@@ -366,7 +366,7 @@ S.form = {
   inc: 'United States of America', ops: 'United States of America', impact: ['Pakistan'], entity: 'charity', structure: 'standalone', regdate: '2016-05-01', reg: '12-3456789', website: 'hopevalley.example.org', social: 'instagram.com/hopevalley',
   people: [{ name: 'Amina Rahman', role: 'Director', dob: '1988-03-14' }, { name: 'Yusuf Khan', role: 'Authorized signatory', dob: '1979-11-02' }]
 };
-// Compliance's country levels (Notion OQ-6). Level 4 isn't supported, so it declines.
+// Compliance's country levels (OQ-6). Level 4 isn't supported, so it declines.
 const LEVELS = [["Level 1 (low risk)", "Low", ["Australia", "Austria", "Belgium", "Canada", "Denmark", "Finland", "France", "Germany", "Iceland", "Ireland", "Italy", "Luxembourg", "Netherlands", "New Zealand", "Norway", "Poland", "Sweden", "Switzerland", "United Kingdom", "United States of America", "Virgin Islands, U.S. (501(c)(3) only)"]], ["Level 2 (medium risk)", "Medium", ["Singapore", "Japan", "Spain"]], ["Level 3 (high risk)", "High", ["Algeria", "Antarctica", "Bahrain", "Bangladesh", "China", "Egypt", "Estonia", "Greece", "Hungary", "India", "Indonesia", "Jordan", "Korea, Republic of", "Kuwait", "Malaysia", "Morocco", "Oman", "Pakistan", "Philippines", "Portugal", "Qatar", "Saudi Arabia", "South Africa", "Thailand", "Tunisia", "Turkey", "United Arab Emirates", "Uruguay"]], ["Level 4 (not supported)", "Not supported", ["Afghanistan", "Aland Islands", "Albania", "American Samoa", "Andorra", "Angola", "Anguilla", "Antigua and Barbuda", "Argentina", "Armenia", "Aruba", "Azerbaijan", "Bahamas", "Barbados", "Belarus", "Belize", "Benin", "Bermuda", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Bouvet Island", "Brazil", "British Indian Ocean Territory", "Brunei Darussalam", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Cape Verde/Cabo Verde", "Cayman Islands", "Central African Republic", "Chad", "Chile", "Christmas Island", "Cocos (Keeling) Islands", "Colombia", "Comoros", "Democratic Republic of the Congo", "The Republic of the Congo", "Cook Islands", "Costa Rica", "Côte D'Ivoire", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "El Salvador", "Equatorial Guinea", "Eritrea", "Ethiopia", "Falkland Islands (Malvinas)", "Faroe Islands", "Fiji", "French Guiana", "French Polynesia", "French Southern Territories", "Gabon", "Gambia", "Georgia", "Ghana", "Gibraltar", "Greenland", "Grenada", "Guadeloupe", "Guam", "Guatemala", "Guernsey", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Heard Island and McDonald Islands", "Holy See (Vatican City State)", "Honduras", "Hong Kong (SAR)", "Iraq", "Isle of Man", "Israel", "Jamaica", "Jersey", "Kazakhstan", "Kenya", "Kiribati", "North Korea", "Kyrgyzstan", "Lao People's Democratic Republic", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Macau (SAR)", "North Macedonia", "Madagascar", "Malawi", "Maldives", "Mali", "Malta", "Marshall Islands", "Martinique", "Mauritania", "Mauritius", "Mayotte", "Mexico", "Micronesia, Federated States of", "Moldova, Republic of", "Monaco", "Mongolia", "Montenegro", "Montserrat", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands Antilles", "New Caledonia", "Nicaragua", "Niger", "Nigeria", "Niue", "Norfolk Island", "Northern Mariana Islands", "Palau", "Palestinian Territories", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Pitcairn Islands", "Puerto Rico", "Reunion", "Romania", "The Russian Federation", "Rwanda", "Saint Barthelemy", "Saint Helena", "Saint Kitts and Nevis", "Saint Lucia", "Saint Martin", "Saint Pierre and Miquelon", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "Somaliland", "South Georgia and the South Sandwich Islands", "South Sudan", "Sri Lanka", "Sudan", "Suriname", "Svalbard and Jan Mayen Islands", "Swaziland/Eswatini", "Syrian Arab Republic", "Taiwan", "Tajikistan", "Tanzania and Zanzibar", "Timor-Leste", "Togo", "Tokelau", "Tonga", "Trinidad and Tobago", "Turkmenistan", "Turks and Caicos Islands", "Tuvalu", "Uganda", "Ukraine", "United States Minor Outlying Islands", "Uzbekistan", "Vanuatu", "Venezuela", "Vietnam", "Virgin Islands, British", "Wallis and Futuna", "Western Sahara", "Yemen", "Zambia", "Zimbabwe", "Iran", "Kosovo"]]];
 const CRISK = Object.fromEntries(LEVELS.flatMap(([, risk, list]) => list.map(c => [c, risk])));
 const ALL_COUNTRIES = LEVELS.flatMap(l => l[2]).sort();
@@ -513,7 +513,7 @@ function userScreen(i) {
     case -1: {
       const opt = (v, t, d) => `<button class="opt ${S.entry === v ? 'on' : ''}" data-k="entry" data-v="${v}"><span class="dot"></span><span><b>${t}</b><small>${d}</small></span></button>`;
       return {
-        h: 'Welcome to LaunchGood', body: `
+        h: 'Welcome', body: `
         <svg class="hero-star" viewBox="-2 -2 104 104" aria-hidden="true"><polygon pathLength="1" points="50,0 64.64,14.64 85.36,14.64 85.36,35.36 100,50 85.36,64.64 85.36,85.36 64.64,85.36 50,100 35.36,85.36 14.64,85.36 14.64,64.64 0,50 14.64,35.36 14.64,14.64 35.36,14.64"/></svg>
         <p class="muted">What would you like to do first?</p>
         <div class="opts">${opt('org', 'Register as an organization', 'Create your account and get your organization approved. Start a fundraiser after.')}${opt('fund', 'Start a fundraiser', 'Create your account and your first fundraiser.')}</div>`,
@@ -645,7 +645,7 @@ function userScreen(i) {
         : row('wait', 'Under review', `Our team is reviewing your information. ${liveDuring() ? 'Your fundraiser stays live, with payouts held until approved.' : 'We\'ll let you know here and by email.'}`, '&middot;')}
         ${docsLeft ? '' : `<div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>`}`;
       const pay = S.paySaved ? row('', 'Payout account', `Added, ${S.pay.type.toLowerCase()} &bull;&bull;&bull;&bull;${last4()}`)
-        : `<div class="check">${tick('wait', '&middot;')}<div style="flex:1"><b>Add a payout account</b><div class="muted">Required before your first payout. Connect with Plaid or enter it by hand.</div></div><button class="btn2 sm" data-act="payfromhub">Add</button></div>`;
+        : `<div class="check">${tick('wait', '&middot;')}<div style="flex:1"><b>Add a payout account</b><div class="muted">Required before your first payout. Connect your bank or enter it by hand.</div></div><button class="btn2 sm" data-act="payfromhub">Add</button></div>`;
       return {
         h: 'Your action hub', body: `<p class="muted">Everything we need from you, in one place. Come back here any time from the bell.</p>
         <h2>Required actions</h2>${hubRows()}${pay}${status}
@@ -674,12 +674,12 @@ function payoutScreen() {
     : `<button class="btn2" data-act="back">Back</button><button class="btn" id="paysave" data-act="paysave" ${payOk() ? '' : 'disabled'}>Save payout account</button>`;
   if (S.payout === 'vendor') return {
     h: 'Add a payout account', nav, body: `
-    <p class="muted">Log in to your bank through Plaid to connect the account where donations are paid out. This runs separately from your organization's approval.</p>
-    <div class="vendorbox"><div class="vhead">Secure bank connection by Plaid, inside the product</div><div class="vbody">
+    <p class="muted">Log in to your bank to connect the account where donations are paid out. This runs separately from your organization's approval.</p>
+    <div class="vendorbox"><div class="vhead">Secure bank connection, inside the product</div><div class="vbody">
     ${S.linked
       ? `<div class="check">${tick()}<div style="flex:1"><b>${P.bank}, checking &bull;&bull;&bull;&bull;6789</b><div class="muted">Account holder: ${who}. Name matches.</div></div>${S.paySaved ? '' : `<button class="rm trash" data-act="unlink" aria-label="Remove bank account">${TRASH}</button>`}</div>`
-      : row('wait', 'Choose your bank', '', '1') + row('wait', 'Log in through Plaid', 'We never see your bank username or password.', '2') + row('wait', 'Pick the account for payouts', 'Account ownership is checked automatically.', '3')
-        + `<div style="padding:10px 0"><button class="btn" data-act="link">Connect with Plaid</button></div>`}
+      : row('wait', 'Choose your bank', '', '1') + row('wait', 'Log in to your bank', 'We never see your bank username or password.', '2') + row('wait', 'Pick the account for payouts', 'Account ownership is checked automatically.', '3')
+        + `<div style="padding:10px 0"><button class="btn" data-act="link">Connect your bank</button></div>`}
     </div></div>
     <p class="muted" style="margin-top:10px">Can't find your bank? Switch to <b>Enter manually</b> above.</p>
     ${S.paySaved ? done : ''}${lock}` };
@@ -720,7 +720,7 @@ function scoreSummary() {
   return `<div class="panel"><b>Summary:</b> Score ${score()}, ${BAND[computedBand()]}. Ratings: ${highs} High, ${meds} Medium. ${missing.length ? 'Missing: ' + missing.join(', ') + '.' : 'Everything required was provided.'}
     ${items.map(([k, v]) => row(v ? '' : 'warn', k, v ? 'Provided' : 'Not provided', v ? null : '!')).join('')}</div>`;
 }
-const auditExtra = () => [...(S.step >= 8 ? ['Fundraiser live'] : []), ...(S.step === 9 && S.paySaved ? [S.payout === 'vendor' ? 'Payout account connected through Plaid, approved automatically' : 'Payout account added, sent to compliance review'] : [])];
+const auditExtra = () => [...(S.step >= 8 ? ['Fundraiser live'] : []), ...(S.step === 9 && S.paySaved ? [S.payout === 'vendor' ? 'Payout account connected by bank login, approved automatically' : 'Payout account added, sent to compliance review'] : [])];
 function adminTabs() {
   if (S.step < 4) return { case: adminScreen(S.step) };
   const types = S.docTypes.map(t => [t, t]).concat([['__new', '+ New document type']]);
@@ -746,7 +746,7 @@ function caseHead() {
 const STAFF = { analyst: 'Layla Haddad', manager: 'Daniel Okafor', director: 'Sara Lindqvist' };
 const TS = 'Layla Haddad (trust and safety)', CO = 'Daniel Okafor (compliance)';
 function audit(extra) {
-  const U = PERSON, SYS = 'System', V = 'Vendor (SEON)';
+  const U = PERSON, SYS = 'System', V = 'Verification vendor';
   const items = [[U, 'Draft created'], [U, 'Risk form submitted'], [SYS, `Score: ${rawScore()}, ${BAND[S.outcome]}`]];
   items.push(vendor() ? [V, 'Verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed')] : [U, 'Documents uploaded to secure document storage']);
   if (flagged() && vendor() && !vendorLow()) items.push([S.outcome === 'high' ? CO : TS, 'Approved after review']);
@@ -764,7 +764,7 @@ function adminScreen(i) {
   if (i === 3) return riskPreview();
   if (i <= 2) return `<h3>Nothing to review</h3><p>${S.draft ? 'A draft is saved. ' : ''}Drafts are not in any queue. Compliance starts when the user submits for go-live.</p>`;
   if (i === 4) {
-    const q = { low: ['Sent to the vendor', 'No review needed.'], medium: ['Sent to the vendor, trust and safety queue', 'Standard due diligence plus manual review. Trust and safety reviews the flagged items in parallel and can request documents.'], high: ['Sent to the vendor, compliance queue', 'Enhanced due diligence. Compliance reviews through the Freshdesk escalation queue in parallel.'], declined: ['Declined', 'Do not onboard. The reason stays internal. The user sees a generic message.'] }[S.outcome];
+    const q = { low: ['Sent to the vendor', 'No review needed.'], medium: ['Sent to the vendor, trust and safety queue', 'Standard due diligence plus manual review. Trust and safety reviews the flagged items in parallel and can request documents.'], high: ['Sent to the vendor, compliance queue', 'Enhanced due diligence. Compliance reviews through the escalation queue in parallel.'], declined: ['Declined', 'Do not onboard. The reason stays internal. The user sees a generic message.'] }[S.outcome];
     const list = S.outcome === 'medium' ? ['Approve', 'Request documents', 'Escalate to compliance', 'Decline']
       : S.outcome === 'high' ? ['Approve', 'Request documents', 'Escalate to compliance', 'Decline'] : [];
     return `<h3>${q[0]}</h3>${caseHead()}<p>${q[1]}</p>${list.length ? acts(list) : ''}
@@ -785,9 +785,9 @@ function adminScreen(i) {
   }
   if (i === 9) {
     const v = S.payout === 'vendor', has = v ? S.linked : true;
-    const rows = [['Method', v ? 'Bank connection through Plaid' : 'Entered manually'],
+    const rows = [['Method', v ? 'Bank login' : 'Entered manually'],
       ['Account', has ? `${S.pay.type} &bull;&bull;&bull;&bull;${last4()}` : 'Not connected yet'],
-      ['Holder name', has ? (v ? `${isOrg() ? ORG : PERSON}, matched by Plaid` : holder()) : '-'],
+      ['Holder name', has ? (v ? `${isOrg() ? ORG : PERSON}, matched by the bank login` : holder()) : '-'],
       ...(v ? [] : [['Bank statement', S.removed.stmt ? 'Missing' : 'Uploaded']]),
       ['Status', !S.paySaved ? 'Not submitted' : v ? 'Approved automatically' : 'In compliance review']];
     return `<h3>Payout account</h3>${caseHead()}<table>${rows.map(([k, val]) => `<tr><th>${k}</th><td>${val}</td></tr>`).join('')}</table>
@@ -808,7 +808,7 @@ function pathMap() {
   const tabs = `<div class="seg" style="margin:8px 0">${[['org', '🏢 Register an organization'], ['fund', '🎯 Start a fundraiser']].map(([v, l]) => `<button class="${S.entry === v ? 'on' : ''}" data-set='${JSON.stringify(v === 'org' ? { entry: 'org', app: 'org', orgDone: false, step: 0, map: true } : { entry: 'fund', orgDone: false, step: 0, map: true })}'>${l}</button>`).join('')}</div>`;
   const check = ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Score 85+. To the vendor', medium: '70 to 84. Vendor, trust and safety in parallel', high: '40 to 69. Vendor, compliance in parallel', declined: 'Below 40. Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join('');
   const verify = mapNode('Action hub', 'No vendor: ID' + (isOrg() ? ' and company documents' : '') + ' as required actions', { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Documents added to the action hub', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p);
-  const payout = mapNode('Connect with Plaid', 'Default. Log in through Plaid, approved automatically', { step: 9, payout: 'vendor' }, 'v') + mapNode('Enter manually', 'Fallback. Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v');
+  const payout = mapNode('Connect your bank', 'Default. Log in to your bank, approved automatically', { step: 9, payout: 'vendor' }, 'v') + mapNode('Enter manually', 'Fallback. Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v');
   const stages = org ? `
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
   ${st('2. Risk form', mapNode('About you and your organization', 'Straight after sign-up', { step: 3 }))}
@@ -856,7 +856,7 @@ function render() {
   const blocked = S.step === 4 && S.outcome === 'declined';
   const nav = u.nav || `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
   $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''} ${S.step < 0 && !S.hub ? 'start' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">${S.hub ? 'Action hub' : S.step < 0 ? 'Before you start' : `${orgEntry() ? 'Registering an organization' : S.orgDone ? 'Starting a fundraiser for your organization' : 'Starting a fundraiser'}${pos() < 0 ? ', action hub' : `, step ${pos() + 1} of ${FLOW().length}`}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['vendor', 'Connect with Plaid'], ['manual', 'Enter manually']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+    <div class="eyebrow">${S.hub ? 'Action hub' : S.step < 0 ? 'Before you start' : `${orgEntry() ? 'Registering an organization' : S.orgDone ? 'Starting a fundraiser for your organization' : 'Starting a fundraiser'}${pos() < 0 ? ', action hub' : `, step ${pos() + 1} of ${FLOW().length}`}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['vendor', 'Connect your bank'], ['manual', 'Enter manually']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
   if (S.admin) a.innerHTML = adminBody();

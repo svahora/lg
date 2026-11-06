@@ -1,6 +1,6 @@
 # LG prototypes
 
-Clickable LaunchGood product prototypes, one folder each. Served at https://svahora.github.io/lg/.
+Clickable product prototypes, one folder each. Served at https://svahora.github.io/lg/.
 
 | Prototype | What it shows | Live |
 |---|---|---|
