@@ -1,4 +1,4 @@
-# Funboarding v2: design plan
+# Funboarding: design plan
 
 **Subject:** LaunchGood onboarding for people and organizations raising donations, along with the compliance checks behind it.
 **Audience:** the product, compliance and engineering reviewers who walk the prototype, and the fundraisers it simulates.

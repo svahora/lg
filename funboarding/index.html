@@ -3,252 +3,312 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Funboarding · onboarding prototype</title>
+<title>Funboarding</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛂</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Reem+Kufi:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon fill='%234aa567' points='50,0 64.64,14.64 85.36,14.64 85.36,35.36 100,50 85.36,64.64 85.36,85.36 64.64,85.36 50,100 35.36,85.36 14.64,85.36 14.64,64.64 0,50 14.64,35.36 14.64,14.64 35.36,14.64'/></svg>">
 <style>
   :root {
-    --bg: #f6f6f4; --card: #ffffff; --ink: #161616; --muted: #6b6b6b; --line: #e3e3df;
-    --primary: #111111; --primary-ink: #ffffff;
-    --teal: #0f8f80; --teal-tint: #e6f5f2;
-    --admin: #eaf2fd; --admin-line: #c9dcf6;
-    --low: #2e8b3e; --low-tint: #e4f3e6;
-    --medium: #b88a00; --medium-tint: #fbf3d6;
-    --high: #d0661b; --high-tint: #fbe8da;
-    --declined: #c62f2f; --declined-tint: #f9e1e1;
-    --page: linear-gradient(180deg, #ffffff 0%, #f5f2fb 100%);
+    --page: #edf2ec; --bg: #e3ebe2; --card: #fbfcf9; --ink: #173a2b; --muted: #5a6d62; --line: #cddacf;
+    --primary: #173a2b; --primary-ink: #f4f8f3;
+    --green: #4aa567; --green-tint: #dcefe1;
+    --saffron: #e8b23a; --saffron-tint: #fbf0d4; --saffron-ink: #855a00;
+    --teal: var(--saffron-ink); --teal-tint: var(--saffron-tint);
+    --lapis: #23395f; --lapis-ink: #e9eef8; --lapis-muted: #b3c2de;
+    --admin: #e2e8f4; --admin-line: #c3cfe6;
+    --low: #2f7d45; --low-tint: #dcefe1;
+    --medium: #9a6c00; --medium-tint: #fbf0d4;
+    --high: #b4561a; --high-tint: #f8e3d4;
+    --declined: #b8322f; --declined-tint: #f6dcdb;
+    --star: polygon(50% 0, 64.64% 14.64%, 85.36% 14.64%, 85.36% 35.36%, 100% 50%, 85.36% 64.64%, 85.36% 85.36%, 64.64% 85.36%, 50% 100%, 35.36% 85.36%, 14.64% 85.36%, 14.64% 64.64%, 0 50%, 14.64% 35.36%, 14.64% 14.64%, 35.36% 14.64%);
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #141414; --card: #1e1e1e; --ink: #ededed; --muted: #a3a3a3; --line: #333;
-      --primary: #f2f2f2; --primary-ink: #111;
-      --teal: #3cc2b0; --teal-tint: #12302c;
-      --admin: #16233a; --admin-line: #2b4269;
-      --low: #5cc56b; --low-tint: #183420; --medium: #e0b93a; --medium-tint: #3a3112;
-      --high: #f0904a; --high-tint: #3d2615; --declined: #f06c6c; --declined-tint: #3d1b1b;
-      --page: #141414;
+      --page: #0e1712; --bg: #13201a; --card: #17251d; --ink: #e3ede6; --muted: #9db2a6; --line: #2a3d33;
+      --primary: #d4eadb; --primary-ink: #0e1712;
+      --green: #5cc27a; --green-tint: #183424;
+      --saffron-tint: #33290f; --saffron-ink: #f0c561;
+      --lapis: #182640; --lapis-ink: #e3e9f5; --lapis-muted: #9fb0d0;
+      --admin: #1d2a45; --admin-line: #34466e;
+      --low: #6fd08b; --low-tint: #183424; --medium: #f0c561; --medium-tint: #33290f;
+      --high: #f0904a; --high-tint: #3d2615; --declined: #f07a76; --declined-tint: #3d1b1b;
+      color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #141414; --card: #1e1e1e; --ink: #ededed; --muted: #a3a3a3; --line: #333;
-    --primary: #f2f2f2; --primary-ink: #111;
-    --teal: #3cc2b0; --teal-tint: #12302c;
-    --admin: #16233a; --admin-line: #2b4269;
-    --low: #5cc56b; --low-tint: #183420; --medium: #e0b93a; --medium-tint: #3a3112;
-    --high: #f0904a; --high-tint: #3d2615; --declined: #f06c6c; --declined-tint: #3d1b1b;
-    --page: #141414;
+    --page: #0e1712; --bg: #13201a; --card: #17251d; --ink: #e3ede6; --muted: #9db2a6; --line: #2a3d33;
+    --primary: #d4eadb; --primary-ink: #0e1712;
+    --green: #5cc27a; --green-tint: #183424;
+    --saffron-tint: #33290f; --saffron-ink: #f0c561;
+    --lapis: #182640; --lapis-ink: #e3e9f5; --lapis-muted: #9fb0d0;
+    --admin: #1d2a45; --admin-line: #34466e;
+    --low: #6fd08b; --low-tint: #183424; --medium: #f0c561; --medium-tint: #33290f;
+    --high: #f0904a; --high-tint: #3d2615; --declined: #f07a76; --declined-tint: #3d1b1b;
+    color-scheme: dark;
   }
-  .ghost.theme { width: 34px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
-  .ghost.theme svg { width: 18px; height: 18px; display: block; }
-  .modebar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; padding: 8px 10px; border-radius: 10px; background: var(--teal-tint); width: fit-content; }
-  .modebar .seglabel { color: var(--teal); }
-  #btn-map { margin-left: auto; }
-  footer { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 28px 16px 36px; color: var(--muted); font-size: 14px; }
-  footer b { color: var(--ink); }
-  .draftcard { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0; background: var(--bg); }
-  .opt-row { opacity: .75; border-top: 1px dashed var(--line); }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, .55); } 70% { box-shadow: 0 0 0 10px rgba(66, 133, 244, 0); } 100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); } }
-  .ghost.pulse { background: var(--admin); border-color: var(--admin-line); animation: pulse 1.6s ease-out infinite; }
-  .ghost.pulse::after { content: ' \00b7 see the score'; font-size: 11px; color: var(--muted); }
-  .pair { display: flex; gap: 10px; flex-wrap: wrap; }
-  footer .ar { font-size: 16px; }
+
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; background: var(--page); background-attachment: fixed; color: var(--ink); font: 15px/1.5 "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.6 "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   button { font: inherit; cursor: pointer; }
-
-  /* Top bar */
-  .topbar { position: sticky; top: 0; z-index: 20; background: var(--card); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
-  .brand { font-weight: 700; margin-right: 8px; display: flex; align-items: center; gap: 8px; }
-  .logo { width: 24px; height: 24px; color: var(--primary); }
-  .brand .ar { font-weight: 500; color: var(--muted); font-size: 16px; }
-  .brand .sub { font-weight: 400; color: var(--muted); font-size: 12px; }
-  @media (max-width: 768px) { .brand .sub { display: none; } }
-  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--bg); }
-  .seg button { border: 0; background: transparent; color: var(--muted); padding: 5px 12px; border-radius: 999px; font-size: 13px; }
-  .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); font-weight: 600; }
-  #seg-app button.on { background: #4aa567; color: #fff; }
-  #seg-mode button.on { background: #f5c518; color: #1a1a1a; }
-  .ctls { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-  .seglabel { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 6px; }
-  .ctl { display: flex; align-items: center; }
-  .ghost { border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
-  .ghost.on { background: var(--admin); border-color: var(--admin-line); font-weight: 600; }
-
-  /* Progress */
-  .progress { padding: 12px 16px 0; max-width: 1200px; margin: 0 auto; }
-  .bar { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
-  .bar > div { height: 100%; background: var(--primary); transition: width .3s; }
-  .steps { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--muted); gap: 4px; }
-  .steps span.cur { color: var(--ink); font-weight: 600; }
-  .steps span.vend { color: var(--teal); }
-  .steps span { cursor: pointer; border-radius: 4px; padding: 1px 2px; }
-  .steps span:hover { text-decoration: underline; }
-
-  /* Layout */
-  .layout { display: flex; max-width: 1200px; margin: 0 auto; gap: 16px; padding: 16px; align-items: flex-start; }
-  .user { flex: 1 1 60%; min-width: 0; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; position: relative; }
-  .card.vendor { border: 2px solid var(--teal); padding: 21px; }
-  .pill { position: absolute; top: 14px; right: 14px; font-size: 11px; font-weight: 600; color: var(--teal); background: var(--teal-tint); border-radius: 999px; padding: 3px 10px; }
-  .eyebrow { font-size: 12px; color: var(--muted); }
-  h1 { font-size: 22px; margin: 2px 0 6px; line-height: 1.25; padding-right: 150px; }
-  h2 { font-size: 15px; margin: 18px 0 8px; }
-  p { margin: 6px 0; }
+  :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  h1, .brand { font-family: "Reem Kufi", "Plus Jakarta Sans", sans-serif; }
+  h1 { font-size: 30px; font-weight: 600; line-height: 1.15; margin: 6px 0 10px; }
+  h2 { font-size: 16px; font-weight: 700; margin: 22px 0 8px; }
+  p { margin: 6px 0; max-width: 64ch; }
   .muted { color: var(--muted); }
-  .tag { display: inline-block; border: 1px dashed var(--muted); color: var(--muted); border-radius: 6px; font-size: 11px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; font-weight: 500; }
-  .field { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; background: var(--bg); margin: 6px 0; }
-  .field b { display: block; font-size: 11px; color: var(--muted); font-weight: 500; }
-  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
-  .opt { display: flex; gap: 10px; align-items: flex-start; text-align: left; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 12px; padding: 12px; }
-  .opt small { display: block; color: var(--muted); font-size: 12px; }
+
+  /* Top bar: the prototype's controls */
+  .topbar { position: sticky; top: 0; z-index: 20; background: var(--page); border-bottom: 1px solid var(--line); padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+  .brand { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .brand::before { content: ''; width: 18px; height: 18px; background: var(--green); clip-path: var(--star); }
+  .tools { margin-left: auto; display: flex; gap: 8px; }
+  .ghost.icon { font-size: 17px; width: 40px; height: 36px; padding: 0; display: inline-grid; place-items: center; }
+  /* Settings panel: the prototype's own controls, dropping from the gear in the top bar */
+  .settings-panel { position: absolute; top: calc(100% + 8px); right: 20px; z-index: 36; background: var(--ink); color: var(--page); border: 1px solid var(--ink); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
+  .settings-panel .ctl { justify-content: space-between; }
+  /* Inverted so the open menu reads apart from the form; the caret points back to the gear */
+  .settings-panel::before { content: ''; position: absolute; top: -7px; right: 62px; width: 12px; height: 12px; background: var(--ink); transform: rotate(45deg); }
+  .settings-panel .seglabel { color: var(--page); opacity: .8; }
+  #btn-settings[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); }
+  .tool-list { display: flex; gap: 6px; }
+  .tool-list .ghost { flex: 1; padding: 8px 12px; white-space: nowrap; }
+  @keyframes rise { from { transform: translateY(-10px); opacity: 0; } }
+  .ctl { display: flex; align-items: center; gap: 8px; }
+  .seglabel { font-size: 12px; color: var(--muted); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--bg); }
+  .seg button { border: 0; background: transparent; color: var(--muted); padding: 4px 12px; border-radius: 999px; font-size: 13px; }
+  .seg button.on { background: var(--card); color: var(--ink); font-weight: 600; }
+  #seg-app button.on { background: var(--green); color: #fff; }
+  #seg-mode button.on { background: var(--saffron); color: #2a1d00; }
+  .ghost { border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 6px 12px; border-radius: 12px; font-size: 13px; }
+  .ghost.on { background: var(--lapis); border-color: var(--lapis); color: var(--lapis-ink); font-weight: 600; }
+  .ghost.theme svg { width: 18px; height: 18px; display: block; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(35, 57, 95, .5); } 70% { box-shadow: 0 0 0 10px rgba(35, 57, 95, 0); } 100% { box-shadow: 0 0 0 0 rgba(35, 57, 95, 0); } }
+  .ghost.pulse { border-color: var(--lapis); animation: pulse 1.6s ease-out infinite; }
+  .bell { position: relative; }
+  .bell .badge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--declined); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; }
+  .help { border: 0; background: transparent; font-size: 15px; font-weight: 800; color: var(--declined); padding: 0 4px; }
+
+  /* Layout: rail, applicant screen, admin drawer */
+  .layout { display: grid; grid-template-columns: 172px minmax(0, 1fr) auto; gap: 24px; max-width: 1320px; margin: 0 auto; padding: 28px 20px; align-items: start; }
+  .user { min-width: 0; max-width: 700px; }
+
+  /* Step rail: the star marks each step. Mobile first: a sticky summary with a star track, the full list on demand. */
+  .rail { position: sticky; top: 0; z-index: 15; background: var(--page); margin: 0 -16px 14px; padding: 10px 16px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .rail-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .rail-head b { display: block; font-size: 15px; }
+  .rail-head .muted { font-size: 12px; }
+  .track { position: relative; display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .track::before, .track::after { content: ''; position: absolute; left: 7px; top: 50%; height: 2px; margin-top: -1px; background: var(--line); width: calc(100% - 14px); }
+  .track::after { background: var(--green); width: calc((100% - 14px) * var(--p, 0)); transition: width .4s cubic-bezier(.22, 1, .36, 1); }
+  .track [data-go] { position: relative; z-index: 1; width: 28px; height: 28px; margin: -7px; border: 0; background: none; padding: 7px; cursor: pointer; }
+  /* Step name on hover or focus, kept inside the screen at either end of the track */
+  .track [data-name]:hover::after, .track [data-name]:focus-visible::after { content: attr(data-name); position: absolute; top: 30px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--ink); color: var(--page); font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 8px; z-index: 2; pointer-events: none; }
+  .track [data-name]:first-child:hover::after, .track [data-name]:first-child:focus-visible::after { left: 0; transform: none; }
+  .track [data-name]:last-child:hover::after, .track [data-name]:last-child:focus-visible::after { left: auto; right: 0; transform: none; }
+  .star { display: block; width: 14px; height: 14px; flex: none; background: var(--line); clip-path: var(--star); transition: background .3s, transform .3s; }
+  .done .star { background: var(--green); }
+  .cur .star { background: var(--ink); transform: scale(1.35); }
+  .rail-list { display: none; flex-direction: column; gap: 2px; margin-top: 10px; }
+  .rail.open .rail-list { display: flex; animation: dropin .35s cubic-bezier(.22, 1, .36, 1); }
+  .rail-list [data-go] { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; color: var(--muted); cursor: pointer; }
+  .rail-list [data-go]:hover { color: var(--ink); }
+  .rail-list .cur { color: var(--ink); font-weight: 700; background: var(--card); }
+  .rail-list .vend .sn::after { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--saffron); margin-left: 6px; vertical-align: 2px; }
+  @media (min-width: 761px) {
+    .rail { position: sticky; top: 96px; margin: 0; padding: 0; border: 0; background: none; }
+    .rail-head, .track { display: none; }
+    .rail-list, .rail.open .rail-list { display: flex; margin: 0; animation: none; }
+  }
+
+  /* Applicant screen */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 28px; position: relative; }
+  .card.vendor { border: 2px solid var(--saffron); padding: 27px; }
+  .card.vendor h1 { padding-right: 150px; }
+  .pill { position: absolute; top: 18px; right: 18px; font-size: 12px; font-weight: 600; color: var(--saffron-ink); background: var(--saffron-tint); border-radius: 999px; padding: 3px 10px; }
+  .eyebrow { font-size: 13px; color: var(--muted); }
+  .card.start { overflow: hidden; }
+  .card.start h1 { font-size: 38px; max-width: 12ch; }
+  .hero-star { position: absolute; top: -46px; right: -46px; width: 220px; height: 220px; pointer-events: none; }
+  .hero-star polygon { fill: var(--green-tint); stroke: var(--green); stroke-width: 1.2; stroke-dasharray: 1; stroke-dashoffset: 0; animation: draw 1.6s cubic-bezier(.65, 0, .35, 1) both, fillin .8s .9s both; }
+  @keyframes draw { from { stroke-dashoffset: 1; } }
+  @keyframes fillin { from { fill: transparent; } }
+  .tag { display: inline-block; border: 1px dashed var(--muted); color: var(--muted); border-radius: 6px; font-size: 11px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; font-weight: 500; font-family: "Plus Jakarta Sans", sans-serif; }
+  .field { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--bg); margin: 6px 0; }
+  .field b { display: block; font-size: 12px; color: var(--muted); font-weight: 500; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .opt { display: flex; gap: 12px; align-items: flex-start; text-align: left; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 14px; padding: 14px; }
+  .opt small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
   .opt .dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--muted); flex: none; margin-top: 3px; }
-  .opt.on { border: 2px solid var(--primary); padding: 11px; }
-  .opt.on .dot { border: 5px solid var(--primary); }
-  @media (max-width: 768px) { .opts { grid-template-columns: 1fr; } }
-  .fld { display: block; margin: 6px 0; }
-  .fld > span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
-  .fld small { display: block; font-size: 11px; color: var(--muted); margin-top: 3px; }
-  input, select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; }
-  input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
-  .people { border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .opt.on { border: 2px solid var(--green); padding: 13px; }
+  .opt.on .dot { border: 5px solid var(--green); }
+  .fld { display: block; margin: 8px 0; }
+  .fld > span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .fld small { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  input, select, .admin textarea { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); outline-offset: 1px; }
+  select[multiple] { padding: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  .people { border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
   .prow { display: grid; grid-template-columns: 1.4fr 1.2fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
-  .own { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
-  .own input { width: 70px; }
-  .rm { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 8px; width: 34px; height: 34px; }
-  .add { font-size: 13px; padding: 7px 12px; }
-  .warnline { color: var(--declined); font-size: 13px; margin: 8px 0 0; }
-  .admin .band { font-size: 11px; }
-  @media (max-width: 768px) { .prow { grid-template-columns: 1fr 1fr; } }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
-  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; gap: 10px; flex-wrap: wrap; }
-  .btn { background: var(--primary); color: var(--primary-ink); border: 0; padding: 10px 20px; border-radius: 999px; font-weight: 600; }
-  .btn:disabled { opacity: .35; cursor: not-allowed; }
-  .btn2 { background: transparent; color: var(--ink); border: 1px solid var(--line); padding: 10px 18px; border-radius: 999px; }
-  .btn2.sm { padding: 5px 12px; font-size: 13px; flex: none; align-self: center; }
+  .rm { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 10px; width: 34px; height: 34px; }
   .rm.trash { display: inline-grid; place-items: center; flex: none; align-self: center; }
   .rm.trash:hover { color: var(--declined); }
-  .lock { font-size: 12px; color: var(--muted); margin: 14px 0 0; }
-  .stmt { border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 16px 0 6px; background: var(--bg); }
-  .stmt h2 { margin: 0 0 4px; }
-  .stmt .file { display: flex; gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
-  .stmt .file svg { width: 26px; height: 26px; flex: none; color: var(--muted); }
-  .stmt .drop { border: 2px dashed var(--line); border-radius: 10px; padding: 18px; margin-top: 10px; text-align: center; background: var(--card); }
-  .notice { border-radius: 10px; padding: 12px 14px; margin: 12px 0; background: var(--bg); border: 1px solid var(--line); }
-  .demo { border: 1px dashed var(--muted); border-radius: 10px; padding: 10px 12px; margin: 14px 0; font-size: 13px; }
-  .demo .seg { display: flex; width: fit-content; margin-top: 8px; flex-wrap: wrap; }
-  .cover { height: 150px; border-radius: 10px; background: linear-gradient(135deg, #c9d6c4, #e9dcc3); display: flex; align-items: flex-end; padding: 12px; color: #2b2b2b; font-weight: 600; margin: 10px 0; }
-  .check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .add { font-size: 13px; padding: 7px 12px; }
+  .warnline { color: var(--declined); font-size: 13px; margin: 8px 0 0; }
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 26px; gap: 10px; flex-wrap: wrap; }
+  .pair { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { background: var(--primary); color: var(--primary-ink); border: 0; padding: 11px 22px; border-radius: 12px; font-weight: 700; }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+  .btn.sm { padding: 6px 14px; font-size: 13px; }
+  .btn2 { background: transparent; color: var(--ink); border: 1px solid var(--line); padding: 10px 18px; border-radius: 12px; font-weight: 600; }
+  .btn2.sm { padding: 5px 12px; font-size: 13px; flex: none; align-self: center; }
+  .lock { font-size: 13px; color: var(--muted); margin: 16px 0 0; }
+  .notice { border-radius: 12px; padding: 12px 14px; margin: 14px 0; background: var(--bg); }
+  .toast { background: var(--green-tint); }
+  .demo { border: 1px dashed var(--saffron); background: var(--saffron-tint); border-radius: 12px; padding: 10px 12px; margin: 16px 0; font-size: 13px; }
+  .demo .seg { display: flex; width: fit-content; margin-top: 8px; flex-wrap: wrap; background: var(--card); }
+  .modebar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0 12px; padding: 8px 10px; border-radius: 12px; background: var(--saffron-tint); width: fit-content; }
+  .modebar .seglabel { color: var(--saffron-ink); }
+  .draftcard { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 12px 0; background: var(--bg); }
+  .opt-row { opacity: .75; border-top: 1px dashed var(--line); }
+  .cover { height: 160px; border-radius: 14px; background: var(--green-tint); display: flex; align-items: flex-end; padding: 14px 16px; color: var(--ink); font-family: "Reem Kufi", sans-serif; font-size: 22px; font-weight: 600; margin: 12px 0; }
+  .check { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); }
   .check:last-child { border-bottom: 0; }
-  .tick { width: 20px; height: 20px; border-radius: 50%; background: var(--low); color: #fff; font-size: 12px; display: grid; place-items: center; flex: none; margin-top: 2px; }
+  .tick { width: 20px; height: 20px; border-radius: 50%; background: var(--green); color: #fff; font-size: 12px; display: grid; place-items: center; flex: none; margin-top: 2px; }
   .tick.wait { background: var(--line); color: var(--muted); }
-  .tick.warn { background: var(--medium); }
-  .vendorbox { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 10px; }
-  .vendorbox .vhead { background: var(--bg); padding: 8px 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .tick.warn { background: var(--saffron); color: #2a1d00; }
+  .vendorbox { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 12px; }
+  .vendorbox .vhead { background: var(--saffron-tint); color: var(--saffron-ink); padding: 8px 12px; font-size: 13px; }
   .vendorbox .vbody { padding: 4px 12px; }
-  .spinner { width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; margin: 16px 0; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .band { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+  .stmt { border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 16px 0 6px; background: var(--bg); }
+  .stmt h2 { margin: 0 0 4px; }
+  .stmt .file { display: flex; gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-top: 10px; }
+  .stmt .file svg { width: 26px; height: 26px; flex: none; color: var(--muted); }
+  .stmt .drop { border: 2px dashed var(--line); border-radius: 12px; padding: 18px; margin-top: 10px; text-align: center; background: var(--card); }
+  .spinner { width: 34px; height: 34px; background: var(--green); clip-path: var(--star); animation: spin 1.4s cubic-bezier(.65, 0, .35, 1) infinite; margin: 18px 0; }
+  @keyframes spin { to { transform: rotate(90deg); } }
+  .band { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; }
   .band.low { color: var(--low); background: var(--low-tint); }
   .band.medium { color: var(--medium); background: var(--medium-tint); }
   .band.high { color: var(--high); background: var(--high-tint); }
   .band.declined { color: var(--declined); background: var(--declined-tint); }
-  .mail { border: 1px solid var(--line); border-radius: 10px; margin-top: 10px; }
-  .mail .mh { padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .mail { border: 1px solid var(--line); border-radius: 12px; margin-top: 12px; }
+  .mail .mh { padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
   .mail .mb { padding: 12px; }
-  .toast { border-left: 3px solid var(--primary); }
-  .live { display: inline-block; background: var(--low-tint); color: var(--low); font-weight: 700; font-size: 12px; padding: 2px 10px; border-radius: 999px; }
-  .meter { height: 8px; border-radius: 8px; background: var(--line); margin: 10px 0 4px; }
+  .live { display: inline-block; background: var(--green); color: #fff; font-weight: 700; font-size: 12px; padding: 2px 10px; border-radius: 999px; }
+  .meter { height: 8px; border-radius: 8px; background: var(--bg); margin: 12px 0 4px; }
 
-  /* Admin drawer */
-  .admin { flex: 0 0 40%; background: var(--admin); border: 1px solid var(--admin-line); border-radius: 14px; padding: 18px; position: sticky; top: 120px; max-height: calc(100vh - 140px); overflow: auto; animation: slidein .25s ease-out; }
-  @keyframes slidein { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  /* Admin drawer: a different room */
+  .admin { width: 390px; background: var(--lapis); color: var(--lapis-ink); border-radius: 18px; padding: 20px; position: sticky; top: 96px; max-height: calc(100vh - 116px); overflow: auto; animation: slidein .35s cubic-bezier(.22, 1, .36, 1); }
+  @keyframes slidein { from { transform: translateX(24px); opacity: 0; } }
   .admin .ahead { display: flex; justify-content: space-between; align-items: center; }
-  .admin .albl { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-  .admin h3 { margin: 6px 0 10px; font-size: 16px; }
-  .admin table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--card); border-radius: 10px; overflow: hidden; }
-  .admin td, .admin th { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  .admin th { font-size: 11px; color: var(--muted); font-weight: 600; }
-  .actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-  .actions span { border: 1px solid var(--admin-line); background: var(--card); border-radius: 8px; padding: 5px 10px; font-size: 12px; }
-  .actions span.main { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
-  .log { font-size: 13px; background: var(--card); border-radius: 10px; padding: 6px 12px; }
-  .log div { padding: 6px 0; border-bottom: 1px solid var(--line); }
-  .log div:last-child { border-bottom: 0; }
-  .x { border: 0; background: transparent; font-size: 20px; color: var(--muted); }
-  .ntoast { position: fixed; right: 16px; top: 64px; z-index: 35; max-width: 360px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid #4aa567; border-radius: 12px; padding: 12px 14px; box-shadow: 0 6px 24px rgba(0,0,0,.18); animation: dropin .6s cubic-bezier(.22, 1, .36, 1); }
-  @keyframes dropin { from { transform: translateY(-14px) scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
-  .ntoast::before { content: ''; position: absolute; top: -7px; right: var(--caret, 18px); width: 12px; height: 12px; background: var(--card); border-left: 1px solid var(--line); border-top: 1px solid var(--line); transform: rotate(45deg); }
-  .bell { position: relative; }
-  .bell .badge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--declined); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; }
-  .ntoast .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
-  .btn.sm { padding: 6px 14px; font-size: 13px; }
-  select[multiple] { padding: 4px; }
-  .admin textarea { font: inherit; width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--card); color: var(--ink); }
-  .help { border: 0; background: transparent; font-size: 15px; font-weight: 800; color: var(--declined); padding: 0 4px; vertical-align: middle; }
-  .atabs { margin: 0 0 12px; display: flex; align-items: center; }
+  .admin .albl { font-size: 13px; font-weight: 700; color: var(--lapis-muted); }
+  .admin .x { color: var(--lapis-muted); }
+  .admin h3 { margin: 6px 0 10px; font-size: 17px; }
+  .admin h2 { color: var(--lapis-ink); }
+  .admin > p, .admin > .muted, .admin > p .muted, .admin .atabs .muted { color: var(--lapis-muted); }
+  .admin > p b { color: var(--lapis-ink); }
+  .admin table, .admin .panel, .admin .log, .admin .notice { background: var(--card); color: var(--ink); }
+  .admin table { width: 100%; border-collapse: collapse; font-size: 13px; border-radius: 12px; overflow: hidden; }
+  .admin td, .admin th { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .admin th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .admin .band { font-size: 11px; }
+  .panel { border-radius: 12px; padding: 12px 14px; margin: 12px 0; }
+  .atabs { margin: 0 0 14px; display: flex; align-items: center; gap: 10px; }
+  .atabs .seg { display: flex; flex-wrap: wrap; width: fit-content; background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .18); }
   .atabs button { font-size: 16px; padding: 4px 12px; }
-  .atabs .seg { display: flex; flex-wrap: wrap; width: fit-content; background: var(--card); }
-  .panel { background: var(--card); border-radius: 10px; padding: 10px 12px; margin: 12px 0; }
+  .atabs .seg button.on { background: var(--card); }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+  .actions span { border: 1px solid var(--admin-line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 5px 10px; font-size: 12px; }
+  .actions span.main { background: var(--green); color: #fff; border-color: var(--green); }
+  .log { font-size: 13px; border-radius: 12px; padding: 4px 14px; }
+  .log div { padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .log div:last-child { border-bottom: 0; }
+  .log b { display: block; }
+  .x { border: 0; background: transparent; font-size: 22px; color: var(--muted); }
+
+  /* Notification from the bell */
+  .ntoast { position: fixed; right: 16px; top: 64px; z-index: 35; max-width: 360px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: dropin .6s cubic-bezier(.22, 1, .36, 1); }
+  @keyframes dropin { from { transform: translateY(-14px) scale(.98); opacity: 0; } }
+  .ntoast::before { content: ''; position: absolute; top: -7px; right: var(--caret, 18px); width: 12px; height: 12px; background: var(--card); border-left: 1px solid var(--line); border-top: 1px solid var(--line); transform: rotate(45deg); }
+  .ntoast b::before { content: ''; display: inline-block; width: 12px; height: 12px; background: var(--green); clip-path: var(--star); margin-right: 8px; vertical-align: -1px; }
+  .ntoast .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
 
   /* Path map */
-  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; display: flex; justify-content: center; align-items: flex-start; overflow: auto; padding: 24px 12px; }
-  .map { background: var(--card); border-radius: 14px; padding: 20px; max-width: 980px; width: 100%; }
-  .stage { display: flex; gap: 12px; align-items: stretch; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .overlay { position: fixed; inset: 0; background: rgba(14, 23, 18, .55); z-index: 40; display: flex; justify-content: center; align-items: flex-start; overflow: auto; padding: 24px 12px; }
+  .map { background: var(--card); border-radius: 18px; padding: 24px; max-width: 1000px; width: 100%; }
+  .stage { display: flex; gap: 14px; align-items: stretch; padding: 10px 0; border-bottom: 1px solid var(--line); }
   .stage:last-child { border-bottom: 0; }
-  .sname { flex: 0 0 120px; font-size: 12px; color: var(--muted); padding-top: 8px; }
+  .sname { flex: 0 0 140px; font-size: 13px; color: var(--muted); padding-top: 8px; }
   .nodes { display: flex; flex-wrap: wrap; gap: 8px; }
-  .node { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 10px; padding: 7px 11px; font-size: 13px; text-align: left; }
-  .node small { display: block; color: var(--muted); font-size: 11px; }
-  .node.v { border: 2px solid var(--teal); }
-  .node.cur { outline: 3px solid var(--primary); outline-offset: 1px; }
+  .node { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 12px; padding: 8px 12px; font-size: 13px; text-align: left; }
+  .node small { display: block; color: var(--muted); font-size: 12px; }
+  .node.v { border: 2px solid var(--saffron); }
+  .node.cur { outline: 3px solid var(--ink); outline-offset: 1px; }
   .node.faded { opacity: .35; border-style: dashed; }
   .node.end { border-style: dashed; }
   .node.b-low { background: var(--low-tint); } .node.b-medium { background: var(--medium-tint); }
   .node.b-high { background: var(--high-tint); } .node.b-declined { background: var(--declined-tint); }
-  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); margin: 6px 0 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin: 6px 0 12px; }
   .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--line); }
 
-  @media (max-width: 768px) {
-    .layout { display: block; padding: 12px 16px; }
-    .admin { position: fixed; inset: 0; top: 0; max-height: none; border-radius: 0; z-index: 30; }
-    .grid { grid-template-columns: 1fr; }
-    h1 { padding-right: 0; margin-top: 28px; }
+
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: 172px minmax(0, 1fr); }
+    .admin { position: fixed; top: 0; right: 0; bottom: 0; width: min(390px, 100%); max-height: none; border-radius: 0; z-index: 30; }
+  }
+  @media (max-width: 760px) {
+    .layout { display: block; padding: 14px 16px 28px; }
+    .topbar { position: relative; }
+    .settings-panel { right: 16px; }
+    .settings-panel::before { right: 66px; }
+    .card { padding: 20px; }
+    .card.vendor { padding: 19px; }
+    .card.vendor h1 { padding-right: 0; margin-top: 30px; }
+    .card.start h1 { font-size: 30px; }
+    .hero-star { width: 150px; height: 150px; top: -40px; right: -40px; }
+    .opts, .grid { grid-template-columns: 1fr; }
+    .prow { grid-template-columns: 1fr 1fr; }
     .sname { flex-basis: 80px; }
-    .steps span { display: none; } .steps span.cur { display: inline; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
 <body>
 <div class="topbar">
-  <div class="brand">Onboarding prototype</div>
-  <div class="ctls">
+  <div class="brand">Funboarding</div>
+  <div class="tools">
+    <button class="ghost icon bell" id="btn-hub" data-act="hub" aria-label="Action hub" title="Action hub">🔔<span class="badge" id="hub-badge" hidden></span></button>
+    <button class="ghost icon" id="btn-settings" aria-label="Prototype settings" title="Prototype settings" aria-expanded="false">⚙️</button>
+    <button class="ghost icon theme" id="btn-theme" aria-label="Switch light or dark mode"></button>
+  </div>
+  <div class="settings-panel" id="settings" role="dialog" aria-label="Prototype settings" hidden>
     <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
     <div class="ctl"><span class="seglabel">KYC/KYB vendor</span><div class="seg" id="seg-mode"></div></div>
+    <div class="tool-list"><button class="ghost" id="btn-admin">🛡️ Admin view</button><button class="ghost" id="btn-map">🗺️ Path map</button></div>
   </div>
-  <button class="ghost" id="btn-map">🗺️ Path map</button>
-  <button class="ghost bell" id="btn-hub" data-act="hub" aria-label="Action hub">🔔<span class="badge" id="hub-badge" hidden></span></button>
-  <button class="ghost" id="btn-admin">🛡️ Admin view</button>
-  <button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button>
 </div>
-<div class="progress"><div class="bar"><div id="bar"></div></div><div class="steps" id="steps"></div></div>
 <div class="layout">
+  <nav class="rail" id="steps" aria-label="Steps"></nav>
   <div class="user" id="user"></div>
   <div class="admin" id="admin" hidden></div>
 </div>
-<footer><b>Funboarding</b></footer>
 <div class="overlay" id="overlay" hidden></div>
 <div class="ntoast" id="ntoast" hidden></div>
 
 <script>
-const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'vendor', linked: false, paySaved: false, role: 'analyst', atab: 'case', roleHelp: false, hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
+const S = { step: -1, settings: true, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'vendor', linked: false, paySaved: false, role: 'analyst', atab: 'case', roleHelp: false, hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
 // Smart document types: the first request defines a type, later requests reuse it
 S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
-const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account', 'Action hub'];
+const STEPS = ['Sign up', 'Person or organization', 'Fundraiser', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account', 'Action hub'];
 const VENDOR_STEPS = [5, 6, 7, 9];
-// Two separate flows over the same screens. A registered organization starting a fundraiser only needs the campaign, go-live and payout.
+// Two separate flows over the same screens. A registered organization starting a fundraiser only needs the fundraiser, go-live and payout.
 // Verified by hand: no verification step, the uploads wait in the action hub. The action hub is the last page of every flow.
 const FLOW = () => S.entry === 'org' ? (vendor() ? [0, 3, 4, 5, 6, 10] : [0, 3, 4, 6, 10]) : S.orgDone ? [2, 8, 10] : vendor() ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 10] : [0, 1, 2, 3, 4, 6, 7, 8, 10];
 const ORG_LABELS = { 3: 'Risk form', 6: 'Organization result' };
@@ -372,8 +432,7 @@ function peopleTable() {
 function riskForm() {
   const F = S.form;
   const impact = `<select data-f="impact" multiple size="4">${ALL_COUNTRIES.map(c => `<option value="${esc(c)}" ${F.impact.includes(c) ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>`;
-  return `<p class="muted">We use these answers to check your application in seconds. No documents or IDs yet. Try changing them, and open Admin view to see the effect.</p>
-  <h2>About you</h2>
+  return `<h2>About you</h2>
   <div class="grid">${lbl('Full legal name', inp('legal', F.legal), 'As it appears on official documents')}${lbl('Date of birth', inp('dob', F.dob, 'date'))}
   ${lbl('Home address', inp('addr', F.addr), 'Full address. No ID needed at this step.')}${lbl('Country', csel('res', F.res))}
   ${lbl('Email', inp('email', F.email, 'email'))}${lbl('Mobile', inp('phone', F.phone, 'tel'))}</div>
@@ -400,7 +459,7 @@ function riskPreview() {
 
 function draftCard() {
   if (!S.draft) return '';
-  return `<div class="draftcard"><div><span class="muted" style="font-size:12px">${S.draftStep === 6 ? 'Draft saved. We\'re reviewing it and will let you know when it can go live.' : S.draftStep === 5 ? 'Draft saved. Finish verifying to go live.' : 'Draft saved. No checks are needed until you go live.'}</span><br><b>Clean water for 300 families</b><br><span class="muted">${name()} &middot; $25,000 goal</span></div><button class="btn" data-act="resume">Continue draft</button></div>
+  return `<div class="draftcard"><div><span class="muted" style="font-size:12px">${S.draftStep === 6 ? 'Draft saved. We\'re reviewing it and will let you know when it can go live.' : S.draftStep === 5 ? 'Draft saved. Finish verifying to go live.' : 'Draft saved. No checks are needed until you go live.'}</span><br><b>Clean water for 300 families</b><br><span class="muted">${name()}, $25,000 goal</span></div><button class="btn" data-act="resume">Continue draft</button></div>
   <p class="muted" style="margin:14px 0 4px">Or start something new:</p>`;
 }
 
@@ -451,9 +510,12 @@ function userScreen(i) {
       const opt = (v, t, d) => `<button class="opt ${S.entry === v ? 'on' : ''}" data-k="entry" data-v="${v}"><span class="dot"></span><span><b>${t}</b><small>${d}</small></span></button>`;
       return {
         h: 'Welcome to LaunchGood', body: `
-        <p class="muted">What would you like to do?</p>
-        <div class="opts">${opt('org', 'Register as an organization', 'Create your account and get your organization approved. Start a fundraiser after.')}${opt('fund', 'Start a fundraiser', 'Create your account and your first campaign.')}</div>`,
-        nav: `<span></span><button class="btn" data-act="start">Continue</button>` };
+        <svg class="hero-star" viewBox="-2 -2 104 104" aria-hidden="true"><polygon pathLength="1" points="50,0 64.64,14.64 85.36,14.64 85.36,35.36 100,50 85.36,64.64 85.36,85.36 64.64,85.36 50,100 35.36,85.36 14.64,85.36 14.64,64.64 0,50 14.64,35.36 14.64,14.64 35.36,14.64"/></svg>
+        <p class="muted">What would you like to do first?</p>
+        <div class="opts">${opt('org', 'Register as an organization', 'Create your account and get your organization approved. Start a fundraiser after.')}${opt('fund', 'Start a fundraiser', 'Create your account and your first fundraiser.')}</div>`,
+        nav: S.entry === 'org'
+          ? `<span></span><span class="pair"><button class="btn2" data-act="start" data-mode="inhouse">Continue in-house</button><button class="btn" data-act="start" data-mode="vendor">Continue with vendor</button></span>`
+          : `<span></span><button class="btn" data-act="start">Continue</button>` };
     }
     case 0: return {
       h: 'Create your account', body: `
@@ -469,7 +531,7 @@ function userScreen(i) {
       ${draftCard()}${choice()}
       <div class="notice">You'll fundraise from your personal account. No organization search or setup needed.</div>` };
     case 2: return {
-      h: 'Your campaign', body: `
+      h: 'Your fundraiser', body: `
       <p class="muted">Already filled in for this walkthrough.</p>
       <div class="cover">Clean water for 300 families</div>
       <div class="grid">${field('Title', 'Clean water for 300 families')}${field('Goal', '$25,000')}${field('Category', 'Water and sanitation')}${field('Fundraising as', name())}</div>
@@ -527,18 +589,18 @@ function userScreen(i) {
         body: `${row(ok ? '' : 'wait', ok ? 'Approved' : 'Under review', ok ? 'You can start a fundraiser and go live.' : why + (orgManual() && (!vendor() || regDocs()) ? ' Complete the required actions in your action hub.' : ' We\'ll be in touch soon for any required documents.'), ok ? null : '&middot;')}
         <div class="notice">${ok ? 'Start a fundraiser whenever you\'re ready. It can go live right away.' : 'You can start a fundraiser now and save it as a draft. It can go live once your organization is approved.'}</div>
         ${orgManual() ? `<div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>` : ''}`,
-        nav: `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="startfund">Start a fundraiser</button><button class="btn" data-act="next">Go to action hub</button></span>` };
+        nav: `<button class="btn2" data-act="back">Back</button><span class="pair">${ok ? '<button class="btn2" data-act="next">Go to action hub</button><button class="btn" data-act="startfund">Start a fundraiser</button>' : '<button class="btn2" data-act="startfund">Start a fundraiser</button><button class="btn" data-act="next">Go to action hub</button>'}</span>` };
     } else {
       const nav = `<button class="btn2" data-act="back">Back</button><span class="pair">${waits() ? '<button class="btn2" data-act="draft">Save as draft</button>' : ''}<button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button></span>`;
       const vdemo = vendor() ? `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` : '';
       const who = vendorLow() ? 'Our compliance team is reviewing' : regDocs() ? 'Our team is checking your organization documents' : !vendor() ? 'Our team is checking your documents' : 'Our team is reviewing your information';
       const got = !vendor() ? row('wait', 'Your documents', 'Upload them in your action hub', '&middot;') : vendorLow() ? row('', 'Verification finished', '') : row('', 'Identity verified', 'By the vendor') + (regDocs() ? row('wait', 'Organization documents', 'The company registry couldn\'t be reached. Upload them in your action hub', '&middot;') : '');
       if (liveDuring()) return {
-        h: 'Your campaign is live', nav, body: `<div class="notice"><span class="live">LIVE</span> &nbsp;Your campaign went live when you submitted. Payouts are held until your documents are approved.</div>
-        ${got}${row('', 'Campaign live', '')}${row('wait', who, 'Nothing for you to do right now.', '&middot;')}${row('wait', 'Payouts released', 'Once the review approves your documents', '&middot;')}${vdemo}` };
+        h: 'Your fundraiser is live', nav, body: `<div class="notice"><span class="live">LIVE</span> &nbsp;Your fundraiser went live when you submitted. Payouts are held until your documents are approved.</div>
+        ${got}${row('', 'Fundraiser live', '')}${row('wait', who, 'Nothing for you to do right now.', '&middot;')}${row('wait', 'Payouts released', 'Once the review approves your documents', '&middot;')}${vdemo}` };
       if (waits()) return {
         h: S.approved ? 'You\'re approved' : vendorLow() ? 'We need a little more time' : !vendor() || regDocs() ? 'We\'re reviewing your documents' : 'We\'re reviewing your information', nav, body: `${got}${row(S.approved ? '' : 'wait', who, S.approved ? 'Approved' : 'Nothing for you to do right now.', S.approved ? null : '&middot;')}${row(S.approved ? '' : 'wait', 'Ready to go live', '', S.approved ? null : '&middot;')}
-        ${S.approved ? `<div class="notice toast"><b>Approved.</b> Your campaign can go live.</div>` : `<div class="draftcard"><div><span class="muted" style="font-size:12px">Saved as a draft while we review</span><br><b>Clean water for 300 families</b><br><span class="muted">We'll let you know in the product and by email when you can go live.</span></div></div>`}
+        ${S.approved ? `<div class="notice toast"><b>Approved.</b> Your fundraiser can go live.</div>` : `<div class="draftcard"><div><span class="muted" style="font-size:12px">Saved as a draft while we review</span><br><b>Clean water for 300 families</b><br><span class="muted">We'll let you know in the product and by email when you can go live.</span></div></div>`}
         <div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>${vdemo}` };
       return {
         h: 'You\'re verified', nav, body: `${got}${isOrg() ? row('', 'Organization verified', 'From the company registry') : ''}${row('', 'Ready to go live', '')}${vdemo}` };
@@ -546,13 +608,13 @@ function userScreen(i) {
     case 7: {
       let inapp, mail;
       const docsLine = ' We\'ll be in touch soon for any required documents.';
-      if (noUpload() && liveDuring()) inapp = mail = 'Your campaign is live and your registration is under review. Payouts will be held until approved.' + docsLine;
-      else if (noUpload()) inapp = mail = 'Your campaign has been saved as a draft while we review your information. We\'ll let you know when you can go live and begin accepting donations.' + docsLine;
-      else if (liveDuring()) { inapp = `${regDocs() ? 'Your identity is verified and your' : 'Your'} campaign is live. Your documents are under review, and payouts are held until they're approved.`; mail = 'Your campaign is live. Our team is reviewing your documents, and payouts are held until they\'re approved. Then: "You\'re approved. Payouts are on."'; }
-      else if (flagged() && !vendorLow()) inapp = mail = 'Your campaign has been saved as a draft while we review your information. We\'ll let you know when you can go live and begin accepting donations.' + docsLine;
-      else if (vendorLow()) { inapp = 'We need a little more time to review your application. Your campaign is saved as a draft until then.'; mail = 'We\'re taking a little more time with your application. Your campaign is saved as a draft, and we\'ll tell you when it can go live. No action is needed from you.'; }
-      else if (waits()) { inapp = 'Your campaign is saved as a draft while we review your documents. We\'ll tell you here when you can go live.'; mail = 'Documents received. Your campaign is saved as a draft while our team reviews them. Then: "You\'re approved. Your campaign can go live."'; }
-      else { inapp = 'You\'re verified. Your campaign can go live now.'; mail = 'You\'re verified. Go live whenever you\'re ready.'; }
+      if (noUpload() && liveDuring()) inapp = mail = 'Your fundraiser is live and your registration is under review. Payouts will be held until approved.' + docsLine;
+      else if (noUpload()) inapp = mail = 'Your fundraiser has been saved as a draft while we review your information. We\'ll let you know when you can go live and begin accepting donations.' + docsLine;
+      else if (liveDuring()) { inapp = `${regDocs() ? 'Your identity is verified and your' : 'Your'} fundraiser is live. Your documents are under review, and payouts are held until they're approved.`; mail = 'Your fundraiser is live. Our team is reviewing your documents, and payouts are held until they\'re approved. Then: "You\'re approved. Payouts are on."'; }
+      else if (flagged() && !vendorLow()) inapp = mail = 'Your fundraiser has been saved as a draft while we review your information. We\'ll let you know when you can go live and begin accepting donations.' + docsLine;
+      else if (vendorLow()) { inapp = 'We need a little more time to review your application. Your fundraiser is saved as a draft until then.'; mail = 'We\'re taking a little more time with your application. Your fundraiser is saved as a draft, and we\'ll tell you when it can go live. No action is needed from you.'; }
+      else if (waits()) { inapp = 'Your fundraiser is saved as a draft while we review your documents. We\'ll tell you here when you can go live.'; mail = 'Documents received. Your fundraiser is saved as a draft while our team reviews them. Then: "You\'re approved. Your fundraiser can go live."'; }
+      else { inapp = 'You\'re verified. Your fundraiser can go live now.'; mail = 'You\'re verified. Go live whenever you\'re ready.'; }
       return {
         h: 'What you hear from us', body: `
         <div class="notice toast"><b>In the product:</b> ${inapp}</div>
@@ -565,18 +627,18 @@ function userScreen(i) {
       <div class="cover">Clean water for 300 families</div>
       <div class="meter"></div><p><b>$0</b> <span class="muted">raised of $25,000</span></p>
       ${liveDuring() ? `<p class="muted">Live since you submitted your documents. Payouts were held until the review approved them.</p>` : ''}
-      <div class="notice">We may ask for more documents later, depending on your campaign${isOrg() ? '' : ', for example if you raise money on behalf of someone else'}.</div>
+      <div class="notice">We may ask for more documents later, depending on your fundraiser${isOrg() ? '' : ', for example if you raise money on behalf of someone else'}.</div>
       <p class="muted">Next: add a payout account in your action hub so you can receive donations.</p>` };
     case 9: return payoutScreen();
     case 10: {
       // Once the documents are in, the review decides: approval unlocks go-live (or releases payouts if already live)
       const review = orgEntry() ? orgManual() : waits() || liveDuring();
       const docsLeft = hubPending(true);
-      const done = orgEntry() ? 'Your organization is approved. Start a fundraiser and go live whenever you\'re ready.' : liveDuring() ? 'Approved. Payouts are released.' : 'Approved. Your campaign can go live.';
+      const done = orgEntry() ? 'Your organization is approved. Start a fundraiser and go live whenever you\'re ready.' : liveDuring() ? 'Approved. Payouts are released.' : 'Approved. Your fundraiser can go live.';
       const status = !review ? '' : `<h2>Review</h2>${docsLeft
         ? row('wait', 'Waiting for your documents', 'Complete the required actions above and we\'ll start the review.', '&middot;')
         : S.approved ? `<div class="notice toast"><b>${done}</b></div>`
-        : row('wait', 'Under review', `Our team is reviewing your information. ${liveDuring() ? 'Your campaign stays live, with payouts held until approved.' : 'We\'ll let you know here and by email.'}`, '&middot;')}
+        : row('wait', 'Under review', `Our team is reviewing your information. ${liveDuring() ? 'Your fundraiser stays live, with payouts held until approved.' : 'We\'ll let you know here and by email.'}`, '&middot;')}
         ${docsLeft ? '' : `<div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>`}`;
       const pay = S.paySaved ? row('', 'Payout account', `Added, ${S.pay.type.toLowerCase()} &bull;&bull;&bull;&bull;${last4()}`)
         : `<div class="check">${tick('wait', '&middot;')}<div style="flex:1"><b>Add a payout account</b><div class="muted">Required before your first payout. Connect with Plaid or enter it by hand.</div></div><button class="btn2 sm" data-act="payfromhub">Add</button></div>`;
@@ -640,7 +702,7 @@ function payoutScreen() {
 // Roles from compliance (OQ-37)
 const ROLE = { analyst: 'Analyst', manager: 'Manager', director: 'Director' };
 const ROLE_NOTE = {
-  analyst: 'Trust and safety or compliance analyst. Decides on accounts and campaigns and changes bank accounts and entity information.',
+  analyst: 'Trust and safety or compliance analyst. Decides on accounts and fundraisers and changes bank accounts and entity information.',
   manager: 'Everything an analyst does, plus scoring rule updates, data pulls, reporting, permission changes and account deletion.',
   director: 'Everything a manager does.' };
 const acts = list => `<div class="actions">${list.map((a, k) => `<span class="${k === 0 ? 'main' : ''}">${a}</span>`).join('')}</div>`;
@@ -654,11 +716,11 @@ function scoreSummary() {
   return `<div class="panel"><b>Summary:</b> Score ${score()}, ${BAND[computedBand()]}. Ratings: ${highs} High, ${meds} Medium. ${missing.length ? 'Missing: ' + missing.join(', ') + '.' : 'Everything required was provided.'}
     ${items.map(([k, v]) => row(v ? '' : 'warn', k, v ? 'Provided' : 'Not provided', v ? null : '!')).join('')}</div>`;
 }
-const auditExtra = () => [...(S.step >= 8 ? ['Campaign live'] : []), ...(S.step === 9 && S.paySaved ? [S.payout === 'vendor' ? 'Payout account connected through Plaid, approved automatically' : 'Payout account added, sent to compliance review'] : [])];
+const auditExtra = () => [...(S.step >= 8 ? ['Fundraiser live'] : []), ...(S.step === 9 && S.paySaved ? [S.payout === 'vendor' ? 'Payout account connected through Plaid, approved automatically' : 'Payout account added, sent to compliance review'] : [])];
 function adminTabs() {
   if (S.step < 4) return { case: adminScreen(S.step) };
   const types = S.docTypes.map(t => [t, t]).concat([['__new', '+ New document type']]);
-  const notes = `<div class="log"><div><span class="muted">Day 1, 10:40</span> &nbsp;<b>${TS}</b> &middot; Website and social profile look consistent with the risk form.</div></div>`;
+  const notes = `<div class="log"><div><span class="muted">Day 1, 10:40</span> &nbsp;<b>${TS}</b>Website and social profile look consistent with the risk form.</div></div>`;
   const req = `<div class="panel">
     ${lbl('Document type', `<select data-r="type">${types.map(([v, l]) => `<option value="${esc(v)}" ${S.req.type === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`, 'Any type. A new type becomes selectable for later requests.')}
     ${S.req.type === '__new' ? lbl('New type name', `<input data-r="newType" value="${esc(S.req.newType)}" placeholder="For example, Medical attestation">`) : ''}
@@ -685,14 +747,14 @@ function audit(extra) {
   items.push(vendor() ? [V, 'Verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed')] : [U, 'Documents uploaded to secure document storage']);
   if (flagged() && vendor() && !vendorLow()) items.push([S.outcome === 'high' ? CO : TS, 'Approved after review']);
   if (regDocs()) items.push([U, 'Company registry not reachable, organization documents uploaded']);
-  if (liveDuring()) items.push([SYS, 'Campaign live while documents are reviewed, payouts held']);
+  if (liveDuring()) items.push([SYS, 'Fundraiser live while documents are reviewed, payouts held']);
   if (waits()) items.push([SYS, 'Saved as draft until the review approves it']);
   if (!vendor() || regDocs()) items.push([TS, 'Approved documents' + (liveDuring() ? ', payouts released' : '')]);
   if (vendorLow()) items.push([CO, 'Approved']);
   S.requests.forEach((q, k) => { items.push([q.by, `Requested: ${esc(q.type)}`]); if (!S.removed['req' + k]) items.push([U, `Uploaded: ${esc(q.type)}`]); });
-  items.push(...(extra || []).filter(t => !(liveDuring() && t === 'Campaign live')).map(t => [t.startsWith('Payout') ? U : SYS, t]));
+  items.push(...(extra || []).filter(t => !(liveDuring() && t === 'Fundraiser live')).map(t => [t.startsWith('Payout') ? U : SYS, t]));
   const time = k => { const m = 2 + k * 7; return `${10 + Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; };
-  return `<div class="log">${items.map(([who, t], k) => `<div><span class="muted">Day 1, ${time(k)}</span> &nbsp;<b>${who}</b> &middot; ${t}</div>`).join('')}</div>`;
+  return `<div class="log">${items.map(([who, t], k) => `<div><span class="muted">Day 1, ${time(k)}</span> &nbsp;<b>${who}</b>${t}</div>`).join('')}</div>`;
 }
 function adminScreen(i) {
   if (i === 3) return riskPreview();
@@ -711,10 +773,10 @@ function adminScreen(i) {
     return `<h3>Case detail</h3>${caseHead()}${docs}<h2>Score summary</h2>${scoreSummary()}`;
   }
   if (i === 6) {
-    if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p>${acts(['Approve', 'Request documents', 'Escalate to compliance', 'Decline'])}`;
-    if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Trust and safety checks the uploaded organization documents. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p><table><tr><th>Document</th><th>Status</th></tr>${docRows()}</table>${acts(['Approve', 'Request documents', 'Escalate to compliance', 'Decline'])}`;
-    if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team. The campaign stays a draft until you approve.</p>${acts(['Approve', 'Request documents', 'Decline'])}`;
-    if (flagged()) return `<h3>${reviewer()} queue</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The internal score was ${BAND[S.outcome]}, so ${S.outcome === 'high' ? 'compliance runs enhanced due diligence' : 'trust and safety reviews the flagged items'}. The campaign stays a draft until approved.</p>${acts(['Approve', 'Request documents', ...(S.outcome === 'medium' ? ['Escalate to compliance'] : []), 'Decline'])}<h2>Score summary</h2>${scoreSummary()}`;
+    if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form. ${liveDuring() ? 'The fundraiser is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live fundraiser.' : 'The fundraiser stays a draft until you approve.'}</p>${acts(['Approve', 'Request documents', 'Escalate to compliance', 'Decline'])}`;
+    if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Trust and safety checks the uploaded organization documents. ${liveDuring() ? 'The fundraiser is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live fundraiser.' : 'The fundraiser stays a draft until you approve.'}</p><table><tr><th>Document</th><th>Status</th></tr>${docRows()}</table>${acts(['Approve', 'Request documents', 'Escalate to compliance', 'Decline'])}`;
+    if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team. The fundraiser stays a draft until you approve.</p>${acts(['Approve', 'Request documents', 'Decline'])}`;
+    if (flagged()) return `<h3>${reviewer()} queue</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The internal score was ${BAND[S.outcome]}, so ${S.outcome === 'high' ? 'compliance runs enhanced due diligence' : 'trust and safety reviews the flagged items'}. The fundraiser stays a draft until approved.</p>${acts(['Approve', 'Request documents', ...(S.outcome === 'medium' ? ['Escalate to compliance'] : []), 'Decline'])}<h2>Score summary</h2>${scoreSummary()}`;
     return `<h3>No action needed</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The case closes automatically.</p>`;
   }
   if (i === 9) {
@@ -750,17 +812,17 @@ function pathMap() {
   ${st('4. Verification', mapNode('With vendor', 'ID scan and selfie, registry lookup', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry not reachable', 'Documents go to the action hub', { step: 5, mode: 'vendor', registry: false }, 'v') + mapNode('No vendor', 'Skips to the result. Uploads wait in the action hub', { step: 6, mode: 'inhouse' }, 'v'))}
   ${st('5. Organization result', mapNode('Approved', 'With vendor, pass, Low. Fundraisers can go live', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Under review', 'Medium or High, vendor low result, registry or vendor down. Fundraisers are drafts until approved', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v'))}
   ${st('6. Action hub', mapNode('Required actions', 'The last page. Add a payout account' + (vendor() ? '' : ', plus ID and organization documents when verified by hand'), { step: 10 }))}
-  ${st('Then', mapNode('Start a fundraiser', 'Campaign, then go live once the organization is approved', { step: 2, entry: 'fund', orgDone: true }, 'end'))}`
+  ${st('Then', mapNode('Start a fundraiser', 'Fundraiser, then go live once the organization is approved', { step: 2, entry: 'fund', orgDone: true }, 'end'))}`
   : `
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
-  ${st('2. Applicant', `<div><div class="seg">${[['org', '🏢 Organization'], ['person', '👤 Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
-  ${st('3. Campaign', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
+  ${st('2. Applicant', `<div><div class="seg">${[['org', 'Organization'], ['person', 'Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
+  ${st('3. Fundraiser', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
   ${st('5. Check', check)}
   ${st('6. Verification', mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Documents go to the action hub', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p) + mapNode('No vendor', 'Skips to review. Uploads wait in the action hub', { step: 6, mode: 'inhouse' }, 'v'))}
   ${st('7. Review', mapNode('Reviewer checks documents', 'No vendor. Low in a level 1 country is live meanwhile, others draft', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass, Low', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Trust and safety or compliance review', 'With vendor, pass, Medium or High. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable. Low is live meanwhile', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('8. Message', mapNode('Verified by hand', 'No vendor. Low in a level 1 country is live, others draft', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Draft while we review', 'With vendor, Medium or High', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
-  ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
+  ${st('9. Go live', mapNode('Fundraiser live', 'More documents may be requested later', { step: 8 }))}
   ${st('10. Action hub', mapNode('Required actions', 'The last page. Payout account, plus documents when verified by hand', { step: 10 }) + payout)}`;
   return `<div class="map"><div style="display:flex;justify-content:space-between;align-items:center"><h1 style="padding:0;margin:0">All paths</h1><button class="x" data-act="closemap">&times;</button></div>
   ${tabs}
@@ -771,19 +833,26 @@ function pathMap() {
 
 /* ---------- Render ---------- */
 function render() {
-  seg('seg-app', [['org', '🏢 Organization'], ['person', '👤 Person']], 'app');
+  seg('seg-app', [['org', 'Organization'], ['person', 'Person']], 'app');
   seg('seg-mode', [['vendor', 'With vendor'], ['inhouse', 'In-house']], 'mode');
   $('btn-admin').classList.toggle('on', S.admin);
+  $('settings').hidden = !S.settings; $('btn-settings').setAttribute('aria-expanded', !!S.settings);
+  // Nudge toward the admin view at the risk form, where the live score is
   $('btn-admin').classList.toggle('pulse', S.step === 3 && !S.admin);
   $('seg-app').parentElement.hidden = orgEntry();
-  $('bar').style.width = ((pos() + 1) / FLOW().length * 100) + '%';
-  $('steps').innerHTML = (S.orgDone ? '' : `<span class="${S.step < 0 ? 'cur' : ''}" data-go="-1" role="button" tabindex="0">0. Start</span>`) + FLOW().map((k, i) => `<span class="${k === S.step ? 'cur' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0">${i + 1}. ${label(k)}</span>`).join('');
+  const at = pos();
+  const flow = (S.orgDone ? [] : [-1]).concat(FLOW()), idx = flow.indexOf(S.step);
+  const cls = k => k === S.step ? 'cur' : flow.indexOf(k) < idx ? 'done' : '';
+  $('steps').classList.toggle('open', !!S.stepsOpen);
+  $('steps').innerHTML = `<div class="rail-head"><div><b>${S.step < 0 ? 'Start' : idx < 0 ? 'Action hub' : label(S.step)}</b><span class="muted">${S.step < 0 ? 'Choose what you want to do' : idx < 0 ? 'Payout account' : `Step ${pos() + 1} of ${FLOW().length}`}</span></div><button class="btn2 sm" data-act="steps" aria-expanded="${!!S.stepsOpen}">${S.stepsOpen ? 'Hide steps' : 'All steps'}</button></div>
+    <div class="track" style="--p:${Math.max(0, idx) / (flow.length - 1)}">${flow.map(k => `<button class="${cls(k)}" data-go="${k}" data-name="${k < 0 ? 'Start' : label(k)}" aria-label="${k < 0 ? 'Start' : label(k)}"><i class="star"></i></button>`).join('')}</div>
+    <div class="rail-list">` + (S.orgDone ? '' : `<span class="${S.step < 0 ? 'cur' : 'done'}" data-go="-1" role="button" tabindex="0"><i class="star"></i><span class="sn">Start</span></span>`) + FLOW().map((k, i) => `<span class="${k === S.step ? 'cur' : i < at ? 'done' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0" ${VENDOR_STEPS.includes(k) ? 'title="Changes with the vendor"' : ''}><i class="star"></i><span class="sn">${label(k)}</span></span>`).join('') + '</div>';
   const u = S.hub ? hubScreen() : userScreen(S.step);
   const isV = VENDOR_STEPS.includes(S.step);
   const blocked = S.step === 4 && S.outcome === 'declined';
   const nav = u.nav || `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
-  $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">${S.hub ? 'Action hub' : S.step < 0 ? 'Step 0 &middot; Start' : `${orgEntry() ? 'Registering an organization' : S.orgDone ? 'Starting a fundraiser for your organization' : 'Starting a fundraiser'}${pos() < 0 ? ' &middot; Action hub' : ` &middot; Step ${pos() + 1} of ${FLOW().length}`}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['vendor', 'Connect with Plaid'], ['manual', 'Enter manually']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+  $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''} ${S.step < 0 && !S.hub ? 'start' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
+    <div class="eyebrow">${S.hub ? 'Action hub' : S.step < 0 ? 'Before you start' : `${orgEntry() ? 'Registering an organization' : S.orgDone ? 'Starting a fundraiser for your organization' : 'Starting a fundraiser'}${pos() < 0 ? ', action hub' : `, step ${pos() + 1} of ${FLOW().length}`}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['vendor', 'Connect with Plaid'], ['manual', 'Enter manually']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
   if (S.admin) a.innerHTML = adminBody();
@@ -802,8 +871,9 @@ function render() {
 }
 function go(step) {
   // Open the admin view on arriving at the risk form so viewers see the live score
-  if (step === 3 && S.step !== 3) S.admin = true;
-  S.hub = false;
+  // Only where it fits beside the form; on smaller screens it would cover the page
+  if (step === 3 && S.step !== 3 && matchMedia('(min-width: 1101px)').matches) S.admin = true;
+  S.hub = false; S.stepsOpen = false;
   S.step = Math.max(-1, Math.min(STEPS.length - 1, step));
   if (S.step !== 9) S.payBack = null;
   if (S.step !== 10) S.hubBack = null;
@@ -825,14 +895,15 @@ document.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.k) { if (b.dataset.k === 'payout') S.paySaved = false; let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
   if (b.dataset.set) { const set = JSON.parse(b.dataset.set); Object.assign(S, set); S.map = !!set.map; S.checking = false; render(); return; }
-  if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
-  if (b.id === 'btn-map') { S.map = true; render(); return; }
+  if (b.id === 'btn-admin') { S.admin = !S.admin; S.settings = false; render(); return; }
+  if (b.id === 'btn-map') { S.map = true; S.settings = false; render(); return; }
+  if (b.id === 'btn-settings') { S.settings = !S.settings; render(); return; }
   switch (b.dataset.act) {
     case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false;
       go(FLOW()[pos() + 1] ?? S.step); break;
     case 'back': go(S.payBack ?? S.hubBack ?? (pos() > 0 ? FLOW()[pos() - 1] : -1)); break;
     case 'payfromhub': S.payBack = 10; go(9); break;
-    case 'start': if (orgEntry()) S.app = 'org'; S.orgDone = false; S.hubSeeded = false; S.pushed = false; S.push = null; go(0); break;
+    case 'start': if (b.dataset.mode) S.mode = b.dataset.mode; if (orgEntry()) S.app = 'org'; S.orgDone = false; S.hubSeeded = false; S.pushed = false; S.push = null; go(0); break;
     case 'sendreq': {
       const type = (S.req.type === '__new' ? S.req.newType : S.req.type).trim();
       if (!type) break;
@@ -846,6 +917,7 @@ document.addEventListener('click', e => {
       if (S.step !== 10 && FLOW()[pos() + 1] !== 10) S.hubBack = S.step; go(10); break;
     case 'closehub': S.hub = false; render(); break;
     case 'rolehelp': S.roleHelp = !S.roleHelp; render(); break;
+    case 'steps': S.stepsOpen = !S.stepsOpen; render(); break;
     case 'closetoast': S.toast = null; S.push = null; render(); break;
     case 'startfund': S.orgDone = true; S.entry = 'fund'; S.draft = false; go(2); break;
     case 'golive': go(8); break;
@@ -876,8 +948,8 @@ $('btn-theme').addEventListener('click', () => {
   paintTheme();
 });
 paintTheme();
-const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>
-  <div class="panel"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="seglabel">Viewing as</span>${demoSeg('role', Object.entries(ROLE))}<button class="help" data-act="rolehelp" aria-label="What this role can do" aria-expanded="${S.roleHelp}">❓</button></div>${S.roleHelp ? `<div class="muted" style="font-size:12px;margin-top:6px"><span class="tag">roles from compliance</span> ${ROLE_NOTE[S.role]}</div>` : ''}</div>`;
+const adminHead = () => `<div class="ahead"><span class="albl">Compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>
+  <div class="panel"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="seglabel">Viewing as</span>${demoSeg('role', Object.entries(ROLE))}</div></div>`;
 const TAB_NAMES = { case: 'Case', documents: 'Request documents', notes: 'Notes', audit: 'Audit log', manager: 'Manager tools' };
 const TAB_ICONS = { case: '📁', documents: '📄', notes: '📝', audit: '📜', manager: '🛠️' };
 function adminBody() {
@@ -899,6 +971,7 @@ function onField(e, full) {
 }
 document.addEventListener('input', e => onField(e, e.target.tagName === 'SELECT'));
 document.addEventListener('change', e => onField(e, true));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.settings) { S.settings = false; render(); $('btn-settings').focus(); } });
 $('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') { S.map = false; render(); } });
 render();
 </script>
