@@ -277,12 +277,16 @@ function choice() {
 
 /* ---------- Risk form (step 4) ---------- */
 S.form = {
-  legal: 'Amina Rahman', dob: '1988-03-14', addr: '120 Main Street, Springfield, IL 62701', res: 'A', email: 'amina.rahman@example.org', phone: '+1 555 0134',
-  inc: 'A', ops: 'A', entity: 'standalone', activity: 'registered', year: '2016', reg: '12-3456789', website: 'hopevalley.example.org', social: 'instagram.com/hopevalley',
+  legal: 'Amina Rahman', dob: '1988-03-14', addr: '120 Main Street, Springfield, IL 62701', res: 'United States of America', email: 'amina.rahman@example.org', phone: '+1 555 0134',
+  inc: 'United States of America', ops: 'United States of America', entity: 'standalone', activity: 'registered', year: '2016', reg: '12-3456789', website: 'hopevalley.example.org', social: 'instagram.com/hopevalley',
   people: [{ name: 'Amina Rahman', role: 'Director', own: '0' }, { name: 'Yusuf Khan', role: 'Authorized signatory', own: '0' }]
 };
-const COUNTRIES = [['A', 'Country A (low risk)'], ['B', 'Country B (medium risk)'], ['C', 'Country C (high risk)']];
-const CRISK = { A: 'Low', B: 'Medium', C: 'High' };
+// Compliance's country levels (Notion OQ-6). Level 4 isn't supported, so it declines.
+const LEVELS = [["Level 1 (low risk)", "Low", ["Australia", "Austria", "Belgium", "Canada", "Denmark", "Finland", "France", "Germany", "Iceland", "Ireland", "Italy", "Luxembourg", "Netherlands", "New Zealand", "Norway", "Poland", "Sweden", "Switzerland", "United Kingdom", "United States of America", "Virgin Islands, U.S. (501(c)(3) only)"]], ["Level 2 (medium risk)", "Medium", ["Singapore", "Japan", "Spain"]], ["Level 3 (high risk)", "High", ["Algeria", "Antarctica", "Bahrain", "Bangladesh", "China", "Egypt", "Estonia", "Greece", "Hungary", "India", "Indonesia", "Jordan", "Korea, Republic of", "Kuwait", "Malaysia", "Morocco", "Oman", "Pakistan", "Philippines", "Portugal", "Qatar", "Saudi Arabia", "South Africa", "Thailand", "Tunisia", "Turkey", "United Arab Emirates", "Uruguay"]], ["Level 4 (not supported)", "Not supported", ["Afghanistan", "Aland Islands", "Albania", "American Samoa", "Andorra", "Angola", "Anguilla", "Antigua and Barbuda", "Argentina", "Armenia", "Aruba", "Azerbaijan", "Bahamas", "Barbados", "Belarus", "Belize", "Benin", "Bermuda", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Bouvet Island", "Brazil", "British Indian Ocean Territory", "Brunei Darussalam", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Cape Verde/Cabo Verde", "Cayman Islands", "Central African Republic", "Chad", "Chile", "Christmas Island", "Cocos (Keeling) Islands", "Colombia", "Comoros", "Democratic Republic of the Congo", "The Republic of the Congo", "Cook Islands", "Costa Rica", "Côte D'Ivoire", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "El Salvador", "Equatorial Guinea", "Eritrea", "Ethiopia", "Falkland Islands (Malvinas)", "Faroe Islands", "Fiji", "French Guiana", "French Polynesia", "French Southern Territories", "Gabon", "Gambia", "Georgia", "Ghana", "Gibraltar", "Greenland", "Grenada", "Guadeloupe", "Guam", "Guatemala", "Guernsey", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Heard Island and McDonald Islands", "Holy See (Vatican City State)", "Honduras", "Hong Kong (SAR)", "Iraq", "Isle of Man", "Israel", "Jamaica", "Jersey", "Kazakhstan", "Kenya", "Kiribati", "North Korea", "Kyrgyzstan", "Lao People's Democratic Republic", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Macau (SAR)", "North Macedonia", "Madagascar", "Malawi", "Maldives", "Mali", "Malta", "Marshall Islands", "Martinique", "Mauritania", "Mauritius", "Mayotte", "Mexico", "Micronesia, Federated States of", "Moldova, Republic of", "Monaco", "Mongolia", "Montenegro", "Montserrat", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands Antilles", "New Caledonia", "Nicaragua", "Niger", "Nigeria", "Niue", "Norfolk Island", "Northern Mariana Islands", "Palau", "Palestinian Territories", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Pitcairn Islands", "Puerto Rico", "Reunion", "Romania", "The Russian Federation", "Rwanda", "Saint Barthelemy", "Saint Helena", "Saint Kitts and Nevis", "Saint Lucia", "Saint Martin", "Saint Pierre and Miquelon", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "Somaliland", "South Georgia and the South Sandwich Islands", "South Sudan", "Sri Lanka", "Sudan", "Suriname", "Svalbard and Jan Mayen Islands", "Swaziland/Eswatini", "Syrian Arab Republic", "Taiwan", "Tajikistan", "Tanzania and Zanzibar", "Timor-Leste", "Togo", "Tokelau", "Tonga", "Trinidad and Tobago", "Turkmenistan", "Turks and Caicos Islands", "Tuvalu", "Uganda", "Ukraine", "United States Minor Outlying Islands", "Uzbekistan", "Vanuatu", "Venezuela", "Vietnam", "Virgin Islands, British", "Wallis and Futuna", "Western Sahara", "Yemen", "Zambia", "Zimbabwe", "Iran", "Kosovo"]]];
+const CRISK = Object.fromEntries(LEVELS.flatMap(([, risk, list]) => list.map(c => [c, risk])));
+const csel = (f, val) => `<select data-f="${f}">${LEVELS.map(([g, , list]) => `<optgroup label="${g}">${list.map(c => `<option value="${esc(c)}" ${val === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+const RANK = { Low: 0, Medium: 1, High: 2, 'Not supported': 3 };
+const bandCls = r => r === 'Not supported' ? 'declined' : r.toLowerCase();
 const ENTITIES = [['standalone', 'Standalone charity or nonprofit', 'Low'], ['parent', 'Parent of other organizations', 'Medium'], ['subsidiary', 'Subsidiary of another organization', 'Medium'], ['trust', 'Trust', 'High'], ['foundation', 'Foundation', 'High'], ['nominee', 'Held through a nominee', 'High']];
 const ACTIVITIES = [['registered', 'Registered charity', 'Low'], ['new', 'Newly registered charity', 'Medium'], ['forprofit', 'For-profit business', 'High']];
 const ROLES = ['Director', 'Officer', 'Authorized signatory', 'Owner (no management role)'];
@@ -294,7 +298,7 @@ function ratings() {
   const F = S.form;
   if (!isOrg()) return [
     ['Full legal name and date of birth', F.legal && F.dob ? 'Low' : 'High', F.legal && F.dob ? 'Used for screening' : 'Missing data scores as the highest risk'],
-    ['Address and country', F.addr ? CRISK[F.res] : 'High', F.addr ? '' : 'Missing address'],
+    ['Address and country', F.addr ? CRISK[F.res] : 'High', F.addr ? `${F.res}: ${LEVELS.find(l => l[1] === CRISK[F.res])[0]}` : 'Missing address'],
     ['Email and phone', F.email && F.phone ? 'Low' : 'High', ''],
     ['Digital footprint', '-', 'Read in the background, not from the form']];
   const managers = F.people.filter(p => !p.role.startsWith('Owner')).length;
@@ -302,7 +306,7 @@ function ratings() {
   const ent = ENTITIES.find(e => e[0] === F.entity);
   const act = ACTIVITIES.find(a => a[0] === F.activity);
   return [
-    ['Jurisdiction', F.ops !== F.inc ? 'High' : CRISK[F.inc], F.ops !== F.inc ? 'Operates outside its country of incorporation' : ''],
+    ['Jurisdiction', CRISK[F.inc] === 'Not supported' || CRISK[F.ops] === 'Not supported' ? 'Not supported' : F.ops !== F.inc ? 'High' : CRISK[F.inc], F.ops !== F.inc ? 'Operates outside its country of incorporation' : `${F.inc}: ${LEVELS.find(l => l[1] === CRISK[F.inc])[0]}`],
     ['Legal form', ent[2], ent[1]],
     ['Business activity', act[2], act[1] + (F.activity === 'new' ? `, formed ${F.year}` : '')],
     ['Directors and signatories', managers <= 2 ? 'Low' : managers <= 6 ? 'Medium' : 'High', `${managers} ${managers === 1 ? 'person' : 'people'}`],
@@ -312,6 +316,7 @@ function ratings() {
 function computedBand() {
   const r = ratings().map(x => x[1]);
   const highs = r.filter(x => x === 'High').length, meds = r.filter(x => x === 'Medium').length;
+  if (r.includes('Not supported')) return 'declined';
   return highs >= 3 ? 'declined' : highs >= 1 ? 'high' : meds >= 1 ? 'medium' : 'low';
 }
 function peopleTable() {
@@ -330,10 +335,10 @@ function riskForm() {
   return `<p class="muted">We use these answers to check your application in seconds. No documents or IDs yet. Try changing them, and open Admin view to see the effect.</p>
   <h2>About you</h2>
   <div class="grid">${lbl('Full legal name', inp('legal', F.legal), 'As it appears on official documents')}${lbl('Date of birth', inp('dob', F.dob, 'date'))}
-  ${lbl('Home address', inp('addr', F.addr), 'Full address. No ID needed at this step.')}${lbl('Country', sel('res', COUNTRIES, F.res))}
+  ${lbl('Home address', inp('addr', F.addr), 'Full address. No ID needed at this step.')}${lbl('Country', csel('res', F.res))}
   ${lbl('Email', inp('email', F.email, 'email'))}${lbl('Mobile', inp('phone', F.phone, 'tel'))}</div>
   ${isOrg() ? `<h2>About your organization</h2>
-  <div class="grid">${lbl('Country of incorporation', sel('inc', COUNTRIES, F.inc))}${lbl('Main country of operation', sel('ops', COUNTRIES, F.ops))}
+  <div class="grid">${lbl('Country of incorporation', csel('inc', F.inc))}${lbl('Main country of operation', csel('ops', F.ops))}
   ${lbl('Entity type', sel('entity', ENTITIES.map(e => [e[0], e[1]]), F.entity), 'Final list to come from compliance <span class="tag">to confirm</span>')}
   ${lbl('Business activity', sel('activity', ACTIVITIES.map(a => [a[0], a[1]]), F.activity))}
   ${F.activity === 'new' ? lbl('Year formed', inp('year', F.year, 'number')) : ''}
@@ -348,9 +353,9 @@ function riskPreview() {
   const next = { low: 'Cleared, straight to verification.', medium: 'In review: a reviewer looks first.', high: 'In review: the compliance team looks first.', declined: 'Not approved, with a generic message.' }[b];
   return `<h3>Live score preview</h3><p class="muted">Not visible to the user. Drafts aren't in any queue; this shows how the current answers would score.</p>
   <p><b>${name()}</b><br><span class="band ${b}">${BAND[b]}</span></p>
-  <table><tr><th>Factor</th><th>Rating</th><th>Why</th></tr>${ratings().map(([f, r, n]) => `<tr><td>${f}</td><td>${r === '-' ? '<span class="muted">Not scored</span>' : `<span class="band ${r.toLowerCase()}">${r}</span>`}</td><td class="muted">${n || ''}</td></tr>`).join('')}</table>
+  <table><tr><th>Factor</th><th>Rating</th><th>Why</th></tr>${ratings().map(([f, r, n]) => `<tr><td>${f}</td><td>${r === '-' ? '<span class="muted">Not scored</span>' : `<span class="band ${bandCls(r)}">${r}</span>`}</td><td class="muted">${n || ''}</td></tr>`).join('')}</table>
   <div class="notice" style="background:var(--card)"><b>What the user sees next:</b> ${next}</div>
-  <p class="muted" style="font-size:12px">Placeholder rule, since the real formula isn't decided: any three High ratings decline, any High goes to compliance, any Medium goes to a reviewer, otherwise Low. Countries A, B and C stand in for the internal risk list. Weights aren't shown.</p>`;
+  <p class="muted" style="font-size:12px">Placeholder rule, since the real formula isn't decided: any three High ratings decline, any High goes to compliance, any Medium goes to a reviewer, otherwise Low. Countries use compliance's levels 1 to 4; level 4 isn't supported and declines. Weights aren't shown.</p>`;
 }
 
 function draftCard() {
