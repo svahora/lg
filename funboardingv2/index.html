@@ -68,8 +68,11 @@
   .ghost.icon { font-size: 17px; width: 40px; height: 36px; padding: 0; display: inline-grid; place-items: center; }
   /* Sticky settings wheel: the prototype's own controls, out of the way of the form */
   .settings { position: fixed; right: 16px; bottom: 16px; z-index: 36; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-  .wheel { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); font-size: 24px; box-shadow: 0 8px 24px rgba(23, 58, 43, .18); transition: transform .4s cubic-bezier(.22, 1, .36, 1); }
+  .wheel { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--ink); color: var(--page); font-size: 26px; display: grid; place-items: center; box-shadow: 0 8px 24px rgba(23, 58, 43, .18); transition: transform .4s cubic-bezier(.22, 1, .36, 1); }
   .wheel[aria-expanded="true"] { transform: rotate(90deg); }
+  /* While closed, a soft green ring keeps the wheel noticeable */
+  .wheel[aria-expanded="false"] { animation: ring 2.2s ease-out infinite; }
+  @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(74, 165, 103, .6), 0 8px 24px rgba(23, 58, 43, .18); } 70% { box-shadow: 0 0 0 14px rgba(74, 165, 103, 0), 0 8px 24px rgba(23, 58, 43, .18); } 100% { box-shadow: 0 0 0 0 rgba(74, 165, 103, 0), 0 8px 24px rgba(23, 58, 43, .18); } }
   .settings-panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
   .settings-panel .ctl { justify-content: space-between; }
   @keyframes rise { from { transform: translateY(10px); opacity: 0; } }
@@ -85,7 +88,7 @@
   .ghost.theme { width: 34px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
   .ghost.theme svg { width: 18px; height: 18px; display: block; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(35, 57, 95, .5); } 70% { box-shadow: 0 0 0 10px rgba(35, 57, 95, 0); } 100% { box-shadow: 0 0 0 0 rgba(35, 57, 95, 0); } }
-  .ghost.pulse, .wheel.pulse { border-color: var(--lapis); animation: pulse 1.6s ease-out infinite; }
+  .ghost.pulse { border-color: var(--lapis); animation: pulse 1.6s ease-out infinite; }
   .bell { position: relative; }
   .bell .badge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--declined); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; }
   .help { border: 0; background: transparent; font-size: 15px; font-weight: 800; color: var(--declined); padding: 0 4px; }
@@ -289,7 +292,7 @@
     <div class="ctl"><span class="seglabel">KYC/KYB vendor</span><div class="seg" id="seg-mode"></div></div>
     <div class="ctl" style="justify-content:flex-start;gap:8px"><button class="ghost icon" id="btn-admin" aria-label="Admin view" title="Admin view">🛡️</button><button class="ghost icon" id="btn-map" aria-label="Path map" title="Path map">🗺️</button><button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button></div>
   </div>
-  <button class="wheel" id="btn-settings" aria-label="Prototype settings" title="Prototype settings" aria-expanded="false">⚙️</button>
+  <button class="wheel" id="btn-settings" aria-label="Prototype settings" title="Prototype settings" aria-expanded="false"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </div>
 <div class="layout">
   <nav class="rail" id="steps" aria-label="Steps"></nav>
@@ -836,7 +839,6 @@ function render() {
   $('settings').hidden = !S.settings; $('btn-settings').setAttribute('aria-expanded', !!S.settings);
   // Nudge toward the admin view at the risk form, where the live score is
   $('btn-admin').classList.toggle('pulse', S.step === 3 && !S.admin);
-  $('btn-settings').classList.toggle('pulse', S.step === 3 && !S.admin && !S.settings);
   $('seg-app').parentElement.hidden = orgEntry();
   const at = pos();
   const flow = (S.orgDone ? [] : [-1]).concat(FLOW()), idx = flow.indexOf(S.step);
