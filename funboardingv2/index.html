@@ -810,7 +810,7 @@ function pathMap() {
   ${st('Then', mapNode('Start a fundraiser', 'Fundraiser, then go live once the organization is approved', { step: 2, entry: 'fund', orgDone: true }, 'end'))}`
   : `
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
-  ${st('2. Applicant', `<div><div class="seg">${[['org', '🏢 Organization'], ['person', '👤 Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
+  ${st('2. Applicant', `<div><div class="seg">${[['org', 'Organization'], ['person', 'Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
   ${st('3. Fundraiser', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
   ${st('5. Check', check)}
@@ -828,7 +828,7 @@ function pathMap() {
 
 /* ---------- Render ---------- */
 function render() {
-  seg('seg-app', [['org', '🏢 Organization'], ['person', '👤 Person']], 'app');
+  seg('seg-app', [['org', 'Organization'], ['person', 'Person']], 'app');
   seg('seg-mode', [['vendor', 'With vendor'], ['inhouse', 'In-house']], 'mode');
   $('btn-admin').classList.toggle('on', S.admin);
   $('settings').hidden = !S.settings; $('btn-settings').setAttribute('aria-expanded', !!S.settings);
