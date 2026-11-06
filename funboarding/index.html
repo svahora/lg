@@ -111,7 +111,7 @@
   input, select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; }
   input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
   .people { border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
-  .prow { display: grid; grid-template-columns: 1.4fr 1.2fr 0.9fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .prow { display: grid; grid-template-columns: 1.4fr 1.2fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
   .own { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
   .own input { width: 70px; }
   .rm { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 8px; width: 34px; height: 34px; }
@@ -178,6 +178,7 @@
   .ntoast { position: fixed; right: 16px; bottom: 16px; z-index: 35; max-width: 360px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid #4aa567; border-radius: 12px; padding: 12px 14px; box-shadow: 0 6px 24px rgba(0,0,0,.18); animation: slidein .25s ease-out; }
   .ntoast .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
   .btn.sm { padding: 6px 14px; font-size: 13px; }
+  select[multiple] { padding: 4px; }
   .admin textarea { font: inherit; width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--card); color: var(--ink); }
   .panel { background: var(--card); border-radius: 10px; padding: 10px 12px; margin: 12px 0; }
 
@@ -230,7 +231,7 @@
 <div class="ntoast" id="ntoast" hidden></div>
 
 <script>
-const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false, role: 'compliance', hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
+const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false, role: 'analyst', scoreAdj: null, adj: { score: '', reason: '' }, hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
 // Smart document types: the first request defines a type, later requests reuse it
 S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
@@ -254,12 +255,14 @@ function seg(id, opts, key) {
 function demoSeg(key, opts) {
   return `<div class="seg">${opts.map(([v, l]) => `<button class="${S[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}">${l}</button>`).join('')}</div>`;
 }
-const reviewer = () => S.outcome === 'high' ? 'Compliance team' : 'Reviewer';
+const reviewer = () => S.outcome === 'high' ? 'Compliance' : 'Trust and safety';
 const flagged = () => S.outcome === 'medium' || S.outcome === 'high';
 const vendorLow = () => vendor() && S.vendorResult === 'low';
-// Manual document review: Low goes live on submit while it runs; everyone else waits as a draft
-const liveDuring = () => S.outcome === 'low' && (!vendor() || regDocs());
-const waits = () => !liveDuring() && (!vendor() || regDocs() || vendorLow());
+// Everyone except declines goes to the vendor. Medium and High wait as a draft for the parallel review.
+// Without the vendor, only Low in a level 1 country goes live during the manual review (OQ-49).
+const level1 = () => CRISK[isOrg() ? S.form.inc : S.form.res] === 'Low';
+const liveDuring = () => S.outcome === 'low' && ((!vendor() && level1()) || regDocs());
+const waits = () => !liveDuring() && (!vendor() || regDocs() || vendorLow() || flagged());
 // Vendor verified the person, but the organization fell back to uploaded documents
 const regDocs = () => vendor() && isOrg() && !S.registry && !vendorLow();
 // Entry path: 'org' registers the organization only, 'fund' starts a fundraiser
@@ -267,7 +270,7 @@ const orgEntry = () => S.entry === 'org';
 const fund = () => S.entry === 'fund';
 // Fundraiser verified by hand (no vendor, or registry unreachable): uploads are required actions in the action hub
 const noUpload = () => fund() && (!vendor() || regDocs());
-const orgManual = () => !vendor() || regDocs() || vendorLow();
+const orgManual = () => !vendor() || regDocs() || vendorLow() || flagged();
 const orgApproved = () => !orgManual() || S.approved;
 
 function choice() {
@@ -278,60 +281,78 @@ function choice() {
 /* ---------- Risk form (step 4) ---------- */
 S.form = {
   legal: 'Amina Rahman', dob: '1988-03-14', addr: '120 Main Street, Springfield, IL 62701', res: 'United States of America', email: 'amina.rahman@example.org', phone: '+1 555 0134',
-  inc: 'United States of America', ops: 'United States of America', entity: 'standalone', activity: 'registered', year: '2016', reg: '12-3456789', website: 'hopevalley.example.org', social: 'instagram.com/hopevalley',
-  people: [{ name: 'Amina Rahman', role: 'Director', own: '0' }, { name: 'Yusuf Khan', role: 'Authorized signatory', own: '0' }]
+  inc: 'United States of America', ops: 'United States of America', impact: ['Pakistan'], entity: 'charity', structure: 'standalone', regdate: '2016-05-01', reg: '12-3456789', website: 'hopevalley.example.org', social: 'instagram.com/hopevalley',
+  people: [{ name: 'Amina Rahman', role: 'Director' }, { name: 'Yusuf Khan', role: 'Authorized signatory' }]
 };
 // Compliance's country levels (Notion OQ-6). Level 4 isn't supported, so it declines.
 const LEVELS = [["Level 1 (low risk)", "Low", ["Australia", "Austria", "Belgium", "Canada", "Denmark", "Finland", "France", "Germany", "Iceland", "Ireland", "Italy", "Luxembourg", "Netherlands", "New Zealand", "Norway", "Poland", "Sweden", "Switzerland", "United Kingdom", "United States of America", "Virgin Islands, U.S. (501(c)(3) only)"]], ["Level 2 (medium risk)", "Medium", ["Singapore", "Japan", "Spain"]], ["Level 3 (high risk)", "High", ["Algeria", "Antarctica", "Bahrain", "Bangladesh", "China", "Egypt", "Estonia", "Greece", "Hungary", "India", "Indonesia", "Jordan", "Korea, Republic of", "Kuwait", "Malaysia", "Morocco", "Oman", "Pakistan", "Philippines", "Portugal", "Qatar", "Saudi Arabia", "South Africa", "Thailand", "Tunisia", "Turkey", "United Arab Emirates", "Uruguay"]], ["Level 4 (not supported)", "Not supported", ["Afghanistan", "Aland Islands", "Albania", "American Samoa", "Andorra", "Angola", "Anguilla", "Antigua and Barbuda", "Argentina", "Armenia", "Aruba", "Azerbaijan", "Bahamas", "Barbados", "Belarus", "Belize", "Benin", "Bermuda", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Bouvet Island", "Brazil", "British Indian Ocean Territory", "Brunei Darussalam", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Cape Verde/Cabo Verde", "Cayman Islands", "Central African Republic", "Chad", "Chile", "Christmas Island", "Cocos (Keeling) Islands", "Colombia", "Comoros", "Democratic Republic of the Congo", "The Republic of the Congo", "Cook Islands", "Costa Rica", "Côte D'Ivoire", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "El Salvador", "Equatorial Guinea", "Eritrea", "Ethiopia", "Falkland Islands (Malvinas)", "Faroe Islands", "Fiji", "French Guiana", "French Polynesia", "French Southern Territories", "Gabon", "Gambia", "Georgia", "Ghana", "Gibraltar", "Greenland", "Grenada", "Guadeloupe", "Guam", "Guatemala", "Guernsey", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Heard Island and McDonald Islands", "Holy See (Vatican City State)", "Honduras", "Hong Kong (SAR)", "Iraq", "Isle of Man", "Israel", "Jamaica", "Jersey", "Kazakhstan", "Kenya", "Kiribati", "North Korea", "Kyrgyzstan", "Lao People's Democratic Republic", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Macau (SAR)", "North Macedonia", "Madagascar", "Malawi", "Maldives", "Mali", "Malta", "Marshall Islands", "Martinique", "Mauritania", "Mauritius", "Mayotte", "Mexico", "Micronesia, Federated States of", "Moldova, Republic of", "Monaco", "Mongolia", "Montenegro", "Montserrat", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands Antilles", "New Caledonia", "Nicaragua", "Niger", "Nigeria", "Niue", "Norfolk Island", "Northern Mariana Islands", "Palau", "Palestinian Territories", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Pitcairn Islands", "Puerto Rico", "Reunion", "Romania", "The Russian Federation", "Rwanda", "Saint Barthelemy", "Saint Helena", "Saint Kitts and Nevis", "Saint Lucia", "Saint Martin", "Saint Pierre and Miquelon", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "Somaliland", "South Georgia and the South Sandwich Islands", "South Sudan", "Sri Lanka", "Sudan", "Suriname", "Svalbard and Jan Mayen Islands", "Swaziland/Eswatini", "Syrian Arab Republic", "Taiwan", "Tajikistan", "Tanzania and Zanzibar", "Timor-Leste", "Togo", "Tokelau", "Tonga", "Trinidad and Tobago", "Turkmenistan", "Turks and Caicos Islands", "Tuvalu", "Uganda", "Ukraine", "United States Minor Outlying Islands", "Uzbekistan", "Vanuatu", "Venezuela", "Vietnam", "Virgin Islands, British", "Wallis and Futuna", "Western Sahara", "Yemen", "Zambia", "Zimbabwe", "Iran", "Kosovo"]]];
 const CRISK = Object.fromEntries(LEVELS.flatMap(([, risk, list]) => list.map(c => [c, risk])));
+const ALL_COUNTRIES = LEVELS.flatMap(l => l[2]).sort();
 const csel = (f, val) => `<select data-f="${f}">${LEVELS.map(([g, , list]) => `<optgroup label="${g}">${list.map(c => `<option value="${esc(c)}" ${val === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</optgroup>`).join('')}</select>`;
-const RANK = { Low: 0, Medium: 1, High: 2, 'Not supported': 3 };
+const RANK = ['Low', 'Medium', 'High', 'Not supported'];
+const worst = (...r) => RANK[Math.max(...r.map(x => RANK.indexOf(x)))];
 const bandCls = r => r === 'Not supported' ? 'declined' : r.toLowerCase();
-const ENTITIES = [['standalone', 'Standalone charity or nonprofit', 'Low'], ['parent', 'Parent of other organizations', 'Medium'], ['subsidiary', 'Subsidiary of another organization', 'Medium'], ['trust', 'Trust', 'High'], ['foundation', 'Foundation', 'High'], ['nominee', 'Held through a nominee', 'High']];
-const ACTIVITIES = [['registered', 'Registered charity', 'Low'], ['new', 'Newly registered charity', 'Medium'], ['forprofit', 'For-profit business', 'High']];
-const ROLES = ['Director', 'Officer', 'Authorized signatory', 'Owner (no management role)'];
+const levelName = c => LEVELS.find(l => l[1] === CRISK[c])[0];
+// Entity types from compliance (OQ-8). Their ratings are assumptions: the matrix rates structure, not these types.
+const ENTITIES = [['charity', 'Registered charity', 'Low'], ['nonprofit', 'Registered non-profit', 'Low'], ['ltd', 'Private limited company', 'Medium'], ['forprofit', 'For-profit entity', 'Medium'], ['association', 'Association', 'High'], ['other', 'Other', 'High']];
+const STRUCTURES = [['standalone', 'Standalone organization', 'Low'], ['branch', 'Parent charity or sister branch', 'Medium']];
+const forProfit = () => ['ltd', 'forprofit'].includes(S.form.entity);
+// shortcut: placeholder OFAC lists, swap in compliance's list when it arrives
+const OFAC_PROHIBITED = ['Cuba', 'Iran', 'North Korea', 'Syrian Arab Republic'];
+const OFAC = ['Afghanistan', 'Belarus', 'Iraq', 'Lebanon', 'Libya', 'Myanmar', 'Somalia', 'South Sudan', 'Sudan', 'The Russian Federation', 'Venezuela', 'Yemen', 'Zimbabwe'];
+const ROLES = ['Director', 'Officer', 'Authorized signatory'];
 const sel = (f, opts, val) => `<select data-f="${f}">${opts.map(([v, l]) => `<option value="${v}" ${val === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
 const inp = (f, val, type) => `<input data-f="${f}" type="${type || 'text'}" value="${val}">`;
 const lbl = (k, ctl, hint) => `<label class="fld"><span>${k}</span>${ctl}${hint ? `<small>${hint}</small>` : ''}</label>`;
+// Points per rating, out of each factor's weight in the risk matrix. Medium is the middle of its range and High half its cap (to confirm).
+const pt = (w, med, high) => ({ Low: w, Medium: med, High: high });
+const yearsSince = d => (Date.now() - new Date(d)) / 31557600000;
 
 function ratings() {
   const F = S.form;
-  if (!isOrg()) return [
-    ['Full legal name and date of birth', F.legal && F.dob ? 'Low' : 'High', F.legal && F.dob ? 'Used for screening' : 'Missing data scores as the highest risk'],
-    ['Address and country', F.addr ? CRISK[F.res] : 'High', F.addr ? `${F.res}: ${LEVELS.find(l => l[1] === CRISK[F.res])[0]}` : 'Missing address'],
-    ['Email and phone', F.email && F.phone ? 'Low' : 'High', ''],
-    ['Digital footprint', '-', 'Read in the background, not from the form']];
-  const managers = F.people.filter(p => !p.role.startsWith('Owner')).length;
-  const owners = F.people.filter(p => +p.own >= 25);
-  const ent = ENTITIES.find(e => e[0] === F.entity);
-  const act = ACTIVITIES.find(a => a[0] === F.activity);
+  if (!isOrg()) {
+    const age = F.dob ? yearsSince(F.dob) : 0;
+    return [
+      ['Date of birth', !F.dob ? 'High' : age >= 25 && age <= 50 ? 'Low' : age >= 19 && age <= 65 ? 'Medium' : 'High', F.dob ? `Age ${Math.floor(age)}` : 'Missing', pt(15, 12, 5)],
+      ['Address and country', F.addr ? CRISK[F.res] : 'High', F.addr ? `${F.res}: ${levelName(F.res)}` : 'Missing address', pt(30, 24.5, 10)],
+      ['Residency', '-', 'Not scored: immigration status is under review with compliance', pt(25, 20, 7.5)],
+      ['Digital footprint', 'Low', 'Read in the background from IP and device (demo value)', pt(15, 12, 5)],
+      ['Email and phone', F.email && F.phone ? 'Low' : 'High', F.email && F.phone ? 'Email age and phone type checked in the background' : 'Missing', pt(15, 12, 5)]];
+  }
+  const ent = ENTITIES.find(e => e[0] === F.entity), str = STRUCTURES.find(e => e[0] === F.structure);
+  const jur = CRISK[F.inc] === 'Not supported' || CRISK[F.ops] === 'Not supported' ? 'Not supported' : worst(CRISK[F.inc], CRISK[F.ops], F.ops !== F.inc ? 'Medium' : 'Low');
+  const imp = F.impact.some(c => OFAC_PROHIBITED.includes(c)) ? 'High' : F.impact.some(c => OFAC.includes(c)) ? 'Medium' : 'Low';
+  const years = F.regdate ? yearsSince(F.regdate) : 0;
+  const online = [F.website, F.social].filter(Boolean).length;
   return [
-    ['Jurisdiction', CRISK[F.inc] === 'Not supported' || CRISK[F.ops] === 'Not supported' ? 'Not supported' : F.ops !== F.inc ? 'High' : CRISK[F.inc], F.ops !== F.inc ? 'Operates outside its country of incorporation' : `${F.inc}: ${LEVELS.find(l => l[1] === CRISK[F.inc])[0]}`],
-    ['Legal form', ent[2], ent[1]],
-    ['Business activity', act[2], act[1] + (F.activity === 'new' ? `, formed ${F.year}` : '')],
-    ['Directors and signatories', managers <= 2 ? 'Low' : managers <= 6 ? 'Medium' : 'High', `${managers} ${managers === 1 ? 'person' : 'people'}`],
-    ['Owners of 25% or more', '-', `${owners.length} listed. Not scored yet (to confirm)`],
-    ['Online presence', F.website && F.social ? 'Low' : 'High', F.website && F.social ? 'Domain age and social profile checked in the background' : 'Website and social media profile are both required']];
+    ['Jurisdiction', jur, F.ops !== F.inc ? 'Operates outside its country of incorporation' : `${F.inc}: ${levelName(F.inc)}`, pt(30, 24.5, 10)],
+    ['Legal form and structure', worst(ent[2], str[2]), `${ent[1]}, ${str[1].toLowerCase()}`, pt(20, 14.5, 5)],
+    ['OFAC countries of impact', imp, F.impact.length ? F.impact.join(', ') : 'None listed', pt(25, 22, 10)],
+    ['Business activity', forProfit() ? 'High' : !F.regdate ? 'High' : years >= 1 ? 'Low' : 'Medium', forProfit() ? 'For-profit' : F.regdate ? `Registered ${years >= 1 ? 'more' : 'less'} than 12 months ago` : 'No registration date', pt(15, 12.5, 5)],
+    ['Online presence', ['High', 'Medium', 'Low'][online], online === 2 ? 'Domain age and social profile checked in the background' : 'Website and social media profile are both required', pt(10, 7.5, 2.5)]];
 }
+// 0 to 100. Unscored factors are left out and the rest scaled to 100.
+function rawScore() {
+  const r = ratings().filter(x => x[3][x[1]] !== undefined);
+  return Math.round(r.reduce((t, x) => t + x[3][x[1]], 0) / r.reduce((t, x) => t + x[3].Low, 0) * 100);
+}
+const score = () => S.scoreAdj ?? rawScore();
+const tier = n => n >= 85 ? 'low' : n >= 70 ? 'medium' : n >= 40 ? 'high' : 'declined';
 function computedBand() {
-  const r = ratings().map(x => x[1]);
-  const highs = r.filter(x => x === 'High').length, meds = r.filter(x => x === 'Medium').length;
-  if (r.includes('Not supported')) return 'declined';
-  return highs >= 3 ? 'declined' : highs >= 1 ? 'high' : meds >= 1 ? 'medium' : 'low';
+  if (S.scoreAdj == null && ratings().some(x => x[1] === 'Not supported')) return 'declined';
+  return tier(score());
 }
 function peopleTable() {
   const F = S.form;
-  const total = F.people.reduce((t, p) => t + (+p.own || 0), 0);
   return `<div class="people">${F.people.map((p, k) => `<div class="prow">
       <input data-pi="${k}" data-pf="name" value="${p.name}" placeholder="Full name">
       <select data-pi="${k}" data-pf="role">${ROLES.map(r => `<option ${p.role === r ? 'selected' : ''}>${r}</option>`).join('')}</select>
-      <span class="own"><input data-pi="${k}" data-pf="own" type="number" min="0" max="100" value="${p.own}"><span>% owned</span></span>
       <button class="rm" data-act="rmperson" data-i="${k}" aria-label="Remove">&times;</button></div>`).join('')}
-    <button class="btn2 add" data-act="addperson">+ Add a person</button>
-    ${total > 100 ? `<p class="warnline">Ownership adds up to ${total}%. It can't be more than 100%.</p>` : ''}</div>`;
+    <button class="btn2 add" data-act="addperson">+ Add a person</button></div>`;
 }
 function riskForm() {
   const F = S.form;
+  const impact = `<select data-f="impact" multiple size="4">${ALL_COUNTRIES.map(c => `<option value="${esc(c)}" ${F.impact.includes(c) ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>`;
   return `<p class="muted">We use these answers to check your application in seconds. No documents or IDs yet. Try changing them, and open Admin view to see the effect.</p>
   <h2>About you</h2>
   <div class="grid">${lbl('Full legal name', inp('legal', F.legal), 'As it appears on official documents')}${lbl('Date of birth', inp('dob', F.dob, 'date'))}
@@ -339,23 +360,23 @@ function riskForm() {
   ${lbl('Email', inp('email', F.email, 'email'))}${lbl('Mobile', inp('phone', F.phone, 'tel'))}</div>
   ${isOrg() ? `<h2>About your organization</h2>
   <div class="grid">${lbl('Country of incorporation', csel('inc', F.inc))}${lbl('Main country of operation', csel('ops', F.ops))}
-  ${lbl('Entity type', sel('entity', ENTITIES.map(e => [e[0], e[1]]), F.entity), 'Final list to come from compliance <span class="tag">to confirm</span>')}
-  ${lbl('Business activity', sel('activity', ACTIVITIES.map(a => [a[0], a[1]]), F.activity))}
-  ${F.activity === 'new' ? lbl('Year formed', inp('year', F.year, 'number')) : ''}
-  ${F.activity !== 'forprofit' ? lbl('Charity registration number', inp('reg', F.reg), 'Checked against the public registry') : ''}
+  ${lbl('Entity type', sel('entity', ENTITIES.map(e => [e[0], e[1]]), F.entity))}${lbl('Structure', sel('structure', STRUCTURES.map(e => [e[0], e[1]]), F.structure))}
+  ${forProfit() ? '' : lbl('Registration date', inp('regdate', F.regdate, 'date')) + lbl('Charity registration number', inp('reg', F.reg), 'Checked against the public registry')}
   ${lbl('Website', inp('website', F.website), 'Required')}${lbl('Social media profile', inp('social', F.social), 'Required')}</div>
+  ${lbl('Countries of impact', impact, 'Where donations are spent. Hold Cmd or Ctrl to pick several.')}
   <h2>People behind the organization</h2>
-  <p class="muted">List every director, officer and authorized signatory, and anyone who owns 25% or more.</p>
+  <p class="muted">List your directors, officers and authorized signatories. We verify only you, as the key controller.</p>
   ${peopleTable()}` : ''}`;
 }
+const ptsCell = x => x[1] === '-' ? '<span class="muted">Not scored</span>' : `${x[3][x[1]] ?? 0} / ${x[3].Low}`;
 function riskPreview() {
   const b = computedBand();
-  const next = { low: 'Cleared, straight to verification.', medium: 'In review: a reviewer looks first.', high: 'In review: the compliance team looks first.', declined: 'Not approved, with a generic message.' }[b];
+  const next = { low: 'Straight to the vendor.', medium: 'To the vendor. Trust and safety reviews the flagged items in parallel.', high: 'To the vendor. Compliance runs enhanced due diligence in parallel.', declined: 'Not approved, with a generic message.' }[b];
   return `<h3>Live score preview</h3><p class="muted">Not visible to the user. Drafts aren't in any queue; this shows how the current answers would score.</p>
-  <p><b>${name()}</b><br><span class="band ${b}">${BAND[b]}</span></p>
-  <table><tr><th>Factor</th><th>Rating</th><th>Why</th></tr>${ratings().map(([f, r, n]) => `<tr><td>${f}</td><td>${r === '-' ? '<span class="muted">Not scored</span>' : `<span class="band ${bandCls(r)}">${r}</span>`}</td><td class="muted">${n || ''}</td></tr>`).join('')}</table>
-  <div class="notice" style="background:var(--card)"><b>What the user sees next:</b> ${next}</div>
-  <p class="muted" style="font-size:12px">Placeholder rule, since the real formula isn't decided: any three High ratings decline, any High goes to compliance, any Medium goes to a reviewer, otherwise Low. Countries use compliance's levels 1 to 4; level 4 isn't supported and declines. Weights aren't shown.</p>`;
+  <p><b>${name()}</b><br><span class="band ${b}">${BAND[b]}</span> &nbsp;<b>Score ${score()}</b></p>
+  <table><tr><th>Factor</th><th>Rating</th><th>Points</th><th>Why</th></tr>${ratings().map(x => `<tr><td>${x[0]}</td><td>${x[1] === '-' ? '' : `<span class="band ${bandCls(x[1])}">${x[1]}</span>`}</td><td>${ptsCell(x)}</td><td class="muted">${x[2] || ''}</td></tr>`).join('')}</table>
+  <div class="notice" style="background:var(--card)"><b>What happens next:</b> ${next}</div>
+  <p class="muted" style="font-size:12px">Weights and tiers from the risk matrix: Low 85 and up, Medium 70 to 84, High 40 to 69, declined below 40 or in a level 4 country. Medium points are the middle of each range and High points half the cap <span class="tag">to confirm</span>. ${isOrg() ? 'Entity type ratings and the OFAC lists are placeholders.' : 'Residency is left out, so the score is scaled from 75 to 100.'}</p>`;
 }
 
 function draftCard() {
@@ -367,8 +388,12 @@ function draftCard() {
 // Step 6 items start done; the trash icon removes one so it must be redone
 const TRASH = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>';
 const FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></svg>';
+// OQ-26: US 501(c)(3) needs the IRS letter and state registration; everyone else one registration document
+const us501 = () => S.form.inc === 'United States of America' && !forProfit();
+const ORG_DOCS = () => us501() ? [['reg', 'IRS determination letter'], ['state', 'State registration certificate']] : [['reg', 'Registration document']];
+const docRows = () => ORG_DOCS().map(([, t]) => `<tr><td>${t}</td><td>Uploaded</td></tr>`).join('');
 function required() {
-  const co = ['reg', 'form', 'board'];
+  const co = ORG_DOCS().map(d => d[0]);
   if (!vendor()) return ['id', ...(isOrg() ? co : [])];
   return ['scan', 'selfie', ...(isOrg() && !S.registry ? co : [])];
 }
@@ -377,12 +402,8 @@ function up(key, title, doneSub, reqSub, label) {
   return `<div class="check">${tick('wait', '&middot;')}<div style="flex:1"><b>${title}</b><div class="muted">Required${reqSub ? '. ' + reqSub : ''}</div></div><button class="btn2 sm" data-act="up" data-key="${key}">${label || 'Upload'}</button></div>`;
 }
 
-function otherIds(what) {
-  const owners = S.form.people.filter(p => p.name && +p.own >= 25).map(p => `${p.name} (${p.own}%)`);
-  return `<div class="check opt-row">${tick('wait', '&middot;')}<div><b>${what} for anyone owning 25% or more <span class="tag">to discuss: IDV for each</span></b><div class="muted">Not required in this flow, which verifies only the person creating the organization. The risk matrix asks for full KYC on owners of 25% or more (or a lower threshold) plus one control person. ${owners.length ? 'Would apply to: ' + owners.join(', ') + '.' : 'No one owns 25% or more in step 4.'}</div></div></div>`;
-}
 
-const orgDocs = () => up('reg', 'Registration document', 'IRS determination letter, uploaded') + up('form', 'Formation documents', 'Articles of incorporation, operating agreement, and partnership or trust deed, uploaded', 'Articles of incorporation, operating agreement, and partnership or trust deed <span class="tag">to confirm if all are required</span>') + up('board', 'Board resolution', 'Uploaded');
+const orgDocs = () => ORG_DOCS().map(([k, t]) => up(k, t, 'Uploaded')).join('');
 // Required actions: hand-verification uploads once the user reaches verification, plus any documents compliance requested
 function hubRows() {
   let rows = '';
@@ -417,7 +438,7 @@ function userScreen(i) {
       h: 'Who are you fundraising as?', tag: 'to discuss', body: `
       ${draftCard()}${choice()}
       ${field('Search for your organization', ORG)}
-      <div class="notice">No match found. <b>Create "${ORG}"</b>. Anyone joining an existing organization would request access instead.</div>` } : {
+      <div class="notice">No match found. <b>Create "${ORG}"</b>.</div>` } : {
       h: 'Who are you fundraising as?', tag: 'to discuss', body: `
       ${draftCard()}${choice()}
       <div class="notice">You'll fundraise from your personal account. No organization search or setup needed.</div>` };
@@ -436,10 +457,9 @@ function userScreen(i) {
       h: orgEntry() ? 'Tell us about your organization' : 'A few details before you go live', body: riskForm(),
       nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="submit">${orgEntry() ? 'Submit for review' : 'Submit for go-live'}</button>` };
     case 4: {
+      const ready = `<p><span class="band low">Next: verification</span></p><p>Thanks. Next, verify your identity${isOrg() ? ' and organization' : ''}.</p><p class="muted">Low, Medium and High all go to the vendor. The user isn't told the band.</p>`;
       const res = {
-        low: `<p><span class="band low">Cleared</span></p><p>You're ready to verify your identity${isOrg() ? ' and organization' : ''}.</p>`,
-        medium: `<p><span class="band medium">In review</span></p><p>Thanks. A member of our team is taking a closer look. We'll let you know here when you can continue.</p>`,
-        high: `<p><span class="band high">In review</span></p><p>Thanks. Our compliance team is reviewing your application. We'll let you know here when you can continue.</p>`,
+        low: ready, medium: ready, high: ready,
         declined: `<p><span class="band declined">Not approved</span></p><p>We're unable to approve this application. Your drafts stay saved.</p><p class="muted">The user is never told why.</p>` }[S.outcome];
       return {
         h: 'Checking your details', body: S.checking
@@ -450,8 +470,7 @@ function userScreen(i) {
           : null };
     }
     case 5: {
-      const pre = (S.resumed ? `<div class="notice toast"><b>Draft restored.</b> Pick up where you left off.</div>` : '')
-        + (flagged() ? `<div class="notice">Review complete. You can now verify.</div>` : '');
+      const pre = S.resumed ? `<div class="notice toast"><b>Draft restored.</b> Pick up where you left off.</div>` : '';
       const h = 'Verify your identity' + (isOrg() ? ' and organization' : '');
       const missing = () => required().some(k => S.removed[k]);
       const nav = `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next" ${missing() ? 'disabled' : ''}>${liveDuring() && fund() ? 'Submit and go live' : 'Continue'}</button></span>`;
@@ -461,7 +480,7 @@ function userScreen(i) {
         h: 'Your action hub', nav, body: `${pre}
         <p class="muted">We verify you by hand for now, so these are your required actions. Files are kept in secure document storage.</p>
         <h2>Required actions</h2>${hubRows()}
-        ${isOrg() ? otherIds('Photo ID') : ''}${lock}` };
+        ${lock}` };
       const regDemo = `<div class="demo" style="margin:8px 0 0"><b>Demo control:</b> company registry${demoSeg('registry', [[true, 'Reachable'], [false, 'Not reachable']])}</div>`;
       const reg = S.registry
         ? row('', 'Business lookup', 'Found in the company registry. No documents needed.' + regDemo)
@@ -472,7 +491,6 @@ function userScreen(i) {
         ${up('scan', 'Scan your ID', 'Passport scanned', 'Use your phone camera', 'Start scan')}
         ${up('selfie', 'Selfie check', 'Matched to your ID', 'Takes a few seconds', 'Take selfie')}
         ${isOrg() ? reg : ''}</div></div>
-        ${isOrg() ? otherIds('ID scan and selfie') : ''}
         ${isOrg() && !S.registry ? '' : `<p class="muted" style="margin-top:10px">No documents to upload unless the vendor can't verify you.</p>`}<p class="lock">&#128274; Your ID images stay with our verification vendor. We keep only a reference to them.</p>` };
     }
     case 6: if (orgEntry()) {
@@ -487,13 +505,13 @@ function userScreen(i) {
     } else {
       const nav = `<button class="btn2" data-act="back">Back</button><span class="pair">${waits() ? '<button class="btn2" data-act="draft">Save as draft</button>' : ''}<button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button></span>`;
       const vdemo = vendor() ? `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` : '';
-      const who = vendorLow() ? 'Our compliance team is reviewing' : regDocs() ? 'A reviewer is checking your organization documents <span class="tag">to confirm: reviewer or compliance</span>' : 'A reviewer is checking your documents';
+      const who = vendorLow() ? 'Our compliance team is reviewing' : regDocs() ? 'Our team is checking your organization documents' : !vendor() ? 'Our team is checking your documents' : 'Our team is reviewing your information';
       const got = !vendor() ? row('', 'Documents received', '') : vendorLow() ? row('', 'Verification finished', '') : row('', 'Identity verified', 'By the vendor') + (regDocs() ? row('', 'Organization documents received', 'The company registry couldn\'t be reached') : '');
       if (liveDuring()) return {
         h: 'Your campaign is live', nav, body: `<div class="notice"><span class="live">LIVE</span> &nbsp;Your campaign went live when you submitted. Payouts are held until your documents are approved.</div>
         ${got}${row('', 'Campaign live', '')}${row('wait', who, 'Nothing for you to do right now.', '&middot;')}${row('wait', 'Payouts released', 'Once the review approves your documents', '&middot;')}${vdemo}` };
       if (waits()) return {
-        h: S.approved ? 'You\'re approved' : vendorLow() ? 'We need a little more time' : 'We\'re reviewing your documents', nav, body: `${got}${row(S.approved ? '' : 'wait', who, S.approved ? 'Approved' : 'Nothing for you to do right now.', S.approved ? null : '&middot;')}${row(S.approved ? '' : 'wait', 'Ready to go live', '', S.approved ? null : '&middot;')}
+        h: S.approved ? 'You\'re approved' : vendorLow() ? 'We need a little more time' : !vendor() || regDocs() ? 'We\'re reviewing your documents' : 'We\'re reviewing your information', nav, body: `${got}${row(S.approved ? '' : 'wait', who, S.approved ? 'Approved' : 'Nothing for you to do right now.', S.approved ? null : '&middot;')}${row(S.approved ? '' : 'wait', 'Ready to go live', '', S.approved ? null : '&middot;')}
         ${S.approved ? `<div class="notice toast"><b>Approved.</b> Your campaign can go live.</div>` : `<div class="draftcard"><div><span class="muted" style="font-size:12px">Saved as a draft while we review</span><br><b>Clean water for 300 families</b><br><span class="muted">We'll let you know in the product and by email when you can go live.</span></div></div>`}
         <div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>${vdemo}` };
       return {
@@ -505,6 +523,7 @@ function userScreen(i) {
       if (noUpload() && liveDuring()) inapp = mail = 'Your campaign is live and your registration is under review. Payouts will be held until approved.' + docsLine;
       else if (noUpload()) inapp = mail = 'Your campaign has been saved as a draft while we review your information. We\'ll let you know when you can go live and begin accepting donations.' + docsLine;
       else if (liveDuring()) { inapp = `${regDocs() ? 'Your identity is verified and your' : 'Your'} campaign is live. Your documents are under review, and payouts are held until they're approved.`; mail = 'Your campaign is live. Our team is reviewing your documents, and payouts are held until they\'re approved. Then: "You\'re approved. Payouts are on."'; }
+      else if (flagged() && !vendorLow()) inapp = mail = 'Your campaign has been saved as a draft while we review your information. We\'ll let you know when you can go live and begin accepting donations.' + docsLine;
       else if (vendorLow()) { inapp = 'We need a little more time to review your application. Your campaign is saved as a draft until then.'; mail = 'We\'re taking a little more time with your application. Your campaign is saved as a draft, and we\'ll tell you when it can go live. No action is needed from you.'; }
       else if (waits()) { inapp = 'Your campaign is saved as a draft while we review your documents. We\'ll tell you here when you can go live.'; mail = 'Documents received. Your campaign is saved as a draft while our team reviews them. Then: "You\'re approved. Your campaign can go live."'; }
       else { inapp = 'You\'re verified. Your campaign can go live now.'; mail = 'You\'re verified. Go live whenever you\'re ready.'; }
@@ -569,59 +588,56 @@ function payoutScreen() {
     ${S.removed.stmt
       ? `<div class="drop"><div class="muted" style="margin-bottom:10px">PDF, JPG or PNG</div><button class="btn" data-act="up" data-key="stmt">Upload bank statement</button></div>`
       : `<div class="file">${FILE}<div style="flex:1"><b>bank-statement.pdf</b><div class="muted">Uploaded. Our compliance team reviews it before the first payout.</div></div>${S.paySaved ? '' : `<button class="rm trash" data-act="rmup" data-key="stmt" aria-label="Remove bank statement">${TRASH}</button>`}</div>`}</div>
-    <p class="muted" style="font-size:12px">Outside the US we ask for IBAN and SWIFT/BIC instead. <span class="tag">to confirm: fields per country</span></p>
+    <p class="muted" style="font-size:12px">Outside the US we ask for IBAN and SWIFT/BIC instead.</p>
     ${S.paySaved ? done : ''}${lock}` };
 }
 
 /* ---------- Admin screens ---------- */
-const ROLE = { viewer: 'Viewer', reviewer: 'Reviewer', compliance: 'Compliance' };
-// Assumed levels until compliance sends the permission matrix
+// Roles from compliance (OQ-37)
+const ROLE = { analyst: 'Analyst', manager: 'Manager', director: 'Director' };
 const ROLE_NOTE = {
-  viewer: 'CX and business development. Sees status, score band and audit log. No personal details, documents or actions.',
-  reviewer: 'Trust and safety. Sees everything, approves, requests documents and escalates to compliance. Can\'t decline.',
-  compliance: 'Compliance. Everything, including declines and the final decision on escalations.' };
-const viewer = () => S.role === 'viewer';
-const hidden = what => `<p class="muted">${what} hidden for the Viewer role.</p>`;
-function acts(list) {
-  if (viewer()) return `<p class="muted">View only. This role can't take actions.</p>`;
-  const ok = list.filter(a => S.role === 'compliance' ? a !== 'Escalate to compliance' : a !== 'Decline');
-  return `<div class="actions">${ok.map((a, k) => `<span class="${k === 0 ? 'main' : ''}">${a}</span>`).join('')}</div>`;
-}
+  analyst: 'Trust and safety or compliance analyst. Decides on accounts and campaigns, changes bank accounts and entity information, adjusts scores.',
+  manager: 'Everything an analyst does, plus scoring rule updates, data pulls, reporting, permission changes and account deletion.',
+  director: 'Everything a manager does.' };
+const acts = list => `<div class="actions">${list.map((a, k) => `<span class="${k === 0 ? 'main' : ''}">${a}</span>`).join('')}</div>`;
 // The score comes with a summary and a checklist of what was and wasn't provided
 function scoreSummary() {
-  if (viewer()) return hidden('Score details are');
   const F = S.form, r = ratings().map(x => x[1]);
   const items = [['Full legal name', F.legal], ['Date of birth', F.dob], ['Home address and country', F.addr], ['Email', F.email], ['Mobile', F.phone]];
-  if (isOrg()) items.push(...(F.activity !== 'forprofit' ? [['Charity registration number', F.reg]] : []), ['Website', F.website], ['Social media profile', F.social], ['Directors and signatories listed', F.people.some(x => x.name)]);
+  if (isOrg()) items.push(...(!forProfit() ? [['Registration date', F.regdate], ['Charity registration number', F.reg]] : []), ['Website', F.website], ['Social media profile', F.social], ['Countries of impact', F.impact.length], ['Directors and signatories listed', F.people.some(x => x.name)]);
   const missing = items.filter(x => !x[1]).map(x => x[0]);
   const highs = r.filter(x => x === 'High').length, meds = r.filter(x => x === 'Medium').length;
-  return `<div class="panel"><b>Summary:</b> ${BAND[computedBand()]}. Ratings: ${highs} High, ${meds} Medium. ${missing.length ? 'Missing: ' + missing.join(', ') + '.' : 'Everything required was provided.'}
+  return `<div class="panel"><b>Summary:</b> Score ${score()}, ${BAND[computedBand()]}. Ratings: ${highs} High, ${meds} Medium. ${missing.length ? 'Missing: ' + missing.join(', ') + '.' : 'Everything required was provided.'}
     ${items.map(([k, v]) => row(v ? '' : 'warn', k, v ? 'Provided' : 'Not provided', v ? null : '!')).join('')}</div>`;
 }
 function adminExtras() {
   if (S.step < 4) return '';
   const types = S.docTypes.map(t => [t, t]).concat([['__new', '+ New document type']]);
-  const notes = viewer() ? hidden('Internal notes are') : `<div class="log"><div><span class="muted">Day 1, 10:40 &middot; Trust and safety</span> &nbsp;Website and social profile look consistent with the risk form.</div></div>`;
-  const req = viewer() ? '' : `<h2>Request documents</h2><div class="panel">
+  const notes = `<div class="log"><div><span class="muted">Day 1, 10:40 &middot; Trust and safety</span> &nbsp;Website and social profile look consistent with the risk form.</div></div>`;
+  const req = `<h2>Request documents</h2><div class="panel">
     ${lbl('Document type', `<select data-r="type">${types.map(([v, l]) => `<option value="${esc(v)}" ${S.req.type === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`, 'Any type. A new type becomes selectable for later requests.')}
     ${S.req.type === '__new' ? lbl('New type name', `<input data-r="newType" value="${esc(S.req.newType)}" placeholder="For example, Medical attestation">`) : ''}
     ${lbl('Message to the user', `<textarea data-r="msg" rows="2">${esc(S.req.msg)}</textarea>`)}
     <button class="btn sm" data-act="sendreq">Send request</button>
     <p class="muted" style="font-size:12px;margin:8px 0 0">Any file type for now, with size and security limits. Later, compliance picks the allowed file types.</p></div>`;
-  return `${req}<h2>Internal notes</h2>${notes}`;
+  const adj = `<h2>Adjust score</h2><div class="panel"><div class="muted" style="font-size:12px">Only trust and safety and compliance can adjust a score. It's logged in the audit trail.${S.scoreAdj != null ? ` Adjusted from ${rawScore()} to ${S.scoreAdj}.` : ''}</div>
+    <div class="grid">${lbl('New score (0 to 100)', `<input data-a="score" type="number" min="0" max="100" value="${esc(S.adj.score)}">`)}${lbl('Reason', `<input data-a="reason" value="${esc(S.adj.reason)}" placeholder="Required">`)}</div>
+    <button class="btn sm" data-act="adjust">Adjust score</button></div>`;
+  const mgr = S.role === 'analyst' ? '' : `<h2>Manager tools</h2>${acts(['Edit scoring rules', 'Export data', 'Reporting', 'Change permissions', 'Delete account'])}`;
+  return `${adj}${req}<h2>Internal notes</h2>${notes}${mgr}`;
 }
 function factors() {
-  if (viewer()) return '';
   const note = S.outcome !== computedBand() ? `<p class="muted" style="font-size:12px">The demo control overrides the result. The answers alone give ${BAND[computedBand()]}.</p>` : '';
-  return `<table><tr><th>Factor</th><th>Rating</th></tr>${ratings().map(([f, v]) => `<tr><td>${f}</td><td>${v === '-' ? 'Not scored' : v}</td></tr>`).join('')}</table>${note}`;
+  return `<table><tr><th>Factor</th><th>Rating</th><th>Points</th></tr>${ratings().map(x => `<tr><td>${x[0]}</td><td>${x[1] === '-' ? '' : x[1]}</td><td>${ptsCell(x)}</td></tr>`).join('')}</table>${note}`;
 }
 function caseHead() {
-  return `<p><b>${name()}</b><br><span class="band ${S.outcome}">${BAND[S.outcome]}</span> &nbsp;<span class="muted">Score band and review state are shown separately.</span></p>`;
+  return `<p><b>${name()}</b><br><span class="band ${S.outcome}">${BAND[S.outcome]}</span> &nbsp;<b>Score ${score()}</b>${S.scoreAdj != null ? ' <span class="muted">(adjusted)</span>' : ''}</p>`;
 }
 function audit(extra) {
-  const items = ['Draft created', 'Risk form submitted', `Score: ${BAND[S.outcome]}`];
-  if (flagged()) items.push(`${reviewer()} approved after review`);
+  const items = ['Draft created', 'Risk form submitted', `Score: ${rawScore()}, ${BAND[S.outcome]}`];
+  if (S.scoreAdj != null) items.push(`${S.adjBy} adjusted the score from ${rawScore()} to ${S.scoreAdj}: ${esc(S.adjWhy)}`);
   items.push(vendor() ? 'Vendor verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed') : 'Documents uploaded to secure document storage');
+  if (flagged() && vendor() && !vendorLow()) items.push(`${reviewer()} approved after review`);
   if (regDocs()) items.push('Company registry not reachable, organization documents uploaded');
   if (liveDuring()) items.push('Campaign live while documents are reviewed, payouts held');
   if (waits()) items.push('Saved as draft until the review approves it');
@@ -635,22 +651,23 @@ function adminScreen(i) {
   if (i === 3) return riskPreview();
   if (i <= 2) return `<h3>Nothing to review</h3><p>${S.draft ? 'A draft is saved. ' : ''}Drafts are not in any queue. Compliance starts when the user submits for go-live.</p>`;
   if (i === 4) {
-    const q = { low: ['Cleared automatically', 'No review needed. Sent to verification.'], medium: ['Reviewer queue', 'A reviewer checks the flagged items and can request information.'], high: ['Compliance review queue', 'Enhanced review by the compliance team.'], declined: ['Declined', 'The reason stays internal. The user sees a generic message.'] }[S.outcome];
+    const q = { low: ['Sent to the vendor', 'No review needed.'], medium: ['Sent to the vendor, trust and safety queue', 'Standard due diligence plus manual review. Trust and safety reviews the flagged items in parallel and can request documents.'], high: ['Sent to the vendor, compliance queue', 'Enhanced due diligence. Compliance reviews through the Freshdesk escalation queue in parallel.'], declined: ['Declined', 'Do not onboard. The reason stays internal. The user sees a generic message.'] }[S.outcome];
     const list = S.outcome === 'medium' ? ['Approve', 'Request documents', 'Escalate to compliance', 'Decline']
       : S.outcome === 'high' ? ['Approve', 'Request documents', 'Escalate to compliance', 'Decline'] : [];
     return `<h3>${q[0]}</h3>${caseHead()}<p>${q[1]}</p>${list.length ? acts(list) : ''}
-      <h2>Score summary</h2>${scoreSummary()}${viewer() ? '' : `<h2>Risk form answers, rated</h2>${factors()}<p class="muted" style="font-size:12px">Weights and thresholds are not shown here.</p>`}`;
+      <h2>Score summary</h2>${scoreSummary()}<h2>Risk form answers, rated</h2>${factors()}`;
   }
   if (i === 5) {
     const docs = !vendor()
-      ? `<table><tr><th>Document</th><th>Status</th></tr><tr><td>Photo ID</td><td>Uploaded</td></tr>${isOrg() ? '<tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr>' : ''}</table><p class="muted" style="font-size:12px">Files sit in secure document storage. Reads are logged.</p>${S.requests.length ? `<table><tr><th>Requested</th><th>Status</th></tr>${S.requests.map((q, k) => `<tr><td>${esc(q.type)}</td><td>${S.removed['req' + k] ? 'Waiting for the user' : 'Uploaded'}</td></tr>`).join('')}</table>` : ''}`
+      ? `<table><tr><th>Document</th><th>Status</th></tr><tr><td>Photo ID</td><td>Uploaded</td></tr>${isOrg() ? docRows() : ''}</table><p class="muted" style="font-size:12px">Files sit in secure document storage. Reads are logged.</p>${S.requests.length ? `<table><tr><th>Requested</th><th>Status</th></tr>${S.requests.map((q, k) => `<tr><td>${esc(q.type)}</td><td>${S.removed['req' + k] ? 'Waiting for the user' : 'Uploaded'}</td></tr>`).join('')}</table>` : ''}`
       : `<table><tr><th>Vendor check</th><th>Result</th></tr><tr><td>ID document</td><td>Passed</td></tr><tr><td>Selfie check</td><td>Passed</td></tr><tr><td>Sanctions screening</td><td>Clear</td></tr><tr><td>ID country matches country of residence</td><td>Yes. The vendor flags a mismatch.</td></tr>${isOrg() ? `<tr><td>Company registry</td><td>${S.registry ? 'Found' : 'Not reachable, documents requested'}</td></tr>` : ''}</table><p class="muted" style="font-size:12px">ID images stay with the vendor. We keep only its token and results.</p>`;
-    return `<h3>Case detail</h3>${caseHead()}${viewer() ? hidden('Documents and vendor results are') : docs}<h2>Score summary</h2>${scoreSummary()}`;
+    return `<h3>Case detail</h3>${caseHead()}${docs}<h2>Score summary</h2>${scoreSummary()}`;
   }
   if (i === 6) {
     if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p>${acts(['Approve', 'Request documents', 'Escalate to compliance', 'Decline'])}`;
-    if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Check the uploaded organization documents. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p>${viewer() ? hidden('Documents are') : '<table><tr><th>Document</th><th>Status</th></tr><tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr></table>'}${acts(['Approve', 'Request documents', 'Escalate to compliance', 'Decline'])}`;
+    if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Trust and safety checks the uploaded organization documents. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p><table><tr><th>Document</th><th>Status</th></tr>${docRows()}</table>${acts(['Approve', 'Request documents', 'Escalate to compliance', 'Decline'])}`;
     if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team. The campaign stays a draft until you approve.</p>${acts(['Approve', 'Request documents', 'Decline'])}`;
+    if (flagged()) return `<h3>${reviewer()} queue</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The internal score was ${BAND[S.outcome]}, so ${S.outcome === 'high' ? 'compliance runs enhanced due diligence' : 'trust and safety reviews the flagged items'}. The campaign stays a draft until approved.</p>${acts(['Approve', 'Request documents', ...(S.outcome === 'medium' ? ['Escalate to compliance'] : []), 'Decline'])}<h2>Score summary</h2>${scoreSummary()}`;
     return `<h3>No action needed</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The case closes automatically.</p>`;
   }
   if (i === 9) {
@@ -679,14 +696,14 @@ function pathMap() {
   <div class="legend"><span><span class="sw" style="border:2px solid var(--teal)"></span>Changes with vendor</span><span><span class="sw" style="background:var(--low-tint)"></span><span class="sw" style="background:var(--medium-tint)"></span><span class="sw" style="background:var(--high-tint)"></span><span class="sw" style="background:var(--declined-tint)"></span>Score bands</span><span><span class="sw" style="border-style:dashed;opacity:.4"></span>Skipped on the person path</span><span>Outline = where you are. Click any step to jump there.</span></div>
   ${st('Start', mapNode('Register as an organization', 'Sign up, then straight to the risk form', { step: 0, entry: 'org', app: 'org' }) + mapNode('Start a fundraiser', 'Sign up, then every step below', { step: 0, entry: 'fund' }))}
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
-  ${st('2. Applicant', `<div><div class="seg">${[['org', '🏢 Organization'], ['person', '👤 Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create or join an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
+  ${st('2. Applicant', `<div><div class="seg">${[['org', '🏢 Organization'], ['person', '👤 Person']].map(([v, l]) => `<button class="${S.app === v ? 'on' : ''}" data-k="app" data-v="${v}">${l}</button>`).join('')}</div><div class="muted" style="font-size:12px;margin-top:6px">${isOrg() ? 'Create an organization. All steps apply.' : 'Personal account. Organization steps are faded below.'}</div></div>`)}
   ${st('3. Campaign', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
-  ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Goes live now, verifies while live', medium: 'Reviewer first', high: 'Compliance first', declined: 'Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
+  ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Score 85+. To the vendor', medium: '70 to 84. Vendor, trust and safety in parallel', high: '40 to 69. Vendor, compliance in parallel', declined: 'Below 40. Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
   ${st('6. Verification', mapNode('Action hub', 'No vendor: ID' + (isOrg() ? ' and company documents' : '') + ' as required actions', { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Documents added to the action hub', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
-  ${st('7. Review', mapNode('Reviewer checks documents', 'In-house. Low is live meanwhile, others wait as a draft', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable. Low is live meanwhile', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('7. Review', mapNode('Reviewer checks documents', 'No vendor. Low in a level 1 country is live meanwhile, others draft', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass, Low', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Trust and safety or compliance review', 'With vendor, pass, Medium or High. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable. Low is live meanwhile', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('7. Organization result', mapNode('Under review or approved', 'Registering an organization only. Then start a fundraiser', { step: 6, entry: 'org', app: 'org' }))}
-  ${st('8. Message', mapNode('Verified by hand', 'No vendor. Low is live, others draft', { step: 7, mode: 'inhouse', entry: 'fund' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('8. Message', mapNode('Verified by hand', 'No vendor. Low in a level 1 country is live, others draft', { step: 7, mode: 'inhouse', entry: 'fund' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
   ${st('10. Payout', mapNode('Enter manually', 'Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect with Plaid', 'Log in through Plaid, approved automatically', { step: 9, payout: 'vendor' }, 'v'))}
   </div>`;
@@ -755,12 +772,17 @@ document.addEventListener('click', e => {
     case 'up': delete S.removed[b.dataset.key]; render(); break;
     case 'rmup': S.removed[b.dataset.key] = true; render(); break;
     case 'submit': S.outcome = computedBand(); go(4); break;
-    case 'addperson': S.form.people.push({ name: '', role: 'Director', own: '0' }); render(); break;
+    case 'addperson': S.form.people.push({ name: '', role: 'Director' }); render(); break;
+    case 'adjust': {
+      const n = Math.round(+S.adj.score);
+      if (S.adj.score === '' || !(n >= 0 && n <= 100) || !S.adj.reason.trim()) break;
+      Object.assign(S, { scoreAdj: n, adjBy: ROLE[S.role], adjWhy: S.adj.reason.trim(), outcome: tier(n), adj: { score: '', reason: '' } }); render(); break;
+    }
     case 'rmperson': S.form.people.splice(+b.dataset.i, 1); render(); break;
     case 'link': S.linked = true; render(); break;
     case 'unlink': S.linked = false; render(); break;
     case 'paysave': S.paySaved = true; render(); break;
-    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor', requests: [], toast: null }); go(-1); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor', requests: [], toast: null, scoreAdj: null }); go(-1); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
@@ -778,15 +800,18 @@ $('btn-theme').addEventListener('click', () => {
 });
 paintTheme();
 const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>
-  <div class="panel"><span class="seglabel">Viewing as</span> <span class="tag">assumed roles, to confirm with compliance</span>${demoSeg('role', Object.entries(ROLE))}<div class="muted" style="font-size:12px;margin-top:6px">${ROLE_NOTE[S.role]}</div></div>`;
+  <div class="panel"><span class="seglabel">Viewing as</span> <span class="tag">roles from compliance</span>${demoSeg('role', Object.entries(ROLE))}<div class="muted" style="font-size:12px;margin-top:6px">${ROLE_NOTE[S.role]}</div></div>`;
 const adminBody = () => adminHead() + adminScreen(S.step) + adminExtras();
 function onField(e, full) {
   const t = e.target;
+  if (t.dataset.a) { S.adj[t.dataset.a] = t.value; return; }
+  if (t.dataset.f === 'impact') { S.form.impact = [...t.selectedOptions].map(o => o.value); S.scoreAdj = null; S.outcome = computedBand(); if (full) render(); return; }
   if (t.dataset.r) { S.req[t.dataset.r] = t.value; if (full && t.tagName === 'SELECT') render(); return; }
   if (t.dataset.p) { S.pay[t.dataset.p] = t.value; if (full) render(); else $('paysave').disabled = !payOk(); return; }
   if (t.dataset.f) S.form[t.dataset.f] = t.value;
   else if (t.dataset.pf) S.form.people[+t.dataset.pi][t.dataset.pf] = t.value;
   else return;
+  S.scoreAdj = null;
   S.outcome = computedBand();
   if (full) render(); else if (S.admin) $('admin').innerHTML = adminBody();
 }
