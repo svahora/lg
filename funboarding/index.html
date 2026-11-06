@@ -111,7 +111,7 @@
   input, select { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; }
   input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
   .people { border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
-  .prow { display: grid; grid-template-columns: 1.4fr 1.2fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .prow { display: grid; grid-template-columns: 1.4fr 1.2fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
   .own { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
   .own input { width: 70px; }
   .rm { border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 8px; width: 34px; height: 34px; }
@@ -282,7 +282,7 @@ function choice() {
 S.form = {
   legal: 'Amina Rahman', dob: '1988-03-14', addr: '120 Main Street, Springfield, IL 62701', res: 'United States of America', email: 'amina.rahman@example.org', phone: '+1 555 0134',
   inc: 'United States of America', ops: 'United States of America', impact: ['Pakistan'], entity: 'charity', structure: 'standalone', regdate: '2016-05-01', reg: '12-3456789', website: 'hopevalley.example.org', social: 'instagram.com/hopevalley',
-  people: [{ name: 'Amina Rahman', role: 'Director' }, { name: 'Yusuf Khan', role: 'Authorized signatory' }]
+  people: [{ name: 'Amina Rahman', role: 'Director', dob: '1988-03-14' }, { name: 'Yusuf Khan', role: 'Authorized signatory', dob: '1979-11-02' }]
 };
 // Compliance's country levels (Notion OQ-6). Level 4 isn't supported, so it declines.
 const LEVELS = [["Level 1 (low risk)", "Low", ["Australia", "Austria", "Belgium", "Canada", "Denmark", "Finland", "France", "Germany", "Iceland", "Ireland", "Italy", "Luxembourg", "Netherlands", "New Zealand", "Norway", "Poland", "Sweden", "Switzerland", "United Kingdom", "United States of America", "Virgin Islands, U.S. (501(c)(3) only)"]], ["Level 2 (medium risk)", "Medium", ["Singapore", "Japan", "Spain"]], ["Level 3 (high risk)", "High", ["Algeria", "Antarctica", "Bahrain", "Bangladesh", "China", "Egypt", "Estonia", "Greece", "Hungary", "India", "Indonesia", "Jordan", "Korea, Republic of", "Kuwait", "Malaysia", "Morocco", "Oman", "Pakistan", "Philippines", "Portugal", "Qatar", "Saudi Arabia", "South Africa", "Thailand", "Tunisia", "Turkey", "United Arab Emirates", "Uruguay"]], ["Level 4 (not supported)", "Not supported", ["Afghanistan", "Aland Islands", "Albania", "American Samoa", "Andorra", "Angola", "Anguilla", "Antigua and Barbuda", "Argentina", "Armenia", "Aruba", "Azerbaijan", "Bahamas", "Barbados", "Belarus", "Belize", "Benin", "Bermuda", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Bouvet Island", "Brazil", "British Indian Ocean Territory", "Brunei Darussalam", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Cape Verde/Cabo Verde", "Cayman Islands", "Central African Republic", "Chad", "Chile", "Christmas Island", "Cocos (Keeling) Islands", "Colombia", "Comoros", "Democratic Republic of the Congo", "The Republic of the Congo", "Cook Islands", "Costa Rica", "Côte D'Ivoire", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "El Salvador", "Equatorial Guinea", "Eritrea", "Ethiopia", "Falkland Islands (Malvinas)", "Faroe Islands", "Fiji", "French Guiana", "French Polynesia", "French Southern Territories", "Gabon", "Gambia", "Georgia", "Ghana", "Gibraltar", "Greenland", "Grenada", "Guadeloupe", "Guam", "Guatemala", "Guernsey", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Heard Island and McDonald Islands", "Holy See (Vatican City State)", "Honduras", "Hong Kong (SAR)", "Iraq", "Isle of Man", "Israel", "Jamaica", "Jersey", "Kazakhstan", "Kenya", "Kiribati", "North Korea", "Kyrgyzstan", "Lao People's Democratic Republic", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Macau (SAR)", "North Macedonia", "Madagascar", "Malawi", "Maldives", "Mali", "Malta", "Marshall Islands", "Martinique", "Mauritania", "Mauritius", "Mayotte", "Mexico", "Micronesia, Federated States of", "Moldova, Republic of", "Monaco", "Mongolia", "Montenegro", "Montserrat", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands Antilles", "New Caledonia", "Nicaragua", "Niger", "Nigeria", "Niue", "Norfolk Island", "Northern Mariana Islands", "Palau", "Palestinian Territories", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Pitcairn Islands", "Puerto Rico", "Reunion", "Romania", "The Russian Federation", "Rwanda", "Saint Barthelemy", "Saint Helena", "Saint Kitts and Nevis", "Saint Lucia", "Saint Martin", "Saint Pierre and Miquelon", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "Somaliland", "South Georgia and the South Sandwich Islands", "South Sudan", "Sri Lanka", "Sudan", "Suriname", "Svalbard and Jan Mayen Islands", "Swaziland/Eswatini", "Syrian Arab Republic", "Taiwan", "Tajikistan", "Tanzania and Zanzibar", "Timor-Leste", "Togo", "Tokelau", "Tonga", "Trinidad and Tobago", "Turkmenistan", "Turks and Caicos Islands", "Tuvalu", "Uganda", "Ukraine", "United States Minor Outlying Islands", "Uzbekistan", "Vanuatu", "Venezuela", "Vietnam", "Virgin Islands, British", "Wallis and Futuna", "Western Sahara", "Yemen", "Zambia", "Zimbabwe", "Iran", "Kosovo"]]];
@@ -347,6 +347,7 @@ function peopleTable() {
   return `<div class="people">${F.people.map((p, k) => `<div class="prow">
       <input data-pi="${k}" data-pf="name" value="${p.name}" placeholder="Full name">
       <select data-pi="${k}" data-pf="role">${ROLES.map(r => `<option ${p.role === r ? 'selected' : ''}>${r}</option>`).join('')}</select>
+      <input data-pi="${k}" data-pf="dob" type="date" value="${p.dob}" aria-label="Date of birth">
       <button class="rm" data-act="rmperson" data-i="${k}" aria-label="Remove">&times;</button></div>`).join('')}
     <button class="btn2 add" data-act="addperson">+ Add a person</button></div>`;
 }
@@ -365,7 +366,7 @@ function riskForm() {
   ${lbl('Website', inp('website', F.website), 'Required')}${lbl('Social media profile', inp('social', F.social), 'Required')}</div>
   ${lbl('Countries of impact', impact, 'Where donations are spent. Hold Cmd or Ctrl to pick several.')}
   <h2>People behind the organization</h2>
-  <p class="muted">List your directors, officers and authorized signatories. We verify only you, as the key controller.</p>
+  <p class="muted">List your directors, officers and authorized signatories, with each person's full name and date of birth. We screen everyone listed and verify only you, as the key controller.</p>
   ${peopleTable()}` : ''}`;
 }
 const ptsCell = x => x[1] === '-' ? '<span class="muted">Not scored</span>' : `${x[3][x[1]] ?? 0} / ${x[3].Low}`;
@@ -604,7 +605,7 @@ const acts = list => `<div class="actions">${list.map((a, k) => `<span class="${
 function scoreSummary() {
   const F = S.form, r = ratings().map(x => x[1]);
   const items = [['Full legal name', F.legal], ['Date of birth', F.dob], ['Home address and country', F.addr], ['Email', F.email], ['Mobile', F.phone]];
-  if (isOrg()) items.push(...(!forProfit() ? [['Registration date', F.regdate], ['Charity registration number', F.reg]] : []), ['Website', F.website], ['Social media profile', F.social], ['Countries of impact', F.impact.length], ['Directors and signatories listed', F.people.some(x => x.name)]);
+  if (isOrg()) items.push(...(!forProfit() ? [['Registration date', F.regdate], ['Charity registration number', F.reg]] : []), ['Website', F.website], ['Social media profile', F.social], ['Countries of impact', F.impact.length], ['Directors and signatories listed', F.people.some(x => x.name)], ['Dates of birth for everyone listed', F.people.length && F.people.every(x => x.dob)]);
   const missing = items.filter(x => !x[1]).map(x => x[0]);
   const highs = r.filter(x => x === 'High').length, meds = r.filter(x => x === 'Medium').length;
   return `<div class="panel"><b>Summary:</b> Score ${score()}, ${BAND[computedBand()]}. Ratings: ${highs} High, ${meds} Medium. ${missing.length ? 'Missing: ' + missing.join(', ') + '.' : 'Everything required was provided.'}
@@ -772,7 +773,7 @@ document.addEventListener('click', e => {
     case 'up': delete S.removed[b.dataset.key]; render(); break;
     case 'rmup': S.removed[b.dataset.key] = true; render(); break;
     case 'submit': S.outcome = computedBand(); go(4); break;
-    case 'addperson': S.form.people.push({ name: '', role: 'Director' }); render(); break;
+    case 'addperson': S.form.people.push({ name: '', role: 'Director', dob: '' }); render(); break;
     case 'adjust': {
       const n = Math.round(+S.adj.score);
       if (S.adj.score === '' || !(n >= 0 && n <= 100) || !S.adj.reason.trim()) break;
