@@ -184,6 +184,9 @@
   .btn.sm { padding: 6px 14px; font-size: 13px; }
   select[multiple] { padding: 4px; }
   .admin textarea { font: inherit; width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--card); color: var(--ink); }
+  .help { border: 0; background: transparent; font-size: 15px; font-weight: 800; color: var(--declined); padding: 0 4px; vertical-align: middle; }
+  .atabs { margin: 0 0 12px; }
+  .atabs .seg { display: flex; flex-wrap: wrap; width: fit-content; background: var(--card); }
   .panel { background: var(--card); border-radius: 10px; padding: 10px 12px; margin: 12px 0; }
 
   /* Path map */
@@ -236,7 +239,7 @@
 <div class="ntoast" id="ntoast" hidden></div>
 
 <script>
-const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'vendor', linked: false, paySaved: false, role: 'analyst', hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
+const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'vendor', linked: false, paySaved: false, role: 'analyst', atab: 'case', roleHelp: false, hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
 // Smart document types: the first request defines a type, later requests reuse it
 S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
@@ -628,18 +631,20 @@ function scoreSummary() {
   return `<div class="panel"><b>Summary:</b> Score ${score()}, ${BAND[computedBand()]}. Ratings: ${highs} High, ${meds} Medium. ${missing.length ? 'Missing: ' + missing.join(', ') + '.' : 'Everything required was provided.'}
     ${items.map(([k, v]) => row(v ? '' : 'warn', k, v ? 'Provided' : 'Not provided', v ? null : '!')).join('')}</div>`;
 }
-function adminExtras() {
-  if (S.step < 4) return '';
+const auditExtra = () => [...(S.step >= 8 ? ['Campaign live'] : []), ...(S.step === 9 && S.paySaved ? [S.payout === 'vendor' ? 'Payout account connected through Plaid, approved automatically' : 'Payout account added, sent to compliance review'] : [])];
+function adminTabs() {
+  if (S.step < 4) return { case: adminScreen(S.step) };
   const types = S.docTypes.map(t => [t, t]).concat([['__new', '+ New document type']]);
   const notes = `<div class="log"><div><span class="muted">Day 1, 10:40 &middot; Trust and safety</span> &nbsp;Website and social profile look consistent with the risk form.</div></div>`;
-  const req = `<h2>Request documents</h2><div class="panel">
+  const req = `<div class="panel">
     ${lbl('Document type', `<select data-r="type">${types.map(([v, l]) => `<option value="${esc(v)}" ${S.req.type === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`, 'Any type. A new type becomes selectable for later requests.')}
     ${S.req.type === '__new' ? lbl('New type name', `<input data-r="newType" value="${esc(S.req.newType)}" placeholder="For example, Medical attestation">`) : ''}
     ${lbl('Message to the user', `<textarea data-r="msg" rows="2">${esc(S.req.msg)}</textarea>`)}
     <button class="btn sm" data-act="sendreq">Send request</button>
     <p class="muted" style="font-size:12px;margin:8px 0 0">Any file type for now, with size and security limits. Later, compliance picks the allowed file types.</p></div>`;
-  const mgr = S.role === 'analyst' ? '' : `<h2>Manager tools</h2>${acts(['Edit scoring rules', 'Export data', 'Reporting', 'Change permissions', 'Delete account'])}`;
-  return `${req}<h2>Internal notes</h2>${notes}${mgr}`;
+  const tabs = { case: adminScreen(S.step), documents: req, notes, audit: audit(auditExtra()) };
+  if (S.role !== 'analyst') tabs.manager = acts(['Edit scoring rules', 'Export data', 'Reporting', 'Change permissions', 'Delete account']);
+  return tabs;
 }
 function factors() {
   const note = S.outcome !== computedBand() ? `<p class="muted" style="font-size:12px">The demo control overrides the result. The answers alone give ${BAND[computedBand()]}.</p>` : '';
@@ -692,10 +697,9 @@ function adminScreen(i) {
       ...(v ? [] : [['Bank statement', S.removed.stmt ? 'Missing' : 'Uploaded']]),
       ['Status', !S.paySaved ? 'Not submitted' : v ? 'Approved automatically' : 'In compliance review']];
     return `<h3>Payout account</h3>${caseHead()}<table>${rows.map(([k, val]) => `<tr><th>${k}</th><td>${val}</td></tr>`).join('')}</table>
-      <p class="muted" style="font-size:12px">Full account numbers are never shown here.</p>
-      <h2>Audit log</h2>${audit(['Campaign live', ...(S.paySaved ? [S.payout === 'vendor' ? 'Payout account connected through Plaid, approved automatically' : 'Payout account added, sent to compliance review'] : [])])}`;
+      <p class="muted" style="font-size:12px">Full account numbers are never shown here.</p>`;
   }
-  return `<h3>Audit log</h3>${caseHead()}${audit(i === 8 ? ['Campaign live'] : [])}`;
+  return `<h3>Case</h3>${caseHead()}<p class="muted">The full history is in the Audit log tab.</p>`;
 }
 
 /* ---------- Path map ---------- */
@@ -798,6 +802,7 @@ document.addEventListener('click', e => {
     }
     case 'hub': S.hub = true; S.toast = null; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
     case 'closehub': S.hub = false; render(); break;
+    case 'rolehelp': S.roleHelp = !S.roleHelp; render(); break;
     case 'closetoast': S.toast = null; render(); break;
     case 'startfund': S.orgDone = true; S.entry = 'fund'; S.draft = false; go(2); break;
     case 'golive': go(8); break;
@@ -829,8 +834,14 @@ $('btn-theme').addEventListener('click', () => {
 });
 paintTheme();
 const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>
-  <div class="panel"><span class="seglabel">Viewing as</span> <span class="tag">roles from compliance</span>${demoSeg('role', Object.entries(ROLE))}<div class="muted" style="font-size:12px;margin-top:6px">${ROLE_NOTE[S.role]}</div></div>`;
-const adminBody = () => adminHead() + adminScreen(S.step) + adminExtras();
+  <div class="panel"><span class="seglabel">Viewing as</span><button class="help" data-act="rolehelp" aria-label="What this role can do" aria-expanded="${S.roleHelp}">❓</button>${demoSeg('role', Object.entries(ROLE))}${S.roleHelp ? `<div class="muted" style="font-size:12px;margin-top:6px"><span class="tag">roles from compliance</span> ${ROLE_NOTE[S.role]}</div>` : ''}</div>`;
+const TAB_NAMES = { case: 'Case', documents: 'Request documents', notes: 'Notes', audit: 'Audit log', manager: 'Manager tools' };
+function adminBody() {
+  const tabs = adminTabs();
+  if (!tabs[S.atab]) S.atab = 'case';
+  const bar = Object.keys(tabs).length > 1 ? `<div class="atabs">${demoSeg('atab', Object.keys(tabs).map(k => [k, TAB_NAMES[k]]))}</div>` : '';
+  return adminHead() + bar + tabs[S.atab];
+}
 function onField(e, full) {
   const t = e.target;
   if (t.dataset.f === 'impact') { S.form.impact = [...t.selectedOptions].map(o => o.value); S.outcome = computedBand(); if (full) render(); return; }
