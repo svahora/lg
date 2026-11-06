@@ -85,7 +85,7 @@
   .ghost.theme { width: 34px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
   .ghost.theme svg { width: 18px; height: 18px; display: block; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(35, 57, 95, .5); } 70% { box-shadow: 0 0 0 10px rgba(35, 57, 95, 0); } 100% { box-shadow: 0 0 0 0 rgba(35, 57, 95, 0); } }
-  .ghost.pulse { border-color: var(--lapis); animation: pulse 1.6s ease-out infinite; }
+  .ghost.pulse, .wheel.pulse { border-color: var(--lapis); animation: pulse 1.6s ease-out infinite; }
   .bell { position: relative; }
   .bell .badge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--declined); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; }
   .help { border: 0; background: transparent; font-size: 15px; font-weight: 800; color: var(--declined); padding: 0 4px; }
@@ -278,14 +278,13 @@
   <div class="brand">Funboarding</div>
   <div class="tools">
     <button class="ghost icon bell" id="btn-hub" data-act="hub" aria-label="Action hub" title="Action hub">🔔<span class="badge" id="hub-badge" hidden></span></button>
-    <button class="ghost icon" id="btn-admin" aria-label="Admin view" title="Admin view">🛡️</button>
   </div>
 </div>
 <div class="settings">
   <div class="settings-panel" id="settings" role="dialog" aria-label="Prototype settings" hidden>
     <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
     <div class="ctl"><span class="seglabel">KYC/KYB vendor</span><div class="seg" id="seg-mode"></div></div>
-    <div class="ctl" style="justify-content:flex-start"><button class="ghost icon" id="btn-map" aria-label="Path map" title="Path map">🗺️</button><button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button></div>
+    <div class="ctl" style="justify-content:flex-start;gap:8px"><button class="ghost icon" id="btn-admin" aria-label="Admin view" title="Admin view">🛡️</button><button class="ghost icon" id="btn-map" aria-label="Path map" title="Path map">🗺️</button><button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button></div>
   </div>
   <button class="wheel" id="btn-settings" aria-label="Prototype settings" title="Prototype settings" aria-expanded="false">⚙️</button>
 </div>
@@ -831,7 +830,9 @@ function render() {
   seg('seg-mode', [['vendor', 'With vendor'], ['inhouse', 'In-house']], 'mode');
   $('btn-admin').classList.toggle('on', S.admin);
   $('settings').hidden = !S.settings; $('btn-settings').setAttribute('aria-expanded', !!S.settings);
+  // Nudge toward the admin view at the risk form, where the live score is
   $('btn-admin').classList.toggle('pulse', S.step === 3 && !S.admin);
+  $('btn-settings').classList.toggle('pulse', S.step === 3 && !S.admin && !S.settings);
   $('seg-app').parentElement.hidden = orgEntry();
   const at = pos();
   const flow = (S.orgDone ? [] : [-1]).concat(FLOW()), idx = flow.indexOf(S.step);
@@ -888,7 +889,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   if (b.dataset.k) { if (b.dataset.k === 'payout') S.paySaved = false; let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
   if (b.dataset.set) { const set = JSON.parse(b.dataset.set); Object.assign(S, set); S.map = !!set.map; S.checking = false; render(); return; }
-  if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
+  if (b.id === 'btn-admin') { S.admin = !S.admin; S.settings = false; render(); return; }
   if (b.id === 'btn-map') { S.map = true; S.settings = false; render(); return; }
   if (b.id === 'btn-settings') { S.settings = !S.settings; render(); return; }
   switch (b.dataset.act) {
