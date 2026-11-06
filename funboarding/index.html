@@ -811,10 +811,10 @@ function go(step) {
     S.hubSeeded = true;
     (!vendor() ? ['id'] : []).concat(ORG_DOCS().map(d => d[0])).forEach(k => S.removed[k] = true);
   }
-  // On reaching the action hub, the push notification eases in after a second
-  if (S.step === 10 && S.hubSeeded && !S.pushed) {
+  // On reaching the result, the push notification eases in after a second and points to the action hub
+  if (S.step === 6 && S.hubSeeded && !S.pushed) {
     S.pushed = true;
-    setTimeout(() => { if (S.step === 10 && hubPending()) { S.push = { title: 'Action needed', msg: `You have ${hubPending()} required actions in your action hub.`, here: true }; render(); } }, 1000);
+    setTimeout(() => { if (S.step === 6 && hubPending()) { S.push = { title: 'Action needed', msg: `You have ${hubPending()} required actions in your action hub.` }; render(); } }, 1000);
   }
   if (S.step === 4) { S.checking = true; setTimeout(() => { S.checking = false; render(); }, 1200); }
   render(); window.scrollTo({ top: 0, behavior: 'smooth' });
