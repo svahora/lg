@@ -175,6 +175,11 @@
   .log div { padding: 6px 0; border-bottom: 1px solid var(--line); }
   .log div:last-child { border-bottom: 0; }
   .x { border: 0; background: transparent; font-size: 20px; color: var(--muted); }
+  .ntoast { position: fixed; right: 16px; bottom: 16px; z-index: 35; max-width: 360px; background: var(--card); border: 1px solid var(--line); border-left: 4px solid #4aa567; border-radius: 12px; padding: 12px 14px; box-shadow: 0 6px 24px rgba(0,0,0,.18); animation: slidein .25s ease-out; }
+  .ntoast .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
+  .btn.sm { padding: 6px 14px; font-size: 13px; }
+  .admin textarea { font: inherit; width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--card); color: var(--ink); }
+  .panel { background: var(--card); border-radius: 10px; padding: 10px 12px; margin: 12px 0; }
 
   /* Path map */
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 40; display: flex; justify-content: center; align-items: flex-start; overflow: auto; padding: 24px 12px; }
@@ -222,9 +227,12 @@
 </div>
 <footer><b>Funboarding</b></footer>
 <div class="overlay" id="overlay" hidden></div>
+<div class="ntoast" id="ntoast" hidden></div>
 
 <script>
-const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false };
+const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false, role: 'compliance', hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
+// Smart document types: the first request defines a type, later requests reuse it
+S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
 const VENDOR_STEPS = [5, 6, 7, 9];
 // Test values only (standard test routing and account numbers)
@@ -233,6 +241,7 @@ const ORG = 'Hope Valley Community Center';
 const PERSON = 'Amina Rahman';
 const BAND = { low: 'Low risk', medium: 'Medium risk', high: 'High risk', declined: 'Declined' };
 const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 const isOrg = () => S.app === 'org';
 const vendor = () => S.mode === 'vendor';
 const name = () => isOrg() ? ORG : PERSON + ' (personal)';
@@ -256,10 +265,8 @@ const regDocs = () => vendor() && isOrg() && !S.registry && !vendorLow();
 // Entry path: 'org' registers the organization only, 'fund' starts a fundraiser
 const orgEntry = () => S.entry === 'org';
 const fund = () => S.entry === 'fund';
-// In-house upload isn't in v1 for fundraisers: vendor down or registry unreachable skips to the message
+// Fundraiser verified by hand (no vendor, or registry unreachable): uploads are required actions in the action hub
 const noUpload = () => fund() && (!vendor() || regDocs());
-// Any vendor step on the fundraiser path, until Continue acknowledges it
-const notV1 = () => fund() && [5, 6, 7].includes(S.step) && !vendor() && !S.v1ok;
 const orgManual = () => !vendor() || regDocs() || vendorLow();
 const orgApproved = () => !orgManual() || S.approved;
 
@@ -270,8 +277,8 @@ function choice() {
 
 /* ---------- Risk form (step 4) ---------- */
 S.form = {
-  dob: '1988-03-14', nat: 'A', birth: 'A', res: 'A', email: 'amina.rahman@example.org', phone: '+1 555 0134',
-  inc: 'A', ops: 'A', entity: 'standalone', activity: 'registered', year: '2016', reg: '12-3456789', website: 'hopevalley.example.org',
+  legal: 'Amina Rahman', dob: '1988-03-14', addr: '120 Main Street, Springfield, IL 62701', res: 'A', email: 'amina.rahman@example.org', phone: '+1 555 0134',
+  inc: 'A', ops: 'A', entity: 'standalone', activity: 'registered', year: '2016', reg: '12-3456789', website: 'hopevalley.example.org', social: 'instagram.com/hopevalley',
   people: [{ name: 'Amina Rahman', role: 'Director', own: '0' }, { name: 'Yusuf Khan', role: 'Authorized signatory', own: '0' }]
 };
 const COUNTRIES = [['A', 'Country A (low risk)'], ['B', 'Country B (medium risk)'], ['C', 'Country C (high risk)']];
@@ -286,9 +293,8 @@ const lbl = (k, ctl, hint) => `<label class="fld"><span>${k}</span>${ctl}${hint 
 function ratings() {
   const F = S.form;
   if (!isOrg()) return [
-    ['Date of birth', F.dob ? 'Low' : 'High', F.dob ? '' : 'Missing data scores as the highest risk'],
-    ['Address and country', CRISK[F.res], ''],
-    ['Nationality and country of birth', CRISK[F.nat] === 'High' || CRISK[F.birth] === 'High' ? 'High' : (CRISK[F.nat] === 'Medium' || CRISK[F.birth] === 'Medium' ? 'Medium' : 'Low'), ''],
+    ['Full legal name and date of birth', F.legal && F.dob ? 'Low' : 'High', F.legal && F.dob ? 'Used for screening' : 'Missing data scores as the highest risk'],
+    ['Address and country', F.addr ? CRISK[F.res] : 'High', F.addr ? '' : 'Missing address'],
     ['Email and phone', F.email && F.phone ? 'Low' : 'High', ''],
     ['Digital footprint', '-', 'Read in the background, not from the form']];
   const managers = F.people.filter(p => !p.role.startsWith('Owner')).length;
@@ -301,7 +307,7 @@ function ratings() {
     ['Business activity', act[2], act[1] + (F.activity === 'new' ? `, formed ${F.year}` : '')],
     ['Directors and signatories', managers <= 2 ? 'Low' : managers <= 6 ? 'Medium' : 'High', `${managers} ${managers === 1 ? 'person' : 'people'}`],
     ['Owners of 25% or more', '-', `${owners.length} listed. Not scored yet (to confirm)`],
-    ['Online presence', F.website ? 'Low' : 'High', F.website ? 'Domain age checked in the background' : 'No website or social links']];
+    ['Online presence', F.website && F.social ? 'Low' : 'High', F.website && F.social ? 'Domain age and social profile checked in the background' : 'Website and social media profile are both required']];
 }
 function computedBand() {
   const r = ratings().map(x => x[1]);
@@ -323,8 +329,8 @@ function riskForm() {
   const F = S.form;
   return `<p class="muted">We use these answers to check your application in seconds. No documents or IDs yet. Try changing them, and open Admin view to see the effect.</p>
   <h2>About you</h2>
-  <div class="grid">${lbl('Date of birth', inp('dob', F.dob, 'date'))}${lbl('Country of residence', sel('res', COUNTRIES, F.res))}
-  ${lbl('Nationality', sel('nat', COUNTRIES, F.nat))}${lbl('Country of birth', sel('birth', COUNTRIES, F.birth))}
+  <div class="grid">${lbl('Full legal name', inp('legal', F.legal), 'As it appears on official documents')}${lbl('Date of birth', inp('dob', F.dob, 'date'))}
+  ${lbl('Home address', inp('addr', F.addr), 'Full address. No ID needed at this step.')}${lbl('Country', sel('res', COUNTRIES, F.res))}
   ${lbl('Email', inp('email', F.email, 'email'))}${lbl('Mobile', inp('phone', F.phone, 'tel'))}</div>
   ${isOrg() ? `<h2>About your organization</h2>
   <div class="grid">${lbl('Country of incorporation', sel('inc', COUNTRIES, F.inc))}${lbl('Main country of operation', sel('ops', COUNTRIES, F.ops))}
@@ -332,7 +338,7 @@ function riskForm() {
   ${lbl('Business activity', sel('activity', ACTIVITIES.map(a => [a[0], a[1]]), F.activity))}
   ${F.activity === 'new' ? lbl('Year formed', inp('year', F.year, 'number')) : ''}
   ${F.activity !== 'forprofit' ? lbl('Charity registration number', inp('reg', F.reg), 'Checked against the public registry') : ''}
-  ${lbl('Website or social links', inp('website', F.website))}</div>
+  ${lbl('Website', inp('website', F.website), 'Required')}${lbl('Social media profile', inp('social', F.social), 'Required')}</div>
   <h2>People behind the organization</h2>
   <p class="muted">List every director, officer and authorized signatory, and anyone who owns 25% or more.</p>
   ${peopleTable()}` : ''}`;
@@ -359,7 +365,7 @@ const FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 function required() {
   const co = ['reg', 'form', 'board'];
   if (!vendor()) return ['id', ...(isOrg() ? co : [])];
-  return ['scan', 'selfie', ...(isOrg() && !S.registry && !fund() ? co : [])];
+  return ['scan', 'selfie', ...(isOrg() && !S.registry ? co : [])];
 }
 function up(key, title, doneSub, reqSub, label) {
   if (!S.removed[key]) return `<div class="check">${tick()}<div style="flex:1"><b>${title}</b><div class="muted">${doneSub}</div></div><button class="rm trash" data-act="rmup" data-key="${key}" aria-label="Remove ${title}">${TRASH}</button></div>`;
@@ -369,6 +375,21 @@ function up(key, title, doneSub, reqSub, label) {
 function otherIds(what) {
   const owners = S.form.people.filter(p => p.name && +p.own >= 25).map(p => `${p.name} (${p.own}%)`);
   return `<div class="check opt-row">${tick('wait', '&middot;')}<div><b>${what} for anyone owning 25% or more <span class="tag">to discuss: IDV for each</span></b><div class="muted">Not required in this flow, which verifies only the person creating the organization. The risk matrix asks for full KYC on owners of 25% or more (or a lower threshold) plus one control person. ${owners.length ? 'Would apply to: ' + owners.join(', ') + '.' : 'No one owns 25% or more in step 4.'}</div></div></div>`;
+}
+
+const orgDocs = () => up('reg', 'Registration document', 'IRS determination letter, uploaded') + up('form', 'Formation documents', 'Articles of incorporation, operating agreement, and partnership or trust deed, uploaded', 'Articles of incorporation, operating agreement, and partnership or trust deed <span class="tag">to confirm if all are required</span>') + up('board', 'Board resolution', 'Uploaded');
+// Required actions: hand-verification uploads once the user reaches verification, plus any documents compliance requested
+function hubRows() {
+  let rows = '';
+  if (S.step >= 5 && !vendor()) rows += up('id', 'Photo ID', 'passport.jpg uploaded') + (isOrg() ? orgDocs() : '');
+  else if (S.step >= 5 && regDocs()) rows += orgDocs();
+  return rows + S.requests.map((q, k) => up('req' + k, esc(q.type), 'Uploaded', esc(q.msg))).join('');
+}
+function hubScreen() {
+  const rows = hubRows();
+  return { h: 'Your action hub', body: `<p class="muted">Everything we need from you, in one place.</p><h2>Required actions</h2>${rows || '<p class="muted">Nothing needed right now.</p>'}
+    <p class="lock">&#128274; Your documents are encrypted and visible only to our trust and safety and compliance teams.</p>`,
+    nav: `<button class="btn2" data-act="closehub">Back</button><span></span>` };
 }
 
 /* ---------- User screens ---------- */
@@ -430,17 +451,16 @@ function userScreen(i) {
       const missing = () => required().some(k => S.removed[k]);
       const nav = `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="draft">Save as draft</button><button class="btn" data-act="next" ${missing() ? 'disabled' : ''}>${liveDuring() && fund() ? 'Submit and go live' : 'Continue'}</button></span>`;
       const lock = `<p class="lock">&#128274; Your documents are encrypted and visible only to our trust and safety team.</p>`;
-      const docs = up('reg', 'Registration document', 'IRS determination letter, uploaded') + up('form', 'Formation documents', 'Articles of incorporation, operating agreement, and partnership or trust deed, uploaded', 'Articles of incorporation, operating agreement, and partnership or trust deed <span class="tag">to confirm if all are required</span>') + up('board', 'Board resolution', 'Uploaded');
+      const docs = orgDocs();
       if (!vendor()) return {
-        h, nav, body: `${pre}
-        <p class="muted">Upload these in the product. They're kept in secure document storage.</p>
-        ${up('id', 'Photo ID', 'passport.jpg uploaded')}
-        ${isOrg() ? docs + otherIds('Photo ID') : ''}${lock}` };
+        h: 'Your action hub', nav, body: `${pre}
+        <p class="muted">We verify you by hand for now, so these are your required actions. Files are kept in secure document storage.</p>
+        <h2>Required actions</h2>${hubRows()}
+        ${isOrg() ? otherIds('Photo ID') : ''}${lock}` };
       const regDemo = `<div class="demo" style="margin:8px 0 0"><b>Demo control:</b> company registry${demoSeg('registry', [[true, 'Reachable'], [false, 'Not reachable']])}</div>`;
       const reg = S.registry
         ? row('', 'Business lookup', 'Found in the company registry. No documents needed.' + regDemo)
-        : fund() ? row('warn', 'Business lookup', 'The registry for this country can\'t be reached. We\'ll be in touch for any documents we need.' + regDemo, '!')
-        : row('warn', 'Business lookup', 'The registry for this country can\'t be reached, so we need these documents instead.' + regDemo, '!') + docs;
+        : row('warn', 'Business lookup', 'The registry for this country can\'t be reached, so these documents are now required actions in your action hub.' + regDemo, '!') + docs;
       return {
         h, nav, body: `${pre}
         <div class="vendorbox"><div class="vhead">Secure verification by our vendor, inside the product</div><div class="vbody">
@@ -448,7 +468,7 @@ function userScreen(i) {
         ${up('selfie', 'Selfie check', 'Matched to your ID', 'Takes a few seconds', 'Take selfie')}
         ${isOrg() ? reg : ''}</div></div>
         ${isOrg() ? otherIds('ID scan and selfie') : ''}
-        ${isOrg() && !S.registry && !fund() ? '' : `<p class="muted" style="margin-top:10px">No documents to upload unless the vendor can't verify you.</p>`}${lock}` };
+        ${isOrg() && !S.registry ? '' : `<p class="muted" style="margin-top:10px">No documents to upload unless the vendor can't verify you.</p>`}<p class="lock">&#128274; Your ID images stay with our verification vendor. We keep only a reference to them.</p>` };
     }
     case 6: if (orgEntry()) {
       const ok = orgApproved();
@@ -520,12 +540,12 @@ function payoutScreen() {
     : `<button class="btn2" data-act="back">Back</button><button class="btn" id="paysave" data-act="paysave" ${payOk() ? '' : 'disabled'}>Save payout account</button>`;
   if (S.payout === 'vendor') return {
     h: 'Add a payout account', nav, body: `
-    <p class="muted">Log in to your bank to connect the account where donations are paid out.</p>
-    <div class="vendorbox"><div class="vhead">Secure bank connection by our vendor, inside the product</div><div class="vbody">
+    <p class="muted">Log in to your bank through Plaid to connect the account where donations are paid out. This runs separately from your organization's approval.</p>
+    <div class="vendorbox"><div class="vhead">Secure bank connection by Plaid, inside the product</div><div class="vbody">
     ${S.linked
       ? `<div class="check">${tick()}<div style="flex:1"><b>${P.bank}, checking &bull;&bull;&bull;&bull;6789</b><div class="muted">Account holder: ${who}. Name matches.</div></div>${S.paySaved ? '' : `<button class="rm trash" data-act="unlink" aria-label="Remove bank account">${TRASH}</button>`}</div>`
-      : row('wait', 'Choose your bank', '', '1') + row('wait', 'Log in through the vendor', 'We never see your bank username or password.', '2') + row('wait', 'Pick the account for payouts', 'Account ownership is checked automatically.', '3')
-        + `<div style="padding:10px 0"><button class="btn" data-act="link">Connect your bank</button></div>`}
+      : row('wait', 'Choose your bank', '', '1') + row('wait', 'Log in through Plaid', 'We never see your bank username or password.', '2') + row('wait', 'Pick the account for payouts', 'Account ownership is checked automatically.', '3')
+        + `<div style="padding:10px 0"><button class="btn" data-act="link">Connect with Plaid</button></div>`}
     </div></div>
     <p class="muted" style="margin-top:10px">Can't find your bank? Switch to <b>Enter manually</b> above.</p>
     ${S.paySaved ? done : ''}${lock}` };
@@ -549,7 +569,44 @@ function payoutScreen() {
 }
 
 /* ---------- Admin screens ---------- */
+const ROLE = { viewer: 'Viewer', reviewer: 'Reviewer', compliance: 'Compliance' };
+// Assumed levels until compliance sends the permission matrix
+const ROLE_NOTE = {
+  viewer: 'CX and business development. Sees status, score band and audit log. No personal details, documents or actions.',
+  reviewer: 'Trust and safety. Sees everything, approves, requests documents and escalates to compliance. Can\'t decline.',
+  compliance: 'Compliance. Everything, including declines and the final decision on escalations.' };
+const viewer = () => S.role === 'viewer';
+const hidden = what => `<p class="muted">${what} hidden for the Viewer role.</p>`;
+function acts(list) {
+  if (viewer()) return `<p class="muted">View only. This role can't take actions.</p>`;
+  const ok = list.filter(a => S.role === 'compliance' ? a !== 'Escalate to compliance' : a !== 'Decline');
+  return `<div class="actions">${ok.map((a, k) => `<span class="${k === 0 ? 'main' : ''}">${a}</span>`).join('')}</div>`;
+}
+// The score comes with a summary and a checklist of what was and wasn't provided
+function scoreSummary() {
+  if (viewer()) return hidden('Score details are');
+  const F = S.form, r = ratings().map(x => x[1]);
+  const items = [['Full legal name', F.legal], ['Date of birth', F.dob], ['Home address and country', F.addr], ['Email', F.email], ['Mobile', F.phone]];
+  if (isOrg()) items.push(...(F.activity !== 'forprofit' ? [['Charity registration number', F.reg]] : []), ['Website', F.website], ['Social media profile', F.social], ['Directors and signatories listed', F.people.some(x => x.name)]);
+  const missing = items.filter(x => !x[1]).map(x => x[0]);
+  const highs = r.filter(x => x === 'High').length, meds = r.filter(x => x === 'Medium').length;
+  return `<div class="panel"><b>Summary:</b> ${BAND[computedBand()]}. Ratings: ${highs} High, ${meds} Medium. ${missing.length ? 'Missing: ' + missing.join(', ') + '.' : 'Everything required was provided.'}
+    ${items.map(([k, v]) => row(v ? '' : 'warn', k, v ? 'Provided' : 'Not provided', v ? null : '!')).join('')}</div>`;
+}
+function adminExtras() {
+  if (S.step < 4) return '';
+  const types = S.docTypes.map(t => [t, t]).concat([['__new', '+ New document type']]);
+  const notes = viewer() ? hidden('Internal notes are') : `<div class="log"><div><span class="muted">Day 1, 10:40 &middot; Trust and safety</span> &nbsp;Website and social profile look consistent with the risk form.</div></div>`;
+  const req = viewer() ? '' : `<h2>Request documents</h2><div class="panel">
+    ${lbl('Document type', `<select data-r="type">${types.map(([v, l]) => `<option value="${esc(v)}" ${S.req.type === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`, 'Any type. A new type becomes selectable for later requests.')}
+    ${S.req.type === '__new' ? lbl('New type name', `<input data-r="newType" value="${esc(S.req.newType)}" placeholder="For example, Medical attestation">`) : ''}
+    ${lbl('Message to the user', `<textarea data-r="msg" rows="2">${esc(S.req.msg)}</textarea>`)}
+    <button class="btn sm" data-act="sendreq">Send request</button>
+    <p class="muted" style="font-size:12px;margin:8px 0 0">Any file type for now, with size and security limits. Later, compliance picks the allowed file types.</p></div>`;
+  return `${req}<h2>Internal notes</h2>${notes}`;
+}
 function factors() {
+  if (viewer()) return '';
   const note = S.outcome !== computedBand() ? `<p class="muted" style="font-size:12px">The demo control overrides the result. The answers alone give ${BAND[computedBand()]}.</p>` : '';
   return `<table><tr><th>Factor</th><th>Rating</th></tr>${ratings().map(([f, v]) => `<tr><td>${f}</td><td>${v === '-' ? 'Not scored' : v}</td></tr>`).join('')}</table>${note}`;
 }
@@ -565,6 +622,7 @@ function audit(extra) {
   if (waits()) items.push('Saved as draft until the review approves it');
   if (!vendor() || regDocs()) items.push('Reviewer approved documents' + (liveDuring() ? ', payouts released' : ''));
   if (vendorLow()) items.push('Compliance team approved');
+  S.requests.forEach((q, k) => { items.push(`${q.by} requested: ${esc(q.type)}`); if (!S.removed['req' + k]) items.push(`User uploaded: ${esc(q.type)}`); });
   items.push(...(extra || []).filter(t => !(liveDuring() && t === 'Campaign live')));
   return `<div class="log">${items.map((t, k) => `<div><span class="muted">Day 1, 10:${String(2 + k * 7).padStart(2, '0')}</span> &nbsp;${t}</div>`).join('')}</div>`;
 }
@@ -573,33 +631,33 @@ function adminScreen(i) {
   if (i <= 2) return `<h3>Nothing to review</h3><p>${S.draft ? 'A draft is saved. ' : ''}Drafts are not in any queue. Compliance starts when the user submits for go-live.</p>`;
   if (i === 4) {
     const q = { low: ['Cleared automatically', 'No review needed. Sent to verification.'], medium: ['Reviewer queue', 'A reviewer checks the flagged items and can request information.'], high: ['Compliance review queue', 'Enhanced review by the compliance team.'], declined: ['Declined', 'The reason stays internal. The user sees a generic message.'] }[S.outcome];
-    const acts = S.outcome === 'medium' ? ['Approve', 'Request information', 'Escalate to compliance', 'Decline']
-      : S.outcome === 'high' ? ['Approve', 'Request information', 'Decline'] : [];
-    return `<h3>${q[0]}</h3>${caseHead()}<p>${q[1]}</p>${acts.length ? `<div class="actions">${acts.map((a, k) => `<span class="${k === 0 ? 'main' : ''}">${a}</span>`).join('')}</div>` : ''}
-      <h2>Risk form answers, rated</h2>${factors()}<p class="muted" style="font-size:12px">Weights and thresholds are not shown here.</p>`;
+    const list = S.outcome === 'medium' ? ['Approve', 'Request documents', 'Escalate to compliance', 'Decline']
+      : S.outcome === 'high' ? ['Approve', 'Request documents', 'Escalate to compliance', 'Decline'] : [];
+    return `<h3>${q[0]}</h3>${caseHead()}<p>${q[1]}</p>${list.length ? acts(list) : ''}
+      <h2>Score summary</h2>${scoreSummary()}${viewer() ? '' : `<h2>Risk form answers, rated</h2>${factors()}<p class="muted" style="font-size:12px">Weights and thresholds are not shown here.</p>`}`;
   }
   if (i === 5) {
     const docs = !vendor()
-      ? `<table><tr><th>Document</th><th>Status</th></tr><tr><td>Photo ID</td><td>Uploaded</td></tr>${isOrg() ? '<tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr>' : ''}</table><p class="muted" style="font-size:12px">Files sit in secure document storage. Reads are logged.</p>`
-      : `<table><tr><th>Vendor check</th><th>Result</th></tr><tr><td>ID document</td><td>Passed</td></tr><tr><td>Selfie check</td><td>Passed</td></tr><tr><td>Sanctions screening</td><td>Clear</td></tr>${isOrg() ? `<tr><td>Company registry</td><td>${S.registry ? 'Found' : 'Not reachable, documents requested'}</td></tr>` : ''}</table><p class="muted" style="font-size:12px">We keep the vendor's references and results.</p>`;
-    return `<h3>Case detail</h3>${caseHead()}${docs}`;
+      ? `<table><tr><th>Document</th><th>Status</th></tr><tr><td>Photo ID</td><td>Uploaded</td></tr>${isOrg() ? '<tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr>' : ''}</table><p class="muted" style="font-size:12px">Files sit in secure document storage. Reads are logged.</p>${S.requests.length ? `<table><tr><th>Requested</th><th>Status</th></tr>${S.requests.map((q, k) => `<tr><td>${esc(q.type)}</td><td>${S.removed['req' + k] ? 'Waiting for the user' : 'Uploaded'}</td></tr>`).join('')}</table>` : ''}`
+      : `<table><tr><th>Vendor check</th><th>Result</th></tr><tr><td>ID document</td><td>Passed</td></tr><tr><td>Selfie check</td><td>Passed</td></tr><tr><td>Sanctions screening</td><td>Clear</td></tr><tr><td>ID country matches country of residence</td><td>Yes. The vendor flags a mismatch.</td></tr>${isOrg() ? `<tr><td>Company registry</td><td>${S.registry ? 'Found' : 'Not reachable, documents requested'}</td></tr>` : ''}</table><p class="muted" style="font-size:12px">ID images stay with the vendor. We keep only its token and results.</p>`;
+    return `<h3>Case detail</h3>${caseHead()}${viewer() ? hidden('Documents and vendor results are') : docs}<h2>Score summary</h2>${scoreSummary()}`;
   }
   if (i === 6) {
-    if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
-    if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Check the uploaded organization documents. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p><table><tr><th>Document</th><th>Status</th></tr><tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr></table><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Escalate to compliance</span><span>Decline</span></div>`;
-    if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team. The campaign stays a draft until you approve.</p><div class="actions"><span class="main">Approve</span><span>Request information</span><span>Decline</span></div>`;
+    if (!vendor()) return `<h3>Reviewer queue</h3>${caseHead()}<p>Check the uploaded documents against the risk form. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p>${acts(['Approve', 'Request documents', 'Escalate to compliance', 'Decline'])}`;
+    if (regDocs()) return `<h3>Reviewer queue</h3>${caseHead()}<p>The vendor verified the person but couldn't reach the company registry. Check the uploaded organization documents. ${liveDuring() ? 'The campaign is already live, with payouts held until you approve. If you find a problem, compliance decides what happens to the live campaign.' : 'The campaign stays a draft until you approve.'}</p>${viewer() ? hidden('Documents are') : '<table><tr><th>Document</th><th>Status</th></tr><tr><td>Registration document</td><td>Uploaded</td></tr><tr><td>Formation documents</td><td>Uploaded</td></tr><tr><td>Board resolution</td><td>Uploaded</td></tr></table>'}${acts(['Approve', 'Request documents', 'Escalate to compliance', 'Decline'])}`;
+    if (vendorLow()) return `<h3>Compliance review queue</h3>${caseHead()}<p>The vendor returned a low result, so the case comes back to the compliance team. The campaign stays a draft until you approve.</p>${acts(['Approve', 'Request documents', 'Decline'])}`;
     return `<h3>No action needed</h3>${caseHead()}<p>The vendor verified the ${isOrg() ? 'person and organization' : 'person'}. The case closes automatically.</p>`;
   }
   if (i === 9) {
     const v = S.payout === 'vendor', has = v ? S.linked : true;
-    const rows = [['Method', v ? 'Bank connection through the vendor' : 'Entered manually'],
+    const rows = [['Method', v ? 'Bank connection through Plaid' : 'Entered manually'],
       ['Account', has ? `${S.pay.type} &bull;&bull;&bull;&bull;${last4()}` : 'Not connected yet'],
-      ['Holder name', has ? (v ? `${isOrg() ? ORG : PERSON}, matched by the vendor` : holder()) : '-'],
+      ['Holder name', has ? (v ? `${isOrg() ? ORG : PERSON}, matched by Plaid` : holder()) : '-'],
       ...(v ? [] : [['Bank statement', S.removed.stmt ? 'Missing' : 'Uploaded']]),
       ['Status', !S.paySaved ? 'Not submitted' : v ? 'Approved automatically' : 'In compliance review']];
     return `<h3>Payout account</h3>${caseHead()}<table>${rows.map(([k, val]) => `<tr><th>${k}</th><td>${val}</td></tr>`).join('')}</table>
       <p class="muted" style="font-size:12px">Full account numbers are never shown here.</p>
-      <h2>Audit log</h2>${audit(['Campaign live', ...(S.paySaved ? [S.payout === 'vendor' ? 'Payout account connected, approved automatically' : 'Payout account added, sent to compliance review'] : [])])}`;
+      <h2>Audit log</h2>${audit(['Campaign live', ...(S.paySaved ? [S.payout === 'vendor' ? 'Payout account connected through Plaid, approved automatically' : 'Payout account added, sent to compliance review'] : [])])}`;
   }
   return `<h3>Audit log</h3>${caseHead()}${audit(i === 8 ? ['Campaign live'] : [])}`;
 }
@@ -620,12 +678,12 @@ function pathMap() {
   ${st('3. Campaign', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
   ${st('5. Check', ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Goes live now, verifies while live', medium: 'Reviewer first', high: 'Compliance first', declined: 'Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join(''))}
-  ${st('6. Verification', mapNode('In-house', 'Upload ID' + (isOrg() ? ', company documents' : ''), { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Falls back to upload', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
+  ${st('6. Verification', mapNode('Action hub', 'No vendor: ID' + (isOrg() ? ' and company documents' : '') + ' as required actions', { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Documents added to the action hub', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p))}
   ${st('7. Review', mapNode('Reviewer checks documents', 'In-house. Low is live meanwhile, others wait as a draft', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable. Low is live meanwhile', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('7. Organization result', mapNode('Under review or approved', 'Registering an organization only. Then start a fundraiser', { step: 6, entry: 'org', app: 'org' }))}
-  ${st('8. Message', mapNode('Vendor not available', 'Not in V1 for fundraisers. Low is live, others draft', { step: 7, mode: 'inhouse', entry: 'fund' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
+  ${st('8. Message', mapNode('Verified by hand', 'No vendor. Low is live, others draft', { step: 7, mode: 'inhouse', entry: 'fund' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
-  ${st('10. Payout', mapNode('Enter manually', 'Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect your bank', 'Log in through the vendor, approved automatically', { step: 9, payout: 'vendor' }, 'v'))}
+  ${st('10. Payout', mapNode('Enter manually', 'Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect with Plaid', 'Log in through Plaid, approved automatically', { step: 9, payout: 'vendor' }, 'v'))}
   </div>`;
 }
 
@@ -637,26 +695,26 @@ function render() {
   $('btn-admin').classList.toggle('pulse', S.step === 3 && !S.admin);
   $('bar').style.width = ((S.step + 1) / STEPS.length * 100) + '%';
   $('steps').innerHTML = `<span class="${S.step < 0 ? 'cur' : ''}" data-go="-1" role="button" tabindex="0">0. Start</span>` + STEPS.map((s, k) => `<span class="${k === S.step ? 'cur' : ''} ${VENDOR_STEPS.includes(k) ? 'vend' : ''}" data-go="${k}" role="button" tabindex="0">${k + 1}. ${s}</span>`).join('');
-  const u = userScreen(S.step);
+  const u = S.hub ? hubScreen() : userScreen(S.step);
   const isV = VENDOR_STEPS.includes(S.step);
   const blocked = S.step === 4 && S.outcome === 'declined';
   const nav = u.nav || `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
   $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">Step ${S.step + 1} of ${STEPS.length}${S.step >= 0 && orgEntry() ? ' &middot; Registering an organization' : ''}</div>${S.step === 9 ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect your bank']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+    <div class="eyebrow">${S.hub ? 'Action hub' : `Step ${S.step + 1} of ${STEPS.length}${S.step >= 0 && orgEntry() ? ' &middot; Registering an organization' : ''}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect with Plaid']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
-  if (S.admin) a.innerHTML = adminHead() + adminScreen(S.step);
+  if (S.admin) a.innerHTML = adminBody();
   const o = $('overlay');
-  o.hidden = !S.map && !notV1();
+  o.hidden = !S.map;
   if (S.map) o.innerHTML = pathMap();
-  else if (notV1()) o.innerHTML = `<div class="map" style="max-width:460px;margin-top:12vh"><h1 style="padding:0;margin:0 0 8px">Not in V1</h1>
-    <p>In-house verification isn't available in the first version. Fundraisers verify with the vendor.</p>
-    <p class="muted">Continue to see what happens when the vendor isn't available.</p>
-    <div class="nav"><button class="btn2" data-k="mode" data-v="vendor">Back to vendor</button><button class="btn" data-act="novendor">Continue</button></div></div>`;
+  const t = $('ntoast'), q = S.requests[S.toast];
+  t.hidden = !q;
+  if (q) t.innerHTML = `<b>We need a document from you</b><div class="muted">${esc(q.type)}. ${esc(q.msg)}</div><div class="row"><button class="x" data-act="closetoast" aria-label="Dismiss">&times;</button><button class="btn sm" data-act="hub">Go to action hub</button></div>`;
 }
 function go(step) {
   // Open the admin view on arriving at the risk form so viewers see the live score
   if (step === 3 && S.step !== 3) S.admin = true;
+  S.hub = false;
   S.step = Math.max(-1, Math.min(STEPS.length - 1, step));
   if (S.step === 4) { S.checking = true; setTimeout(() => { S.checking = false; render(); }, 1200); }
   render(); window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -664,16 +722,27 @@ function go(step) {
 document.addEventListener('click', e => {
   const g = e.target.closest('[data-go]'); if (g) { S.draft = false; go(+g.dataset.go); return; }
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.k) { if (b.dataset.k === 'payout') S.paySaved = false; let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; if (b.dataset.k === 'mode') S.v1ok = false; render(); return; }
+  if (b.dataset.k) { if (b.dataset.k === 'payout') S.paySaved = false; let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
   if (b.dataset.set) { Object.assign(S, JSON.parse(b.dataset.set)); S.map = false; S.checking = false; render(); return; }
   if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
   if (b.id === 'btn-map') { S.map = true; render(); return; }
   switch (b.dataset.act) {
     case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false;
-      go(S.step === 0 && orgEntry() ? 3 : S.step === 5 && noUpload() ? 7 : S.step + 1); break;
-    case 'back': go(S.step === 3 && orgEntry() ? 0 : S.step === 7 && noUpload() ? 5 : S.step - 1); break;
-    case 'start': if (orgEntry()) S.app = 'org'; else S.mode = 'vendor'; S.v1ok = false; S.orgDone = false; go(0); break;
-    case 'novendor': S.approved = false; S.v1ok = true; go(7); break;
+      go(S.step === 0 && orgEntry() ? 3 : S.step + 1); break;
+    case 'back': go(S.step === 3 && orgEntry() ? 0 : S.step - 1); break;
+    case 'start': if (orgEntry()) S.app = 'org'; S.orgDone = false; go(0); break;
+    case 'sendreq': {
+      const type = (S.req.type === '__new' ? S.req.newType : S.req.type).trim();
+      if (!type) break;
+      if (!S.docTypes.includes(type)) S.docTypes.push(type);
+      S.requests.push({ type, msg: S.req.msg, by: ROLE[S.role] });
+      S.removed['req' + (S.requests.length - 1)] = true;
+      S.req.type = type; S.req.newType = '';
+      S.toast = S.requests.length - 1; render(); break;
+    }
+    case 'hub': S.hub = true; S.toast = null; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+    case 'closehub': S.hub = false; render(); break;
+    case 'closetoast': S.toast = null; render(); break;
     case 'startfund': S.orgDone = true; S.entry = 'fund'; S.draft = false; go(2); break;
     case 'golive': go(8); break;
     case 'draft': S.draft = true; S.resumed = false; S.draftStep = S.step; go(1); break;
@@ -686,7 +755,7 @@ document.addEventListener('click', e => {
     case 'link': S.linked = true; render(); break;
     case 'unlink': S.linked = false; render(); break;
     case 'paysave': S.paySaved = true; render(); break;
-    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor', v1ok: false }); go(-1); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor', requests: [], toast: null }); go(-1); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
@@ -703,15 +772,18 @@ $('btn-theme').addEventListener('click', () => {
   paintTheme();
 });
 paintTheme();
-const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>`;
+const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>
+  <div class="panel"><span class="seglabel">Viewing as</span> <span class="tag">assumed roles, to confirm with compliance</span>${demoSeg('role', Object.entries(ROLE))}<div class="muted" style="font-size:12px;margin-top:6px">${ROLE_NOTE[S.role]}</div></div>`;
+const adminBody = () => adminHead() + adminScreen(S.step) + adminExtras();
 function onField(e, full) {
   const t = e.target;
+  if (t.dataset.r) { S.req[t.dataset.r] = t.value; if (full && t.tagName === 'SELECT') render(); return; }
   if (t.dataset.p) { S.pay[t.dataset.p] = t.value; if (full) render(); else $('paysave').disabled = !payOk(); return; }
   if (t.dataset.f) S.form[t.dataset.f] = t.value;
   else if (t.dataset.pf) S.form.people[+t.dataset.pi][t.dataset.pf] = t.value;
   else return;
   S.outcome = computedBand();
-  if (full) render(); else if (S.admin) $('admin').innerHTML = adminHead() + adminScreen(S.step);
+  if (full) render(); else if (S.admin) $('admin').innerHTML = adminBody();
 }
 document.addEventListener('input', e => onField(e, e.target.tagName === 'SELECT'));
 document.addEventListener('change', e => onField(e, true));
