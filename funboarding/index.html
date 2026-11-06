@@ -244,8 +244,8 @@ const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low',
 S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
 const VENDOR_STEPS = [5, 6, 7, 9];
-// Two separate flows over the same screens. A registered organization starting a fundraiser only needs the campaign and go-live.
-const FLOW = () => S.entry === 'org' ? [0, 3, 4, 5, 6, 9] : S.orgDone ? [2, 8] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+// Two separate flows over the same screens. A registered organization starting a fundraiser only needs the campaign, go-live and payout.
+const FLOW = () => S.entry === 'org' ? [0, 3, 4, 5, 6, 9] : S.orgDone ? [2, 8, 9] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 const ORG_LABELS = { 3: 'Risk form', 6: 'Organization result' };
 const label = k => (S.entry === 'org' && ORG_LABELS[k]) || STEPS[k];
 const pos = () => FLOW().indexOf(S.step);
