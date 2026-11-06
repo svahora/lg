@@ -245,8 +245,8 @@ S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account', 'Action hub'];
 const VENDOR_STEPS = [5, 6, 7, 9];
 // Two separate flows over the same screens. A registered organization starting a fundraiser only needs the campaign, go-live and payout.
-// Organizations verified by hand skip verification: their uploads wait in the action hub, the last page
-const FLOW = () => S.entry === 'org' ? (vendor() ? [0, 3, 4, 5, 6, 10] : [0, 3, 4, 6, 10]) : S.orgDone ? [2, 8, 9] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+// Verified by hand: no verification step, the uploads wait in the action hub. The action hub is the last page of every flow.
+const FLOW = () => S.entry === 'org' ? (vendor() ? [0, 3, 4, 5, 6, 10] : [0, 3, 4, 6, 10]) : S.orgDone ? [2, 8, 10] : vendor() ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 10] : [0, 1, 2, 3, 4, 6, 7, 8, 10];
 const ORG_LABELS = { 3: 'Risk form', 6: 'Organization result' };
 const label = k => (S.entry === 'org' && ORG_LABELS[k]) || STEPS[k];
 const pos = () => FLOW().indexOf(S.step);
@@ -410,7 +410,7 @@ const docRows = () => ORG_DOCS().map(([, t]) => `<tr><td>${t}</td><td>Uploaded</
 function required() {
   const co = ORG_DOCS().map(d => d[0]);
   if (!vendor()) return ['id', ...(isOrg() ? co : [])];
-  return ['scan', 'selfie', ...(isOrg() && !S.registry ? co : [])];
+  return ['scan', 'selfie'];
 }
 function up(key, title, doneSub, reqSub, label) {
   if (!S.removed[key]) return `<div class="check">${tick()}<div style="flex:1"><b>${title}</b><div class="muted">${doneSub}</div></div><button class="rm trash" data-act="rmup" data-key="${key}" aria-label="Remove ${title}">${TRASH}</button></div>`;
@@ -431,7 +431,7 @@ function hubPending() {
   const keys = S.requests.map((q, k) => 'req' + k);
   if (S.step >= 5 && !vendor()) keys.push('id', ...(isOrg() ? ORG_DOCS().map(d => d[0]) : []));
   else if (S.step >= 5 && regDocs()) keys.push(...ORG_DOCS().map(d => d[0]));
-  return keys.filter(k => S.removed[k]).length + (orgEntry() && S.step >= 6 && !S.paySaved ? 1 : 0);
+  return keys.filter(k => S.removed[k]).length + (S.step >= 6 && !S.paySaved ? 1 : 0);
 }
 function hubScreen() {
   const rows = hubRows();
@@ -506,7 +506,7 @@ function userScreen(i) {
       const regDemo = `<div class="demo" style="margin:8px 0 0"><b>Demo control:</b> company registry${demoSeg('registry', [[true, 'Reachable'], [false, 'Not reachable']])}</div>`;
       const reg = S.registry
         ? row('', 'Business lookup', 'Found in the company registry. No documents needed.' + regDemo)
-        : row('warn', 'Business lookup', 'The registry for this country can\'t be reached, so these documents are now required actions in your action hub.' + regDemo, '!') + docs;
+        : row('warn', 'Business lookup', 'The registry for this country can\'t be reached, so these documents are now required actions in your action hub.' + regDemo, '!') + ORG_DOCS().map(([, t]) => row('wait', t, 'Upload in your action hub', '&middot;')).join('');
       return {
         h, nav, body: `${pre}
         <div class="vendorbox"><div class="vhead">Secure verification by our vendor, inside the product</div><div class="vbody">
@@ -528,7 +528,7 @@ function userScreen(i) {
       const nav = `<button class="btn2" data-act="back">Back</button><span class="pair">${waits() ? '<button class="btn2" data-act="draft">Save as draft</button>' : ''}<button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button></span>`;
       const vdemo = vendor() ? `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` : '';
       const who = vendorLow() ? 'Our compliance team is reviewing' : regDocs() ? 'Our team is checking your organization documents' : !vendor() ? 'Our team is checking your documents' : 'Our team is reviewing your information';
-      const got = !vendor() ? row('', 'Documents received', '') : vendorLow() ? row('', 'Verification finished', '') : row('', 'Identity verified', 'By the vendor') + (regDocs() ? row('', 'Organization documents received', 'The company registry couldn\'t be reached') : '');
+      const got = !vendor() ? row('wait', 'Your documents', 'Upload them in your action hub', '&middot;') : vendorLow() ? row('', 'Verification finished', '') : row('', 'Identity verified', 'By the vendor') + (regDocs() ? row('wait', 'Organization documents', 'The company registry couldn\'t be reached. Upload them in your action hub', '&middot;') : '');
       if (liveDuring()) return {
         h: 'Your campaign is live', nav, body: `<div class="notice"><span class="live">LIVE</span> &nbsp;Your campaign went live when you submitted. Payouts are held until your documents are approved.</div>
         ${got}${row('', 'Campaign live', '')}${row('wait', who, 'Nothing for you to do right now.', '&middot;')}${row('wait', 'Payouts released', 'Once the review approves your documents', '&middot;')}${vdemo}` };
@@ -562,7 +562,7 @@ function userScreen(i) {
       <div class="meter"></div><p><b>$0</b> <span class="muted">raised of $25,000</span></p>
       ${liveDuring() ? `<p class="muted">Live since you submitted your documents. Payouts were held until the review approved them.</p>` : ''}
       <div class="notice">We may ask for more documents later, depending on your campaign${isOrg() ? '' : ', for example if you raise money on behalf of someone else'}.</div>
-      <p class="muted">Next: add a payout account so you can receive donations.</p>` };
+      <p class="muted">Next: add a payout account in your action hub so you can receive donations.</p>` };
     case 9: return payoutScreen();
     case 10: {
       const pay = S.paySaved ? row('', 'Payout account', `Added, ${S.pay.type.toLowerCase()} &bull;&bull;&bull;&bull;${last4()}`)
@@ -571,7 +571,7 @@ function userScreen(i) {
         h: 'Your action hub', body: `<p class="muted">Everything we need from you, in one place. Come back here any time from the bell.</p>
         <h2>Required actions</h2>${hubRows()}${pay}
         <p class="lock">&#128274; Your documents are encrypted and visible only to our trust and safety and compliance teams.</p>`,
-        nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="startfund">Start a fundraiser</button>` };
+        nav: `<button class="btn2" data-act="back">Back</button>${orgEntry() ? '<button class="btn" data-act="startfund">Start a fundraiser</button>' : ''}` };
     }
   }
 }
@@ -744,11 +744,11 @@ function pathMap() {
   ${st('3. Campaign', mapNode('Save as draft', 'Stops here, no checks', { step: 2, draft: true }, 'end') + mapNode('Continue to go live', '', { step: 3, draft: false }))}
   ${st('4. Risk form', mapNode('About you', 'Everyone', { step: 3 }) + mapNode('About your organization', 'Organizations only', { step: 3, app: 'org' }, p))}
   ${st('5. Check', check)}
-  ${st('6. Verification', verify)}
+  ${st('6. Verification', mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Documents go to the action hub', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p) + mapNode('No vendor', 'Skips to review. Uploads wait in the action hub', { step: 6, mode: 'inhouse' }, 'v'))}
   ${st('7. Review', mapNode('Reviewer checks documents', 'No vendor. Low in a level 1 country is live meanwhile, others draft', { step: 6, mode: 'inhouse' }, 'v') + mapNode('Verified automatically', 'With vendor, pass, Low', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Trust and safety or compliance review', 'With vendor, pass, Medium or High. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v') + mapNode('Reviewer checks company documents', 'With vendor, registry not reachable. Low is live meanwhile', { step: 6, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('Back to compliance', 'With vendor, low result. Waits as a draft', { step: 6, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('8. Message', mapNode('Verified by hand', 'No vendor. Low in a level 1 country is live, others draft', { step: 7, mode: 'inhouse' }, 'v') + mapNode('You\'re verified', 'With vendor, pass', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Draft while we review', 'With vendor, Medium or High', { step: 7, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v') + mapNode('Organization under review', 'With vendor, registry not reachable', { step: 7, mode: 'vendor', vendorResult: 'pass', app: 'org', registry: false }, 'v ' + p) + mapNode('A little more time', 'With vendor, low result', { step: 7, mode: 'vendor', vendorResult: 'low' }, 'v'))}
   ${st('9. Go live', mapNode('Campaign live', 'More documents may be requested later', { step: 8 }))}
-  ${st('10. Payout', payout)}`;
+  ${st('10. Action hub', mapNode('Required actions', 'The last page. Payout account, plus documents when verified by hand', { step: 10 }) + payout)}`;
   return `<div class="map"><div style="display:flex;justify-content:space-between;align-items:center"><h1 style="padding:0;margin:0">All paths</h1><button class="x" data-act="closemap">&times;</button></div>
   ${tabs}
   <div class="legend"><span><span class="sw" style="border:2px solid var(--teal)"></span>Changes with vendor</span><span><span class="sw" style="background:var(--low-tint)"></span><span class="sw" style="background:var(--medium-tint)"></span><span class="sw" style="background:var(--high-tint)"></span><span class="sw" style="background:var(--declined-tint)"></span>Score bands</span>${org ? '' : '<span><span class="sw" style="border-style:dashed;opacity:.4"></span>Skipped on the person path</span>'}<span>Outline = where you are. Click any step to jump there.</span></div>
@@ -793,8 +793,9 @@ function go(step) {
   S.hub = false;
   S.step = Math.max(-1, Math.min(STEPS.length - 1, step));
   if (S.step !== 9) S.payBack = null;
+  if (S.step !== 10) S.hubBack = null;
   // Verified by hand: the uploads become required actions and a push notification points to the action hub
-  if (orgEntry() && S.step === 6 && (!vendor() || regDocs()) && !S.hubSeeded) {
+  if (S.step === 6 && (!vendor() || regDocs()) && !S.hubSeeded) {
     S.hubSeeded = true;
     (!vendor() ? ['id'] : []).concat(ORG_DOCS().map(d => d[0])).forEach(k => S.removed[k] = true);
     S.push = { title: 'Action needed', msg: `You have ${hubPending()} required actions in your action hub.` };
@@ -812,7 +813,7 @@ document.addEventListener('click', e => {
   switch (b.dataset.act) {
     case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false;
       go(FLOW()[pos() + 1] ?? S.step); break;
-    case 'back': go(S.payBack ?? (pos() > 0 ? FLOW()[pos() - 1] : -1)); break;
+    case 'back': go(S.payBack ?? S.hubBack ?? (pos() > 0 ? FLOW()[pos() - 1] : -1)); break;
     case 'payfromhub': S.payBack = 10; go(9); break;
     case 'start': if (orgEntry()) S.app = 'org'; S.orgDone = false; S.hubSeeded = false; S.push = null; go(0); break;
     case 'sendreq': {
@@ -824,7 +825,8 @@ document.addEventListener('click', e => {
       S.req.type = type; S.req.newType = '';
       S.toast = S.requests.length - 1; render(); break;
     }
-    case 'hub': S.toast = null; S.push = null; if (orgEntry()) { go(10); break; } S.hub = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+    case 'hub': S.toast = null; S.push = null; // From the bell mid-flow, Back returns to where the user was
+      if (S.step !== 10 && FLOW()[pos() + 1] !== 10) S.hubBack = S.step; go(10); break;
     case 'closehub': S.hub = false; render(); break;
     case 'rolehelp': S.roleHelp = !S.roleHelp; render(); break;
     case 'closetoast': S.toast = null; S.push = null; render(); break;
