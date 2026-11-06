@@ -231,7 +231,7 @@
 <div class="ntoast" id="ntoast" hidden></div>
 
 <script>
-const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'manual', linked: false, paySaved: false, role: 'analyst', hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
+const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'vendor', linked: false, paySaved: false, role: 'analyst', hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
 // Smart document types: the first request defines a type, later requests reuse it
 S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
 const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
@@ -698,7 +698,7 @@ function pathMap() {
   const tabs = `<div class="seg" style="margin:8px 0">${[['org', '🏢 Register an organization'], ['fund', '🎯 Start a fundraiser']].map(([v, l]) => `<button class="${S.entry === v ? 'on' : ''}" data-set='${JSON.stringify(v === 'org' ? { entry: 'org', app: 'org', orgDone: false, step: 0, map: true } : { entry: 'fund', orgDone: false, step: 0, map: true })}'>${l}</button>`).join('')}</div>`;
   const check = ['low', 'medium', 'high', 'declined'].map(o => mapNode(BAND[o], { low: 'Score 85+. To the vendor', medium: '70 to 84. Vendor, trust and safety in parallel', high: '40 to 69. Vendor, compliance in parallel', declined: 'Below 40. Ends, generic message' }[o], { step: 4, outcome: o }, 'b-' + o + (o === 'declined' ? ' end' : ''))).join('');
   const verify = mapNode('Action hub', 'No vendor: ID' + (isOrg() ? ' and company documents' : '') + ' as required actions', { step: 5, mode: 'inhouse' }, 'v') + mapNode('With vendor', 'ID scan and selfie', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry lookup', 'Vendor, organizations only', { step: 5, mode: 'vendor', app: 'org', registry: true }, 'v ' + p) + mapNode('Registry not reachable', 'Documents added to the action hub', { step: 5, mode: 'vendor', app: 'org', registry: false }, 'v ' + p);
-  const payout = mapNode('Enter manually', 'Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v') + mapNode('Connect with Plaid', 'Log in through Plaid, approved automatically', { step: 9, payout: 'vendor' }, 'v');
+  const payout = mapNode('Connect with Plaid', 'Default. Log in through Plaid, approved automatically', { step: 9, payout: 'vendor' }, 'v') + mapNode('Enter manually', 'Fallback. Details and bank statement, compliance review', { step: 9, payout: 'manual' }, 'v');
   const stages = org ? `
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
   ${st('2. Risk form', mapNode('About you and your organization', 'Straight after sign-up', { step: 3 }))}
@@ -739,7 +739,7 @@ function render() {
   const blocked = S.step === 4 && S.outcome === 'declined';
   const nav = u.nav || `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
   $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">${S.hub ? 'Action hub' : S.step < 0 ? 'Step 0 &middot; Start' : `${orgEntry() ? 'Registering an organization' : S.orgDone ? 'Starting a fundraiser for your organization' : 'Starting a fundraiser'} &middot; Step ${pos() + 1} of ${FLOW().length}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['manual', 'Enter manually'], ['vendor', 'Connect with Plaid']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+    <div class="eyebrow">${S.hub ? 'Action hub' : S.step < 0 ? 'Step 0 &middot; Start' : `${orgEntry() ? 'Registering an organization' : S.orgDone ? 'Starting a fundraiser for your organization' : 'Starting a fundraiser'} &middot; Step ${pos() + 1} of ${FLOW().length}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['vendor', 'Connect with Plaid'], ['manual', 'Enter manually']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
   if (S.admin) a.innerHTML = adminBody();
@@ -794,7 +794,7 @@ document.addEventListener('click', e => {
     case 'link': S.linked = true; render(); break;
     case 'unlink': S.linked = false; render(); break;
     case 'paysave': S.paySaved = true; render(); break;
-    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, orgDone: false, entry: 'fund', mode: 'vendor', requests: [], toast: null }); go(-1); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, payout: 'vendor', orgDone: false, entry: 'fund', mode: 'vendor', requests: [], toast: null }); go(-1); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
