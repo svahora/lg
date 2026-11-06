@@ -64,7 +64,15 @@
   .topbar { position: sticky; top: 0; z-index: 20; background: var(--page); border-bottom: 1px solid var(--line); padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
   .brand { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
   .brand::before { content: ''; width: 18px; height: 18px; background: var(--green); clip-path: var(--star); }
-  .ctls { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+  .tools { margin-left: auto; display: flex; gap: 8px; }
+  .ghost.icon { font-size: 17px; width: 40px; height: 36px; padding: 0; display: inline-grid; place-items: center; }
+  /* Sticky settings wheel: the prototype's own controls, out of the way of the form */
+  .settings { position: fixed; right: 16px; bottom: 16px; z-index: 36; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .wheel { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); font-size: 24px; box-shadow: 0 8px 24px rgba(23, 58, 43, .18); transition: transform .4s cubic-bezier(.22, 1, .36, 1); }
+  .wheel[aria-expanded="true"] { transform: rotate(90deg); }
+  .settings-panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
+  .settings-panel .ctl { justify-content: space-between; }
+  @keyframes rise { from { transform: translateY(10px); opacity: 0; } }
   .ctl { display: flex; align-items: center; gap: 8px; }
   .seglabel { font-size: 12px; color: var(--muted); }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--bg); }
@@ -78,7 +86,6 @@
   .ghost.theme svg { width: 18px; height: 18px; display: block; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(35, 57, 95, .5); } 70% { box-shadow: 0 0 0 10px rgba(35, 57, 95, 0); } 100% { box-shadow: 0 0 0 0 rgba(35, 57, 95, 0); } }
   .ghost.pulse { border-color: var(--lapis); animation: pulse 1.6s ease-out infinite; }
-  .ghost.pulse::after { content: ' to see the score'; color: var(--muted); }
   .bell { position: relative; }
   .bell .badge { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--declined); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; }
   .help { border: 0; background: transparent; font-size: 15px; font-weight: 800; color: var(--declined); padding: 0 4px; }
@@ -243,7 +250,7 @@
   .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); margin: 6px 0 12px; }
   .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; border: 1px solid var(--line); }
 
-  footer { display: flex; justify-content: center; padding: 28px 16px 40px; color: var(--muted); font-size: 13px; }
+  footer { display: flex; justify-content: center; padding: 28px 16px 96px; color: var(--muted); font-size: 13px; }
 
   @media (max-width: 1100px) {
     .layout { grid-template-columns: 172px minmax(0, 1fr); }
@@ -260,7 +267,6 @@
     .opts, .grid { grid-template-columns: 1fr; }
     .prow { grid-template-columns: 1fr 1fr; }
     .sname { flex-basis: 80px; }
-    .ctls { margin-left: 0; align-items: flex-start; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -270,14 +276,18 @@
 <body>
 <div class="topbar">
   <div class="brand">Funboarding</div>
-  <div class="ctls">
+  <div class="tools">
+    <button class="ghost icon bell" id="btn-hub" data-act="hub" aria-label="Action hub" title="Action hub">🔔<span class="badge" id="hub-badge" hidden></span></button>
+    <button class="ghost icon" id="btn-admin" aria-label="Admin view" title="Admin view">🛡️</button>
+  </div>
+</div>
+<div class="settings">
+  <div class="settings-panel" id="settings" role="dialog" aria-label="Prototype settings" hidden>
     <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
     <div class="ctl"><span class="seglabel">KYC/KYB vendor</span><div class="seg" id="seg-mode"></div></div>
+    <div class="ctl" style="justify-content:flex-start"><button class="ghost icon" id="btn-map" aria-label="Path map" title="Path map">🗺️</button><button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button></div>
   </div>
-  <button class="ghost" id="btn-map">🗺️ Path map</button>
-  <button class="ghost bell" id="btn-hub" data-act="hub" aria-label="Action hub">🔔<span class="badge" id="hub-badge" hidden></span></button>
-  <button class="ghost" id="btn-admin">🛡️ Admin view</button>
-  <button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button>
+  <button class="wheel" id="btn-settings" aria-label="Prototype settings" title="Prototype settings" aria-expanded="false">⚙️</button>
 </div>
 <div class="layout">
   <nav class="rail" id="steps" aria-label="Steps"></nav>
@@ -820,6 +830,7 @@ function render() {
   seg('seg-app', [['org', '🏢 Organization'], ['person', '👤 Person']], 'app');
   seg('seg-mode', [['vendor', 'With vendor'], ['inhouse', 'In-house']], 'mode');
   $('btn-admin').classList.toggle('on', S.admin);
+  $('settings').hidden = !S.settings; $('btn-settings').setAttribute('aria-expanded', !!S.settings);
   $('btn-admin').classList.toggle('pulse', S.step === 3 && !S.admin);
   $('seg-app').parentElement.hidden = orgEntry();
   const at = pos();
@@ -878,7 +889,8 @@ document.addEventListener('click', e => {
   if (b.dataset.k) { if (b.dataset.k === 'payout') S.paySaved = false; let v = b.dataset.v; if (v === 'true') v = true; if (v === 'false') v = false; S[b.dataset.k] = v; render(); return; }
   if (b.dataset.set) { const set = JSON.parse(b.dataset.set); Object.assign(S, set); S.map = !!set.map; S.checking = false; render(); return; }
   if (b.id === 'btn-admin') { S.admin = !S.admin; render(); return; }
-  if (b.id === 'btn-map') { S.map = true; render(); return; }
+  if (b.id === 'btn-map') { S.map = true; S.settings = false; render(); return; }
+  if (b.id === 'btn-settings') { S.settings = !S.settings; render(); return; }
   switch (b.dataset.act) {
     case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false;
       go(FLOW()[pos() + 1] ?? S.step); break;
@@ -952,6 +964,7 @@ function onField(e, full) {
 }
 document.addEventListener('input', e => onField(e, e.target.tagName === 'SELECT'));
 document.addEventListener('change', e => onField(e, true));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.settings) { S.settings = false; render(); $('btn-settings').focus(); } });
 $('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') { S.map = false; render(); } });
 render();
 </script>
