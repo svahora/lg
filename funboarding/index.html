@@ -188,7 +188,8 @@
   select[multiple] { padding: 4px; }
   .admin textarea { font: inherit; width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--card); color: var(--ink); }
   .help { border: 0; background: transparent; font-size: 15px; font-weight: 800; color: var(--declined); padding: 0 4px; vertical-align: middle; }
-  .atabs { margin: 0 0 12px; }
+  .atabs { margin: 0 0 12px; display: flex; align-items: center; }
+  .atabs button { font-size: 16px; padding: 4px 12px; }
   .atabs .seg { display: flex; flex-wrap: wrap; width: fit-content; background: var(--card); }
   .panel { background: var(--card); border-radius: 10px; padding: 10px 12px; margin: 12px 0; }
 
@@ -878,10 +879,11 @@ paintTheme();
 const adminHead = () => `<div class="ahead"><span class="albl">Admin &middot; compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>
   <div class="panel"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="seglabel">Viewing as</span>${demoSeg('role', Object.entries(ROLE))}<button class="help" data-act="rolehelp" aria-label="What this role can do" aria-expanded="${S.roleHelp}">❓</button></div>${S.roleHelp ? `<div class="muted" style="font-size:12px;margin-top:6px"><span class="tag">roles from compliance</span> ${ROLE_NOTE[S.role]}</div>` : ''}</div>`;
 const TAB_NAMES = { case: 'Case', documents: 'Request documents', notes: 'Notes', audit: 'Audit log', manager: 'Manager tools' };
+const TAB_ICONS = { case: '📁', documents: '📄', notes: '📝', audit: '📜', manager: '🛠️' };
 function adminBody() {
   const tabs = adminTabs();
   if (!tabs[S.atab]) S.atab = 'case';
-  const bar = Object.keys(tabs).length > 1 ? `<div class="atabs">${demoSeg('atab', Object.keys(tabs).map(k => [k, TAB_NAMES[k]]))}</div>` : '';
+  const bar = Object.keys(tabs).length > 1 ? `<div class="atabs"><div class="seg">${Object.keys(tabs).map(k => `<button class="${S.atab === k ? 'on' : ''}" data-k="atab" data-v="${k}" title="${TAB_NAMES[k]}" aria-label="${TAB_NAMES[k]}">${TAB_ICONS[k]}</button>`).join('')}</div><span class="muted" style="font-size:12px;margin-left:8px">${TAB_NAMES[S.atab]}</span></div>` : '';
   return adminHead() + bar + tabs[S.atab];
 }
 function onField(e, full) {
