@@ -66,16 +66,10 @@
   .brand::before { content: ''; width: 18px; height: 18px; background: var(--green); clip-path: var(--star); }
   .tools { margin-left: auto; display: flex; gap: 8px; }
   .ghost.icon { font-size: 17px; width: 40px; height: 36px; padding: 0; display: inline-grid; place-items: center; }
-  /* Sticky settings wheel: the prototype's own controls, out of the way of the form */
-  .settings { position: fixed; right: 16px; bottom: 16px; z-index: 36; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-  .wheel { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--ink); color: var(--page); font-size: 26px; display: grid; place-items: center; box-shadow: 0 8px 24px rgba(23, 58, 43, .18); transition: transform .4s cubic-bezier(.22, 1, .36, 1); }
-  .wheel[aria-expanded="true"] { transform: rotate(90deg); }
-  /* While closed, a soft green ring keeps the wheel noticeable */
-  .wheel[aria-expanded="false"] { animation: ring 2.2s ease-out infinite; }
-  @keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(74, 165, 103, .6), 0 8px 24px rgba(23, 58, 43, .18); } 70% { box-shadow: 0 0 0 14px rgba(74, 165, 103, 0), 0 8px 24px rgba(23, 58, 43, .18); } 100% { box-shadow: 0 0 0 0 rgba(74, 165, 103, 0), 0 8px 24px rgba(23, 58, 43, .18); } }
-  .settings-panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
+  /* Settings panel: the prototype's own controls, dropping from the gear in the top bar */
+  .settings-panel { position: absolute; top: calc(100% + 8px); right: 20px; z-index: 36; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
   .settings-panel .ctl { justify-content: space-between; }
-  @keyframes rise { from { transform: translateY(10px); opacity: 0; } }
+  @keyframes rise { from { transform: translateY(-10px); opacity: 0; } }
   .ctl { display: flex; align-items: center; gap: 8px; }
   .seglabel { font-size: 12px; color: var(--muted); }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--bg); }
@@ -94,7 +88,7 @@
   .help { border: 0; background: transparent; font-size: 15px; font-weight: 800; color: var(--declined); padding: 0 4px; }
 
   /* Layout: rail, applicant screen, admin drawer */
-  .layout { display: grid; grid-template-columns: 172px minmax(0, 1fr) auto; gap: 24px; max-width: 1320px; margin: 0 auto; padding: 28px 20px 96px; align-items: start; }
+  .layout { display: grid; grid-template-columns: 172px minmax(0, 1fr) auto; gap: 24px; max-width: 1320px; margin: 0 auto; padding: 28px 20px; align-items: start; }
   .user { min-width: 0; max-width: 700px; }
 
   /* Step rail: the star marks each step. Mobile first: a sticky summary with a star track, the full list on demand. */
@@ -263,8 +257,9 @@
     .admin { position: fixed; top: 0; right: 0; bottom: 0; width: min(390px, 100%); max-height: none; border-radius: 0; z-index: 30; }
   }
   @media (max-width: 760px) {
-    .layout { display: block; padding: 14px 16px 96px; }
-    .topbar { position: static; }
+    .layout { display: block; padding: 14px 16px 28px; }
+    .topbar { position: relative; }
+    .settings-panel { right: 16px; }
     .card { padding: 20px; }
     .card.vendor { padding: 19px; }
     .card.vendor h1 { padding-right: 0; margin-top: 30px; }
@@ -283,16 +278,14 @@
 <div class="topbar">
   <div class="brand">Funboarding</div>
   <div class="tools">
+    <button class="ghost icon" id="btn-settings" aria-label="Prototype settings" title="Prototype settings" aria-expanded="false">⚙️</button>
     <button class="ghost icon bell" id="btn-hub" data-act="hub" aria-label="Action hub" title="Action hub">🔔<span class="badge" id="hub-badge" hidden></span></button>
   </div>
-</div>
-<div class="settings">
   <div class="settings-panel" id="settings" role="dialog" aria-label="Prototype settings" hidden>
     <div class="ctl"><span class="seglabel">Applicant</span><div class="seg" id="seg-app"></div></div>
     <div class="ctl"><span class="seglabel">KYC/KYB vendor</span><div class="seg" id="seg-mode"></div></div>
     <div class="ctl" style="justify-content:flex-start;gap:8px"><button class="ghost icon" id="btn-admin" aria-label="Admin view" title="Admin view">🛡️</button><button class="ghost icon" id="btn-map" aria-label="Path map" title="Path map">🗺️</button><button class="ghost theme" id="btn-theme" aria-label="Switch light or dark mode"></button></div>
   </div>
-  <button class="wheel" id="btn-settings" aria-label="Prototype settings" title="Prototype settings" aria-expanded="false"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </div>
 <div class="layout">
   <nav class="rail" id="steps" aria-label="Steps"></nav>
