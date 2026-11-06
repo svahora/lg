@@ -64,7 +64,7 @@
   .topbar { position: sticky; top: 0; z-index: 20; background: var(--page); border-bottom: 1px solid var(--line); padding: 10px 20px; display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
   .brand { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
   .brand::before { content: ''; width: 18px; height: 18px; background: var(--green); clip-path: var(--star); }
-  .ctls { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .ctls { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
   .ctl { display: flex; align-items: center; gap: 8px; }
   .seglabel { font-size: 12px; color: var(--muted); }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--bg); }
@@ -406,8 +406,7 @@ function peopleTable() {
 function riskForm() {
   const F = S.form;
   const impact = `<select data-f="impact" multiple size="4">${ALL_COUNTRIES.map(c => `<option value="${esc(c)}" ${F.impact.includes(c) ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>`;
-  return `<p class="muted">We use these answers to check your application in seconds. No documents or IDs yet. Try changing them, and open Admin view to see the effect.</p>
-  <h2>About you</h2>
+  return `<h2>About you</h2>
   <div class="grid">${lbl('Full legal name', inp('legal', F.legal), 'As it appears on official documents')}${lbl('Date of birth', inp('dob', F.dob, 'date'))}
   ${lbl('Home address', inp('addr', F.addr), 'Full address. No ID needed at this step.')}${lbl('Country', csel('res', F.res))}
   ${lbl('Email', inp('email', F.email, 'email'))}${lbl('Mobile', inp('phone', F.phone, 'tel'))}</div>
@@ -562,7 +561,7 @@ function userScreen(i) {
         body: `${row(ok ? '' : 'wait', ok ? 'Approved' : 'Under review', ok ? 'You can start a fundraiser and go live.' : why + (orgManual() && (!vendor() || regDocs()) ? ' Complete the required actions in your action hub.' : ' We\'ll be in touch soon for any required documents.'), ok ? null : '&middot;')}
         <div class="notice">${ok ? 'Start a fundraiser whenever you\'re ready. It can go live right away.' : 'You can start a fundraiser now and save it as a draft. It can go live once your organization is approved.'}</div>
         ${orgManual() ? `<div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>` : ''}`,
-        nav: `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="startfund">Start a fundraiser</button><button class="btn" data-act="next">Go to action hub</button></span>` };
+        nav: `<button class="btn2" data-act="back">Back</button><span class="pair">${ok ? '<button class="btn2" data-act="next">Go to action hub</button><button class="btn" data-act="startfund">Start a fundraiser</button>' : '<button class="btn2" data-act="startfund">Start a fundraiser</button><button class="btn" data-act="next">Go to action hub</button>'}</span>` };
     } else {
       const nav = `<button class="btn2" data-act="back">Back</button><span class="pair">${waits() ? '<button class="btn2" data-act="draft">Save as draft</button>' : ''}<button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button></span>`;
       const vdemo = vendor() ? `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` : '';
@@ -912,7 +911,7 @@ $('btn-theme').addEventListener('click', () => {
 });
 paintTheme();
 const adminHead = () => `<div class="ahead"><span class="albl">Compliance and trust and safety</span><button class="x" data-act="closeadmin">&times;</button></div>
-  <div class="panel"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="seglabel">Viewing as</span>${demoSeg('role', Object.entries(ROLE))}<button class="help" data-act="rolehelp" aria-label="What this role can do" aria-expanded="${S.roleHelp}">❓</button></div>${S.roleHelp ? `<div class="muted" style="font-size:12px;margin-top:6px"><span class="tag">roles from compliance</span> ${ROLE_NOTE[S.role]}</div>` : ''}</div>`;
+  <div class="panel"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span class="seglabel">Viewing as</span>${demoSeg('role', Object.entries(ROLE))}</div></div>`;
 const TAB_NAMES = { case: 'Case', documents: 'Request documents', notes: 'Notes', audit: 'Audit log', manager: 'Manager tools' };
 const TAB_ICONS = { case: '📁', documents: '📄', notes: '📝', audit: '📜', manager: '🛠️' };
 function adminBody() {
