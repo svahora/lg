@@ -635,7 +635,7 @@ const auditExtra = () => [...(S.step >= 8 ? ['Campaign live'] : []), ...(S.step 
 function adminTabs() {
   if (S.step < 4) return { case: adminScreen(S.step) };
   const types = S.docTypes.map(t => [t, t]).concat([['__new', '+ New document type']]);
-  const notes = `<div class="log"><div><span class="muted">Day 1, 10:40 &middot; Trust and safety</span> &nbsp;Website and social profile look consistent with the risk form.</div></div>`;
+  const notes = `<div class="log"><div><span class="muted">Day 1, 10:40</span> &nbsp;<b>${TS}</b> &middot; Website and social profile look consistent with the risk form.</div></div>`;
   const req = `<div class="panel">
     ${lbl('Document type', `<select data-r="type">${types.map(([v, l]) => `<option value="${esc(v)}" ${S.req.type === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`, 'Any type. A new type becomes selectable for later requests.')}
     ${S.req.type === '__new' ? lbl('New type name', `<input data-r="newType" value="${esc(S.req.newType)}" placeholder="For example, Medical attestation">`) : ''}
@@ -653,18 +653,23 @@ function factors() {
 function caseHead() {
   return `<p><b>${name()}</b><br><span class="band ${S.outcome}">${BAND[S.outcome]}</span> &nbsp;<b>Score ${score()}</b></p>`;
 }
+// Made-up names for the prototype
+const STAFF = { analyst: 'Layla Haddad', manager: 'Daniel Okafor', director: 'Sara Lindqvist' };
+const TS = 'Layla Haddad (trust and safety)', CO = 'Daniel Okafor (compliance)';
 function audit(extra) {
-  const items = ['Draft created', 'Risk form submitted', `Score: ${rawScore()}, ${BAND[S.outcome]}`];
-  items.push(vendor() ? 'Vendor verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed') : 'Documents uploaded to secure document storage');
-  if (flagged() && vendor() && !vendorLow()) items.push(`${reviewer()} approved after review`);
-  if (regDocs()) items.push('Company registry not reachable, organization documents uploaded');
-  if (liveDuring()) items.push('Campaign live while documents are reviewed, payouts held');
-  if (waits()) items.push('Saved as draft until the review approves it');
-  if (!vendor() || regDocs()) items.push('Reviewer approved documents' + (liveDuring() ? ', payouts released' : ''));
-  if (vendorLow()) items.push('Compliance team approved');
-  S.requests.forEach((q, k) => { items.push(`${q.by} requested: ${esc(q.type)}`); if (!S.removed['req' + k]) items.push(`User uploaded: ${esc(q.type)}`); });
-  items.push(...(extra || []).filter(t => !(liveDuring() && t === 'Campaign live')));
-  return `<div class="log">${items.map((t, k) => `<div><span class="muted">Day 1, 10:${String(2 + k * 7).padStart(2, '0')}</span> &nbsp;${t}</div>`).join('')}</div>`;
+  const U = PERSON, SYS = 'System', V = 'Vendor (SEON)';
+  const items = [[U, 'Draft created'], [U, 'Risk form submitted'], [SYS, `Score: ${rawScore()}, ${BAND[S.outcome]}`]];
+  items.push(vendor() ? [V, 'Verification ' + (vendorLow() ? 'low result, sent to compliance' : 'passed')] : [U, 'Documents uploaded to secure document storage']);
+  if (flagged() && vendor() && !vendorLow()) items.push([S.outcome === 'high' ? CO : TS, 'Approved after review']);
+  if (regDocs()) items.push([U, 'Company registry not reachable, organization documents uploaded']);
+  if (liveDuring()) items.push([SYS, 'Campaign live while documents are reviewed, payouts held']);
+  if (waits()) items.push([SYS, 'Saved as draft until the review approves it']);
+  if (!vendor() || regDocs()) items.push([TS, 'Approved documents' + (liveDuring() ? ', payouts released' : '')]);
+  if (vendorLow()) items.push([CO, 'Approved']);
+  S.requests.forEach((q, k) => { items.push([q.by, `Requested: ${esc(q.type)}`]); if (!S.removed['req' + k]) items.push([U, `Uploaded: ${esc(q.type)}`]); });
+  items.push(...(extra || []).filter(t => !(liveDuring() && t === 'Campaign live')).map(t => [t.startsWith('Payout') ? U : SYS, t]));
+  const time = k => { const m = 2 + k * 7; return `${10 + Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; };
+  return `<div class="log">${items.map(([who, t], k) => `<div><span class="muted">Day 1, ${time(k)}</span> &nbsp;<b>${who}</b> &middot; ${t}</div>`).join('')}</div>`;
 }
 function adminScreen(i) {
   if (i === 3) return riskPreview();
@@ -795,7 +800,7 @@ document.addEventListener('click', e => {
       const type = (S.req.type === '__new' ? S.req.newType : S.req.type).trim();
       if (!type) break;
       if (!S.docTypes.includes(type)) S.docTypes.push(type);
-      S.requests.push({ type, msg: S.req.msg, by: ROLE[S.role] });
+      S.requests.push({ type, msg: S.req.msg, by: `${STAFF[S.role]} (${ROLE[S.role].toLowerCase()})` });
       S.removed['req' + (S.requests.length - 1)] = true;
       S.req.type = type; S.req.newType = '';
       S.toast = S.requests.length - 1; render(); break;
