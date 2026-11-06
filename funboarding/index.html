@@ -21,6 +21,7 @@
     --medium: #9a6c00; --medium-tint: #fbf0d4;
     --high: #b4561a; --high-tint: #f8e3d4;
     --declined: #b8322f; --declined-tint: #f6dcdb;
+    --menu: #d3e5d7; --menu-line: #a9cbb2;
     --star: polygon(50% 0, 64.64% 14.64%, 85.36% 14.64%, 85.36% 35.36%, 100% 50%, 85.36% 64.64%, 85.36% 85.36%, 64.64% 85.36%, 50% 100%, 35.36% 85.36%, 14.64% 85.36%, 14.64% 64.64%, 0 50%, 14.64% 35.36%, 14.64% 14.64%, 35.36% 14.64%);
     color-scheme: light;
   }
@@ -30,6 +31,7 @@
       --primary: #d4eadb; --primary-ink: #0e1712;
       --green: #5cc27a; --green-tint: #183424;
       --saffron-tint: #33290f; --saffron-ink: #f0c561;
+      --menu: #213a2c; --menu-line: #36573f;
       --lapis: #182640; --lapis-ink: #e3e9f5; --lapis-muted: #9fb0d0;
       --admin: #1d2a45; --admin-line: #34466e;
       --low: #6fd08b; --low-tint: #183424; --medium: #f0c561; --medium-tint: #33290f;
@@ -42,6 +44,7 @@
     --primary: #d4eadb; --primary-ink: #0e1712;
     --green: #5cc27a; --green-tint: #183424;
     --saffron-tint: #33290f; --saffron-ink: #f0c561;
+    --menu: #213a2c; --menu-line: #36573f;
     --lapis: #182640; --lapis-ink: #e3e9f5; --lapis-muted: #9fb0d0;
     --admin: #1d2a45; --admin-line: #34466e;
     --low: #6fd08b; --low-tint: #183424; --medium: #f0c561; --medium-tint: #33290f;
@@ -67,12 +70,13 @@
   .tools { margin-left: auto; display: flex; gap: 8px; }
   .ghost.icon { font-size: 17px; width: 40px; height: 36px; padding: 0; display: inline-grid; place-items: center; }
   /* Settings panel: the prototype's own controls, dropping from the gear in the top bar */
-  .settings-panel { position: absolute; top: calc(100% + 8px); right: 20px; z-index: 36; background: var(--ink); color: var(--page); border: 1px solid var(--ink); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
+  .settings-panel { position: absolute; top: calc(100% + 8px); right: 20px; z-index: 36; background: var(--menu); color: var(--ink); border: 1px solid var(--menu-line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
   .settings-panel .ctl { justify-content: space-between; }
-  /* Inverted so the open menu reads apart from the form; the caret points back to the gear */
-  .settings-panel::before { content: ''; position: absolute; top: -7px; right: 62px; width: 12px; height: 12px; background: var(--ink); transform: rotate(45deg); }
-  .settings-panel .seglabel { color: var(--page); opacity: .8; }
-  #btn-settings[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); }
+  /* A deeper sage than the page so the open menu reads apart from the form; the caret points back to the gear */
+  .settings-panel::before { content: ''; position: absolute; top: -7px; right: 62px; width: 12px; height: 12px; background: var(--menu); border-left: 1px solid var(--menu-line); border-top: 1px solid var(--menu-line); transform: rotate(45deg); }
+  .settings-panel .seglabel { color: var(--ink); }
+  .settings-panel .seg { background: var(--card); }
+  #btn-settings[aria-expanded="true"] { background: var(--menu); border-color: var(--menu-line); }
   .tool-list { display: flex; gap: 6px; }
   .tool-list .ghost { flex: 1; padding: 8px 12px; white-space: nowrap; }
   @keyframes rise { from { transform: translateY(-10px); opacity: 0; } }
