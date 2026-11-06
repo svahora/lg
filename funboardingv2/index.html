@@ -67,8 +67,12 @@
   .tools { margin-left: auto; display: flex; gap: 8px; }
   .ghost.icon { font-size: 17px; width: 40px; height: 36px; padding: 0; display: inline-grid; place-items: center; }
   /* Settings panel: the prototype's own controls, dropping from the gear in the top bar */
-  .settings-panel { position: absolute; top: calc(100% + 8px); right: 20px; z-index: 36; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
+  .settings-panel { position: absolute; top: calc(100% + 8px); right: 20px; z-index: 36; background: var(--ink); color: var(--page); border: 1px solid var(--ink); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; max-width: calc(100vw - 32px); box-shadow: 0 12px 32px rgba(23, 58, 43, .22); animation: rise .35s cubic-bezier(.22, 1, .36, 1); }
   .settings-panel .ctl { justify-content: space-between; }
+  /* Inverted so the open menu reads apart from the form; the caret points back to the gear */
+  .settings-panel::before { content: ''; position: absolute; top: -7px; right: 62px; width: 12px; height: 12px; background: var(--ink); transform: rotate(45deg); }
+  .settings-panel .seglabel { color: var(--page); opacity: .8; }
+  #btn-settings[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); }
   .tool-list { display: flex; gap: 6px; }
   .tool-list .ghost { flex: 1; padding: 8px 12px; white-space: nowrap; }
   @keyframes rise { from { transform: translateY(-10px); opacity: 0; } }
@@ -261,6 +265,7 @@
     .layout { display: block; padding: 14px 16px 28px; }
     .topbar { position: relative; }
     .settings-panel { right: 16px; }
+    .settings-panel::before { right: 66px; }
     .card { padding: 20px; }
     .card.vendor { padding: 19px; }
     .card.vendor h1 { padding-right: 0; margin-top: 30px; }
