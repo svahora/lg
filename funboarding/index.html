@@ -242,10 +242,11 @@
 const S = { step: -1, entry: 'fund', app: 'org', mode: 'vendor', outcome: 'low', registry: true, vendorResult: 'pass', draft: false, approved: false, checking: false, admin: false, map: false, removed: {}, draftStep: 2, payout: 'vendor', linked: false, paySaved: false, role: 'analyst', atab: 'case', roleHelp: false, hub: false, toast: null, requests: [], req: { type: 'Proof of address', newType: '', msg: 'Please upload a recent copy.' } };
 // Smart document types: the first request defines a type, later requests reuse it
 S.docTypes = ['Proof of address', 'Bank statement', 'Board resolution'];
-const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account'];
+const STEPS = ['Sign up', 'Person or organization', 'Campaign', 'Risk form', 'Checking your details', 'Verification', 'Review', 'What you hear', 'Go live', 'Payout account', 'Action hub'];
 const VENDOR_STEPS = [5, 6, 7, 9];
 // Two separate flows over the same screens. A registered organization starting a fundraiser only needs the campaign, go-live and payout.
-const FLOW = () => S.entry === 'org' ? [0, 3, 4, 5, 6, 9] : S.orgDone ? [2, 8, 9] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+// Organizations verified by hand skip verification: their uploads wait in the action hub, the last page
+const FLOW = () => S.entry === 'org' ? (vendor() ? [0, 3, 4, 5, 6, 10] : [0, 3, 4, 6, 10]) : S.orgDone ? [2, 8, 9] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 const ORG_LABELS = { 3: 'Risk form', 6: 'Organization result' };
 const label = k => (S.entry === 'org' && ORG_LABELS[k]) || STEPS[k];
 const pos = () => FLOW().indexOf(S.step);
@@ -430,7 +431,7 @@ function hubPending() {
   const keys = S.requests.map((q, k) => 'req' + k);
   if (S.step >= 5 && !vendor()) keys.push('id', ...(isOrg() ? ORG_DOCS().map(d => d[0]) : []));
   else if (S.step >= 5 && regDocs()) keys.push(...ORG_DOCS().map(d => d[0]));
-  return keys.filter(k => S.removed[k]).length;
+  return keys.filter(k => S.removed[k]).length + (orgEntry() && S.step >= 6 && !S.paySaved ? 1 : 0);
 }
 function hubScreen() {
   const rows = hubRows();
@@ -519,10 +520,10 @@ function userScreen(i) {
       const why = !vendor() ? 'The vendor isn\'t available, so our team is reviewing your registration by hand.' : regDocs() ? 'We couldn\'t look up your organization in the company registry, so our team is reviewing your registration by hand.' : vendorLow() ? 'We need a little more time to review your registration.' : '';
       return {
         h: ok ? 'Your organization is approved' : 'Your organization is under review',
-        body: `${row(ok ? '' : 'wait', ok ? 'Approved' : 'Under review', ok ? 'You can start a fundraiser and go live.' : why + ' We\'ll be in touch soon for any required documents.', ok ? null : '&middot;')}
+        body: `${row(ok ? '' : 'wait', ok ? 'Approved' : 'Under review', ok ? 'You can start a fundraiser and go live.' : why + (orgManual() && (!vendor() || regDocs()) ? ' Complete the required actions in your action hub.' : ' We\'ll be in touch soon for any required documents.'), ok ? null : '&middot;')}
         <div class="notice">${ok ? 'Start a fundraiser whenever you\'re ready. It can go live right away.' : 'You can start a fundraiser now and save it as a draft. It can go live once your organization is approved.'}</div>
         ${orgManual() ? `<div class="demo"><b>Demo control:</b> review${demoSeg('approved', [[false, 'In review'], [true, 'Approved']])}</div>` : ''}`,
-        nav: `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="next">Add a payout account</button><button class="btn" data-act="startfund">Start a fundraiser</button></span>` };
+        nav: `<button class="btn2" data-act="back">Back</button><span class="pair"><button class="btn2" data-act="startfund">Start a fundraiser</button><button class="btn" data-act="next">Go to action hub</button></span>` };
     } else {
       const nav = `<button class="btn2" data-act="back">Back</button><span class="pair">${waits() ? '<button class="btn2" data-act="draft">Save as draft</button>' : ''}<button class="btn" data-act="next" ${waits() && !S.approved ? 'disabled' : ''}>Continue</button></span>`;
       const vdemo = vendor() ? `<div class="demo"><b>Demo control:</b> vendor result${demoSeg('vendorResult', [['pass', 'Pass'], ['low', 'Low result']])}</div>` : '';
@@ -563,6 +564,15 @@ function userScreen(i) {
       <div class="notice">We may ask for more documents later, depending on your campaign${isOrg() ? '' : ', for example if you raise money on behalf of someone else'}.</div>
       <p class="muted">Next: add a payout account so you can receive donations.</p>` };
     case 9: return payoutScreen();
+    case 10: {
+      const pay = S.paySaved ? row('', 'Payout account', `Added, ${S.pay.type.toLowerCase()} &bull;&bull;&bull;&bull;${last4()}`)
+        : `<div class="check">${tick('wait', '&middot;')}<div style="flex:1"><b>Add a payout account</b><div class="muted">Required before your first payout. Connect with Plaid or enter it by hand.</div></div><button class="btn2 sm" data-act="payfromhub">Add</button></div>`;
+      return {
+        h: 'Your action hub', body: `<p class="muted">Everything we need from you, in one place. Come back here any time from the bell.</p>
+        <h2>Required actions</h2>${hubRows()}${pay}
+        <p class="lock">&#128274; Your documents are encrypted and visible only to our trust and safety and compliance teams.</p>`,
+        nav: `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="startfund">Start a fundraiser</button>` };
+    }
   }
 }
 
@@ -724,9 +734,9 @@ function pathMap() {
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
   ${st('2. Risk form', mapNode('About you and your organization', 'Straight after sign-up', { step: 3 }))}
   ${st('3. Check', check)}
-  ${st('4. Verification', verify)}
+  ${st('4. Verification', mapNode('With vendor', 'ID scan and selfie, registry lookup', { step: 5, mode: 'vendor' }, 'v') + mapNode('Registry not reachable', 'Documents go to the action hub', { step: 5, mode: 'vendor', registry: false }, 'v') + mapNode('No vendor', 'Skips to the result. Uploads wait in the action hub', { step: 6, mode: 'inhouse' }, 'v'))}
   ${st('5. Organization result', mapNode('Approved', 'With vendor, pass, Low. Fundraisers can go live', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'low' }, 'v') + mapNode('Under review', 'Medium or High, vendor low result, registry or vendor down. Fundraisers are drafts until approved', { step: 6, mode: 'vendor', vendorResult: 'pass', registry: true, outcome: 'medium' }, 'v'))}
-  ${st('6. Payout account', payout)}
+  ${st('6. Action hub', mapNode('Required actions', 'The last page. Add a payout account' + (vendor() ? '' : ', plus ID and organization documents when verified by hand'), { step: 10 }))}
   ${st('Then', mapNode('Start a fundraiser', 'Campaign, then go live once the organization is approved', { step: 2, entry: 'fund', orgDone: true }, 'end'))}`
   : `
   ${st('1. Sign up', mapNode('Sign up', 'Login only', { step: 0 }))}
@@ -760,7 +770,7 @@ function render() {
   const blocked = S.step === 4 && S.outcome === 'declined';
   const nav = u.nav || `<button class="btn2" data-act="back">Back</button><button class="btn" data-act="next" ${S.checking || blocked ? 'disabled' : ''}>Continue</button>`;
   $('user').innerHTML = `<div class="card ${isV ? 'vendor' : ''}">${isV ? '<span class="pill">Changes with vendor</span>' : ''}
-    <div class="eyebrow">${S.hub ? 'Action hub' : S.step < 0 ? 'Step 0 &middot; Start' : `${orgEntry() ? 'Registering an organization' : S.orgDone ? 'Starting a fundraiser for your organization' : 'Starting a fundraiser'} &middot; Step ${pos() + 1} of ${FLOW().length}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['vendor', 'Connect with Plaid'], ['manual', 'Enter manually']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
+    <div class="eyebrow">${S.hub ? 'Action hub' : S.step < 0 ? 'Step 0 &middot; Start' : `${orgEntry() ? 'Registering an organization' : S.orgDone ? 'Starting a fundraiser for your organization' : 'Starting a fundraiser'}${pos() < 0 ? ' &middot; Action hub' : ` &middot; Step ${pos() + 1} of ${FLOW().length}`}`}</div>${S.step === 9 && !S.hub ? `<div class="modebar" style="margin-top:8px"><span class="seglabel">Payout account</span>${demoSeg('payout', [['vendor', 'Connect with Plaid'], ['manual', 'Enter manually']])}</div>` : ''}<h1>${u.h}${u.tag ? `<span class="tag">${u.tag}</span>` : ''}</h1>${u.body}<div class="nav">${nav}</div></div>`;
   const a = $('admin');
   a.hidden = !S.admin;
   if (S.admin) a.innerHTML = adminBody();
@@ -769,18 +779,26 @@ function render() {
   if (S.map) o.innerHTML = pathMap();
   const n = hubPending();
   $('hub-badge').hidden = !n; $('hub-badge').textContent = n;
-  $('btn-hub').classList.toggle('on', S.hub);
-  const t = $('ntoast'), q = S.requests[S.toast];
+  $('btn-hub').classList.toggle('on', S.hub || S.step === 10);
+  const t = $('ntoast'), rq = S.requests[S.toast];
+  const q = rq ? { title: 'We need a document from you', msg: `${esc(rq.type)}. ${esc(rq.msg)}` } : S.push;
   t.hidden = !q;
   // The notification drops down from the bell
   if (q) { const r = $('btn-hub').getBoundingClientRect(); t.style.top = r.bottom + 10 + 'px'; const right = Math.max(8, document.documentElement.clientWidth - r.right - 8); t.style.right = right + 'px'; t.style.setProperty('--caret', Math.max(10, document.documentElement.clientWidth - right - r.right + r.width / 2 - 6) + 'px'); }
-  if (q) t.innerHTML = `<b>We need a document from you</b><div class="muted">${esc(q.type)}. ${esc(q.msg)}</div><div class="row"><button class="x" data-act="closetoast" aria-label="Dismiss">&times;</button><button class="btn sm" data-act="hub">Go to action hub</button></div>`;
+  if (q) t.innerHTML = `<b>${q.title}</b><div class="muted">${q.msg}</div><div class="row"><button class="x" data-act="closetoast" aria-label="Dismiss">&times;</button><button class="btn sm" data-act="hub">Go to action hub</button></div>`;
 }
 function go(step) {
   // Open the admin view on arriving at the risk form so viewers see the live score
   if (step === 3 && S.step !== 3) S.admin = true;
   S.hub = false;
   S.step = Math.max(-1, Math.min(STEPS.length - 1, step));
+  if (S.step !== 9) S.payBack = null;
+  // Verified by hand: the uploads become required actions and a push notification points to the action hub
+  if (orgEntry() && S.step === 6 && (!vendor() || regDocs()) && !S.hubSeeded) {
+    S.hubSeeded = true;
+    (!vendor() ? ['id'] : []).concat(ORG_DOCS().map(d => d[0])).forEach(k => S.removed[k] = true);
+    S.push = { title: 'Action needed', msg: `You have ${hubPending()} required actions in your action hub.` };
+  }
   if (S.step === 4) { S.checking = true; setTimeout(() => { S.checking = false; render(); }, 1200); }
   render(); window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -794,8 +812,9 @@ document.addEventListener('click', e => {
   switch (b.dataset.act) {
     case 'next': if (S.step === 2) S.draft = false; if (S.step === 5) S.approved = false; S.resumed = false;
       go(FLOW()[pos() + 1] ?? S.step); break;
-    case 'back': go(pos() > 0 ? FLOW()[pos() - 1] : -1); break;
-    case 'start': if (orgEntry()) S.app = 'org'; S.orgDone = false; go(0); break;
+    case 'back': go(S.payBack ?? (pos() > 0 ? FLOW()[pos() - 1] : -1)); break;
+    case 'payfromhub': S.payBack = 10; go(9); break;
+    case 'start': if (orgEntry()) S.app = 'org'; S.orgDone = false; S.hubSeeded = false; S.push = null; go(0); break;
     case 'sendreq': {
       const type = (S.req.type === '__new' ? S.req.newType : S.req.type).trim();
       if (!type) break;
@@ -805,10 +824,10 @@ document.addEventListener('click', e => {
       S.req.type = type; S.req.newType = '';
       S.toast = S.requests.length - 1; render(); break;
     }
-    case 'hub': S.hub = true; S.toast = null; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+    case 'hub': S.toast = null; S.push = null; if (orgEntry()) { go(10); break; } S.hub = true; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
     case 'closehub': S.hub = false; render(); break;
     case 'rolehelp': S.roleHelp = !S.roleHelp; render(); break;
-    case 'closetoast': S.toast = null; render(); break;
+    case 'closetoast': S.toast = null; S.push = null; render(); break;
     case 'startfund': S.orgDone = true; S.entry = 'fund'; S.draft = false; go(2); break;
     case 'golive': go(8); break;
     case 'draft': S.draft = true; S.resumed = false; S.draftStep = S.step; go(1); break;
@@ -820,8 +839,8 @@ document.addEventListener('click', e => {
     case 'rmperson': S.form.people.splice(+b.dataset.i, 1); render(); break;
     case 'link': S.linked = true; render(); break;
     case 'unlink': S.linked = false; render(); break;
-    case 'paysave': S.paySaved = true; render(); break;
-    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, payout: 'vendor', orgDone: false, entry: 'fund', mode: 'vendor', requests: [], toast: null }); go(-1); break;
+    case 'paysave': S.paySaved = true; if (S.payBack) { go(S.payBack); break; } render(); break;
+    case 'restart': Object.assign(S, { draft: false, outcome: 'low', registry: true, vendorResult: 'pass', approved: false, removed: {}, draftStep: 2, linked: false, paySaved: false, payout: 'vendor', orgDone: false, entry: 'fund', mode: 'vendor', requests: [], toast: null, push: null, hubSeeded: false }); go(-1); break;
     case 'closeadmin': S.admin = false; render(); break;
     case 'closemap': S.map = false; render(); break;
   }
