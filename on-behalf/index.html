@@ -121,6 +121,37 @@
   .rule.blocked { background: var(--yellow-50); color: var(--yellow-800); }
   .rule p { margin: 0; font-size: 13px; line-height: 20px; color: var(--n700); }
   .upload { border: 1px dashed var(--n300); border-radius: 8px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+  /* Panel toggles */
+  body.hide-flow nav, body.hide-admin aside { display: none; }
+
+  /* Tablet and phone: steps become a swipeable strip, panels stack */
+  @media (max-width: 900px) {
+    nav, aside { flex-basis: 100%; min-width: 0; }
+    nav .eyebrow { display: none; }
+    #steps { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px; position: relative; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+    .step { flex: none; width: auto; min-height: 44px; padding: 8px 12px; scroll-snap-align: center; background: var(--n0); border: 1px solid var(--n200); }
+    .step[aria-current="step"] { border-color: var(--n900); }
+    .step-actor { display: none; }
+    .step-title { white-space: nowrap; }
+  }
+  @media (max-width: 640px) {
+    header { padding: 12px 16px; gap: 12px; }
+    .head-left .muted, .head-right > .muted { display: none; }
+    .head-right { width: 100%; gap: 8px; }
+    .head-right .seg { flex: 1 1 100%; }
+    .seg button { flex: 1 1 0; padding: 6px 10px; line-height: 18px; }
+    .head-right > .btn { margin-left: auto; }
+    .layout { padding: 16px; gap: 16px; }
+    .card { padding: 20px; gap: 20px; border-radius: 12px; }
+    h1 { font-size: 24px; line-height: 30px; }
+    .lede { font-size: 15px; line-height: 22px; }
+    .actions .btn { flex: 1 1 auto; }
+    .match { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; }
+    .match > b, .match > .badge { grid-column: 1 / -1; }
+    .match > .badge { justify-self: start; }
+    .match.head span:first-child, .match.head span:last-child { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -135,6 +166,11 @@
       <button type="button" data-action="payout-off" id="seg-off">No payout on campaign</button>
       <button type="button" data-action="payout-on" id="seg-on">Aisha's payout attached</button>
     </div>
+    <span class="muted">Show</span>
+    <div class="seg" role="group" aria-label="Panels">
+      <button type="button" data-action="toggle-flow" id="tg-flow">Flow</button>
+      <button type="button" data-action="toggle-admin" id="tg-admin">Admin view</button>
+    </div>
     <button type="button" class="btn btn-tertiary btn-sm" data-action="reset">Start over</button>
   </div>
 </header>
@@ -148,7 +184,7 @@
     <div class="viewing" id="viewing"></div>
     <section class="card" id="screen" aria-live="polite"></section>
   </main>
-  <aside aria-label="Campaign record">
+  <aside aria-label="Admin view">
     <div class="panel"><p class="eyebrow" style="margin:0">Campaign record</p><div id="record" style="display:flex;flex-direction:column;gap:14px"></div></div>
     <div class="panel"><p class="eyebrow" style="margin:0">Approvals for hand-off</p><div id="approvals" style="display:flex;flex-direction:column;gap:12px"></div></div>
     <div id="rule"></div>
@@ -322,6 +358,24 @@
     document.getElementById('seg-off').setAttribute('aria-pressed', String(!st.payoutA));
     document.getElementById('seg-on').setAttribute('aria-pressed', String(st.payoutA));
     renderSide();
+    renderPanels();
+    var strip = document.getElementById('steps'), curEl = strip.querySelector('[aria-current="step"]');
+    if (curEl && strip.scrollWidth > strip.clientWidth) strip.scrollLeft = curEl.offsetLeft - (strip.clientWidth - curEl.offsetWidth) / 2;
+  }
+
+  // Panel visibility is a per-viewer preference, kept across "Start over" and reloads.
+  var panels = { flow: true, admin: true };
+  try { var saved = JSON.parse(localStorage.getItem('onBehalfPanels') || 'null'); if (saved) panels = { flow: saved.flow !== false, admin: saved.admin !== false }; } catch (e) {}
+  function renderPanels() {
+    document.body.classList.toggle('hide-flow', !panels.flow);
+    document.body.classList.toggle('hide-admin', !panels.admin);
+    document.getElementById('tg-flow').setAttribute('aria-pressed', String(panels.flow));
+    document.getElementById('tg-admin').setAttribute('aria-pressed', String(panels.admin));
+  }
+  function togglePanel(k) {
+    panels[k] = !panels[k];
+    try { localStorage.setItem('onBehalfPanels', JSON.stringify(panels)); } catch (e) {}
+    renderPanels();
   }
 
   function go(id) { st.step = id; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -346,6 +400,8 @@
       case 'for-self': st.forOther = false; render(); break;
       case 'for-other': st.forOther = true; render(); break;
       case 'edit-invite': go('invite'); break;
+      case 'toggle-flow': togglePanel('flow'); break;
+      case 'toggle-admin': togglePanel('admin'); break;
     }
   });
   document.addEventListener('input', function (e) {
