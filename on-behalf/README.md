@@ -7,8 +7,8 @@ Live: https://svahora.github.io/lg/on-behalf/
 What to try:
 - Click through the default path: Aisha creates the campaign, passes KYC and goes live. She invites Bilal with his legal name and date of birth. Bilal signs up, completes KYC (his personal organization is created when he opens the form) and adds a payout account. Aisha approves, and Bilal's organization owns the campaign with Aisha as a member.
 - Change Bilal's name or date of birth on the invite or KYC step. Aisha's approval is blocked until both match.
-- Switch the scenario to "Aisha's payout attached". Aisha can't invite Bilal, and a Trust & Safety review becomes the only way to transfer ownership.
+- Open the settings button (top right) and switch the scenario to "Aisha's payout attached". Aisha can't invite Bilal, and a Trust & Safety review becomes the only way to transfer ownership.
 - Watch the admin view on the right: owner, pending owner, payout account and approvals update at each step.
-- Use "Show" in the header to hide the flow list or the admin view. On a phone the steps become a strip you can swipe.
+- In settings, "Show" hides the flow or the admin view. On smaller screens the admin view slides in as a drawer. On a phone the flow becomes a summary bar with a progress track and an "All steps" list.
 
 All names, amounts and account digits are sample data. [KYC vendor] is a placeholder.
