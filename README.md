@@ -8,6 +8,7 @@ Clickable product prototypes, one folder each. Served at https://svahora.github.
 | [funboarding-v1](funboarding-v1/) | The earlier version of the onboarding prototype, before the redesign. | https://svahora.github.io/lg/funboarding-v1/ |
 | [dash-restructure](dash-restructure/) | A dashboard that lists every fundraiser a user created or helps run, whatever account it pays out to. | https://svahora.github.io/lg/dash-restructure/ |
 | [on-behalf](on-behalf/) | Fundraising on behalf of someone else: the organizer launches the campaign, then hands ownership to the beneficiary after identity checks and approvals. | https://svahora.github.io/lg/on-behalf/ |
+| [self-serve-ads](self-serve-ads/) | Self-serve ads approved by account: promote any fundraiser, seasonal packages, limited Gold and Silver tiers, and the admin review queue. | https://svahora.github.io/lg/self-serve-ads/ |
 
 ## Adding a prototype
 

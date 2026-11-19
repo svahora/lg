@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-Serve Ads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand-50: #EDF7F0; --brand-500: #4AA567; --brand-600: #3C8653; --brand-700: #2C633D;
+    --n0: #FFFFFF; --n50: #FAFAFA; --n100: #F5F5F5; --n200: #E5E5E5; --n300: #D4D4D4;
+    --n400: #A3A3A3; --n500: #737373; --n600: #525252; --n700: #404040; --n900: #171717; --n950: #0A0A0A;
+    --green-50: #F0FDF4; --green-700: #15803D;
+    --blue-50: #EFF6FF; --blue-700: #1D4ED8;
+    --amber-50: #FFFBEB; --amber-700: #B45309; --amber-800: #92400E;
+    --red-50: #FEF2F2; --red-700: #B91C1C;
+    --purple-50: #FAF5FF; --purple-700: #7E22CE;
+    --gold: #A16207; --gold-50: #FEFCE8;
+    --eng: #1E3A8A; --eng-50: #EEF2FF;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--n50); color: var(--n900); font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; font-size: 14px; line-height: 20px; }
+  button, select, input { font: inherit; color: inherit; }
+  button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--n900); outline-offset: 2px; }
+  .icon { width: 20px; height: 20px; flex: none; }
+  .icon-sm { width: 16px; height: 16px; flex: none; }
+  h1 { margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.01em; }
+  h2 { margin: 0; font-size: 18px; line-height: 26px; font-weight: 700; }
+  h3 { margin: 0; font-size: 16px; font-weight: 700; }
+  p { margin: 0; }
+  .muted { color: var(--n600); }
+  .small { font-size: 12px; line-height: 16px; }
+
+  /* Scenario bar */
+  .scenario { position: sticky; top: 0; z-index: 30; background: var(--n900); color: #fff; padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+  .scenario .label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--n400); }
+  .scenario label.f { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--n300); }
+  .scenario select { background: #262626; color: #fff; border: 1px solid #404040; border-radius: 9999px; padding: 6px 10px; min-height: 36px; font-weight: 600; }
+  .seg { display: inline-flex; background: #262626; border-radius: 9999px; padding: 3px; }
+  .seg button { border: 0; background: none; color: var(--n300); font-weight: 600; padding: 6px 14px; border-radius: 9999px; cursor: pointer; min-height: 32px; }
+  .seg button[aria-pressed="true"] { background: #fff; color: var(--n900); }
+  .scenario .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--n300); cursor: pointer; }
+  .scenario .toggle input { width: 16px; height: 16px; accent-color: #818CF8; }
+  .scenario .spacer { flex: 1; }
+  .scenario .reset { background: none; border: 1px solid #404040; color: var(--n300); border-radius: 9999px; padding: 6px 12px; cursor: pointer; }
+
+  /* Creator site */
+  .site-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px; background: var(--n0); border-bottom: 1px solid var(--n200); flex-wrap: wrap; }
+  .brand { display: inline-flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 800; letter-spacing: -0.025em; }
+  .brand-mark { width: 28px; height: 28px; border-radius: 9999px; background: var(--brand-500); display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+  .steps { display: flex; gap: 6px; overflow-x: auto; padding: 12px 24px; background: var(--n0); border-bottom: 1px solid var(--n200); }
+  .step { white-space: nowrap; border: 1px solid var(--n300); background: var(--n0); border-radius: 9999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--n700); }
+  .step[aria-current="step"] { background: var(--n900); border-color: var(--n900); color: #fff; }
+  .step .n { display: inline-block; min-width: 16px; color: var(--n400); }
+  .step[aria-current="step"] .n { color: var(--n400); }
+  .page { max-width: 1120px; margin: 0 auto; padding: 28px 16px 64px; display: flex; flex-direction: column; gap: 20px; }
+  .two { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .two > .main { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .two > .side { flex: 1 1 300px; display: flex; flex-direction: column; gap: 12px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 18px; border-radius: 9999px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid var(--n300); background: var(--n0); color: var(--n900); white-space: nowrap; }
+  .btn:hover { background: var(--n100); }
+  .btn-primary { background: var(--n900); border-color: var(--n900); color: #fff; }
+  .btn-primary:hover { background: #262626; }
+  .btn-brand { background: var(--brand-600); border-color: var(--brand-600); color: #fff; }
+  .btn-brand:hover { background: var(--brand-700); }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+  .btn-sm { min-height: 34px; padding: 6px 14px; font-size: 13px; }
+  .link { background: none; border: 0; padding: 0; color: var(--n900); font-weight: 600; text-decoration: underline; cursor: pointer; }
+
+  .card { background: var(--n0); border: 1px solid var(--n200); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; line-height: 20px; white-space: nowrap; }
+  .b-green { background: var(--green-50); color: var(--green-700); }
+  .b-neutral { background: var(--n100); color: var(--n700); }
+  .b-blue { background: var(--blue-50); color: var(--blue-700); }
+  .b-amber { background: var(--amber-50); color: var(--amber-700); }
+  .b-red { background: var(--red-50); color: var(--red-700); }
+  .b-gold { background: var(--gold-50); color: var(--gold); }
+  .b-purple { background: var(--purple-50); color: var(--purple-700); }
+  .banner { display: flex; gap: 12px; padding: 16px; border-radius: 8px; align-items: flex-start; flex-wrap: wrap; }
+  .banner .body { flex: 1 1 260px; }
+  .banner-title { font-weight: 700; }
+  .banner.blue { background: var(--blue-50); color: var(--blue-700); }
+  .banner.green { background: var(--brand-50); color: var(--brand-700); }
+  .banner.amber { background: var(--amber-50); color: var(--amber-800); }
+  .banner.neutral { background: var(--n100); color: var(--n700); }
+  .banner .body p { color: var(--n700); margin-top: 2px; }
+
+  .bar { height: 6px; border-radius: 9999px; background: var(--n200); overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--brand-500); }
+
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; padding: 18px 20px; background: var(--n0); border: 1px solid var(--n200); border-radius: 8px; }
+  .row-main { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .row-title { font-size: 17px; line-height: 24px; font-weight: 700; }
+  .row-stats { flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; }
+  .row-act { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .choice { display: flex; flex-direction: column; gap: 10px; }
+  .opt { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px solid var(--n300); border-radius: 8px; background: var(--n0); cursor: pointer; text-align: left; width: 100%; }
+  .opt[aria-pressed="true"] { border-color: var(--n900); box-shadow: 0 0 0 1px var(--n900); }
+  .input { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--n300); border-radius: 8px; background: var(--n0); }
+  .field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+  .field .hint { font-weight: 400; color: var(--n500); font-size: 12px; }
+
+  .hero { border-radius: 12px; overflow: hidden; background: var(--n0); border: 1px solid var(--n200); }
+  .hero-img { height: 180px; background: linear-gradient(135deg, #2C633D 0%, #4AA567 55%, #A7D7B5 100%); position: relative; }
+  .hero-img svg { position: absolute; right: 24px; bottom: 16px; opacity: .35; }
+  .hero-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .owner-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: var(--n900); color: #fff; border-radius: 8px; }
+  .owner-bar .t { flex: 1 1 220px; }
+  .owner-bar .btn { border-color: #fff; }
+
+  .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .tier { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 18px; background: var(--n0); border: 1px solid var(--n200); border-radius: 10px; text-align: left; cursor: pointer; }
+  .tier[aria-pressed="true"] { border-color: var(--n900); box-shadow: 0 0 0 1px var(--n900); }
+  .tier.off { cursor: default; background: var(--n50); }
+  .tier .name { font-size: 16px; font-weight: 800; }
+  .tier .price { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .tier ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--n700); }
+  .tier li { display: flex; gap: 6px; }
+  .tier li svg { color: var(--brand-600); margin-top: 2px; }
+  .tier .note { font-size: 12px; font-weight: 600; padding: 8px 10px; border-radius: 6px; }
+  .note.amber { background: var(--amber-50); color: var(--amber-800); }
+  .note.neutral { background: var(--n100); color: var(--n700); }
+  .note.red { background: var(--red-50); color: var(--red-700); }
+  .slots { display: flex; gap: 3px; }
+  .slots i { width: 10px; height: 10px; border-radius: 2px; background: var(--gold); }
+  .slots i.used { background: var(--n200); }
+  .season-head { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; padding: 20px; border-radius: 10px; color: #fff; }
+  .season-head .t { flex: 1 1 260px; display: flex; flex-direction: column; gap: 4px; }
+  .season-head.standard { background: linear-gradient(120deg, #262626, #525252); }
+  .season-head.winter { background: linear-gradient(120deg, #1E3A8A, #3B82F6); }
+  .season-head.ramadan { background: linear-gradient(120deg, #312E81, #7C3AED 60%, #A16207); }
+  .season-head .pill { background: rgba(255,255,255,.18); padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 13px; }
+
+  .line { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--n200); }
+  .line:first-child { border-top: 0; }
+  .line strong { font-weight: 700; }
+  .done-icon { width: 48px; height: 48px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; }
+
+  .email { max-width: 640px; border: 1px solid var(--n200); border-radius: 10px; background: var(--n0); overflow: hidden; }
+  .email-meta { padding: 14px 20px; border-bottom: 1px solid var(--n200); background: var(--n50); font-size: 13px; color: var(--n600); display: flex; flex-direction: column; gap: 2px; }
+  .email-body { padding: 24px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* Engineering notes */
+  .eng { display: none; border: 1px solid #C7D2FE; background: var(--eng-50); color: var(--eng); border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 19px; }
+  body.show-eng .eng { display: block; }
+  .eng .h { font-weight: 800; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; display: flex; gap: 6px; align-items: center; }
+  .eng ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+  .eng b { color: #172554; }
+  .eng .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin-top: 8px; }
+  .eng .o { background: #fff; border: 1px solid #C7D2FE; border-radius: 6px; padding: 10px; }
+
+  /* Admin */
+  .admin { display: flex; min-height: calc(100vh - 56px); }
+  .sidebar { width: 256px; flex: none; background: var(--n950); color: #fff; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 20px; }
+  .sidebar .logo { height: 64px; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; padding: 0 8px; }
+  .sidebar .grp { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar .gname { display: flex; align-items: center; gap: 10px; padding: 8px; font-size: 14px; font-weight: 600; color: var(--n400); }
+  .sidebar .item { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 38px; border-radius: 6px; font-size: 14px; color: var(--n400); background: none; border: 0; text-align: left; cursor: pointer; width: 100%; }
+  .sidebar .item:hover { background: rgba(255,255,255,.05); color: #fff; }
+  .sidebar .item[aria-current="page"] { background: rgba(255,255,255,.08); color: #fff; font-weight: 600; }
+  .sidebar .item.dim { cursor: default; }
+  .sidebar .new { margin-left: auto; font-size: 11px; font-weight: 700; color: #A5B4FC; background: rgba(129,140,248,.15); padding: 1px 8px; border-radius: 9999px; }
+  .sidebar .count { margin-left: auto; font-size: 11px; color: var(--n400); background: rgba(255,255,255,.08); padding: 1px 8px; border-radius: 9999px; }
+  .admin-main { flex: 1; min-width: 0; padding: 32px; display: flex; flex-direction: column; gap: 20px; }
+  .admin-main h1 { font-size: 26px; }
+  .tbl-wrap { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); outline: 1px solid rgba(0,0,0,.05); overflow-x: auto; }
+  table { width: 100%; min-width: 880px; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-weight: 600; color: var(--n900); background: var(--n50); padding: 12px; white-space: nowrap; font-size: 13px; }
+  td { padding: 12px; border-top: 1px solid var(--n100); vertical-align: top; color: var(--n700); }
+  td.strong { color: var(--n900); font-weight: 600; }
+  td .sub { font-size: 12px; color: var(--n500); }
+  .tag { display: inline-flex; align-items: center; border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 500; white-space: nowrap; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+  .t-gray { background: var(--n50); color: var(--n600); }
+  .t-green { background: var(--green-50); color: var(--green-700); }
+  .t-yellow { background: #FEFCE8; color: #854D0E; }
+  .t-red { background: var(--red-50); color: var(--red-700); }
+  .t-blue { background: var(--blue-50); color: var(--blue-700); }
+  .t-purple { background: var(--purple-50); color: var(--purple-700); }
+  .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .abtn { border: 1px solid var(--n300); background: #fff; border-radius: 6px; padding: 5px 10px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .abtn:hover { background: var(--n50); }
+  .abtn.dark { background: var(--n900); color: #fff; border-color: var(--n900); }
+  .abtn.dark:hover { background: #262626; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .stat { background: #fff; border-radius: 8px; padding: 16px; outline: 1px solid rgba(0,0,0,.05); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  .stat .k { font-size: 13px; color: var(--n500); }
+  .stat .v { font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--n900); }
+  .stepper { display: inline-flex; align-items: center; gap: 6px; }
+  .stepper button { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--n300); background: #fff; cursor: pointer; font-weight: 700; }
+  .roas-hi { color: var(--green-700); font-weight: 700; }
+  .roas-lo { color: var(--red-700); font-weight: 700; }
+  .empty { padding: 28px; text-align: center; color: var(--n500); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--n900); color: #fff; padding: 10px 18px; border-radius: 9999px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.2); z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+
+  @media (max-width: 860px) {
+    .admin { flex-direction: column; }
+    .sidebar { width: auto; padding-bottom: 12px; gap: 8px; }
+    .sidebar .logo { height: 48px; }
+    .sidebar .grp.hide-m { display: none; }
+    .admin-main { padding: 20px 16px; }
+    .row-act { align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="scenario" role="region" aria-label="Prototype controls">
+  <span class="label">Prototype</span>
+  <div class="seg" role="group" aria-label="View">
+    <button type="button" data-view="creator">Creator</button>
+    <button type="button" data-view="admin">Admin</button>
+  </div>
+  <label class="f">Season
+    <select id="season">
+      <option value="standard">Standard</option>
+      <option value="winter">Winter</option>
+      <option value="ramadan">Ramadan</option>
+    </select>
+  </label>
+  <label class="f">Account
+    <select id="account">
+      <option value="new">New to ads</option>
+      <option value="grad">Ran 1-week ads</option>
+      <option value="approved">Pre-approved account</option>
+    </select>
+  </label>
+  <label class="f">Gold &amp; Silver
+    <select id="gs">
+      <option value="A">A. Request, review, then pay</option>
+      <option value="B">B. Account manager only</option>
+      <option value="C">C. Live slot count</option>
+    </select>
+  </label>
+  <label class="toggle"><input type="checkbox" id="engToggle"> Engineering notes</label>
+  <span class="spacer"></span>
+  <button type="button" class="reset" id="reset">Reset</button>
+</div>
+
+<div id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  // ---------- icons ----------
+  const P = {
+    check: 'M4.5 12.75l6 6 9-13.5',
+    lock: 'M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z',
+    mega: 'M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46',
+    clock: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
+    info: 'M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z',
+    code: 'M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5',
+    spark: 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z',
+    arrow: 'M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3',
+    home: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25',
+    brief: 'M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0',
+    heart: 'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z',
+    cog: 'M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
+    mail: 'M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75'
+  };
+  const ic = (n, c = 'icon') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${P[n]}"/></svg>`;
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = (n) => '$' + Math.round(n).toLocaleString('en-US');
+
+  // ---------- sample data ----------
+  const SEASONS = {
+    standard: { name: 'Standard ads', short: 'Standard', length: '2-week feature', when: 'Next block goes live Jan 6', mult: 1, pitch: 'Two weeks of featured placement for your fundraiser.' },
+    winter: { name: 'Winter ads', short: 'Winter', length: '35-day feature', when: 'Block goes live Dec 2', mult: 1.6, pitch: '35 days of featured placement, more than twice our usual 2-week block.' },
+    ramadan: { name: 'Ramadan ads', short: 'Ramadan', length: 'All 30 days of Ramadan', when: 'Applications open in January', mult: 2.5, pitch: 'Featured placement for every day of Ramadan, when giving is at its peak.' }
+  };
+  const TIERS = [
+    { id: 'starter', name: 'Starter', base: 500, feats: ['Category page placement', 'One social post'] },
+    { id: 'bronze', name: 'Bronze', base: 1200, feats: ['Homepage rotation', 'Category page placement', 'Two social posts'] },
+    { id: 'silver', name: 'Silver', base: 2500, limited: true, feats: ['Homepage rotation', 'Newsletter feature (one segment)', 'Three social posts'] },
+    { id: 'gold', name: 'Gold', base: 5000, limited: true, feats: ['Top homepage placement', 'Newsletter feature (all segments)', 'Five social posts', 'Dedicated ads contact'] }
+  ];
+  const ONE_WEEK = { base: 300, feats: ['7 days of category page placement', 'Return on ad spend report at the end'] };
+  const ACCOUNT_NAME = 'Crescent Relief';
+  const FUNDRAISERS = [
+    { id: 'f1', title: 'Winter warmth kits for displaced families', raised: 48200, goal: 80000, status: 'live', created: 'Oct 2', invited: true },
+    { id: 'f2', title: 'Flood emergency appeal', raised: 3100, goal: 50000, status: 'live', created: 'Today', fresh: true },
+    { id: 'f3', title: 'Orphan sponsorship 2027', raised: 112000, goal: 150000, status: 'live', created: 'Aug 14' },
+    { id: 'f4', title: 'Masjid roof repair', raised: 40500, goal: 40000, status: 'ended', created: 'Mar 3' }
+  ];
+  const seedRequests = () => [
+    { id: 'r1', acct: 'Sunrise Orphan Care', fr: 'Ramadan orphan meals', tier: 'gold', roas: 5.1, raised: 284000, when: '2 hours ago', status: 'pending' },
+    { id: 'r2', acct: 'Mercy Water Project', fr: 'Wells for winter villages', tier: 'silver', roas: 3.4, raised: 96000, when: 'Yesterday', status: 'pending' },
+    { id: 'r3', acct: 'Hope Bridge Foundation', fr: 'Gaza winter blankets', tier: 'gold', roas: 1.2, raised: 18000, when: 'Yesterday', status: 'pending' },
+    { id: 'r4', acct: 'Northside Islamic Center', fr: 'Youth center build', tier: 'silver', roas: null, raised: 7200, when: '3 days ago', status: 'pending' }
+  ];
+  const seedAccounts = () => [
+    { acct: 'Sunrise Orphan Care', since: 'Sep 2026', frs: 14, roas: 5.1, src: 'Repeat advertiser' },
+    { acct: 'Mercy Water Project', since: 'Oct 2026', frs: 6, roas: 3.4, src: 'Repeat advertiser' },
+    { acct: 'Amal Relief Fund', since: 'Nov 2026', frs: 9, roas: 4.0, src: 'Graduated from 1-week ads' }
+  ];
+  const seedGrads = () => [
+    { acct: 'Bright Path Education', fr: 'Scholarships for refugee students', roas: 3.8, spend: 300 },
+    { acct: 'Al-Huda Food Bank', fr: 'Winter food parcels', roas: 0.9, spend: 300 }
+  ];
+  const seedInterest = () => [
+    { acct: 'Green Valley Masjid', link: 'fundraising.example/green-valley-expansion', raised: 22100, when: 'Today', status: 'new' },
+    { acct: 'Little Hands Charity', link: 'fundraising.example/winter-coats-for-kids', raised: 1400, when: 'Yesterday', status: 'new' }
+  ];
+  const seedSlots = () => ({ standard: { silver: [13, 5], gold: [9, 3] }, winter: { silver: [13, 10], gold: [9, 8] }, ramadan: { silver: [13, 0], gold: [9, 0] } });
+
+  const fresh = () => ({
+    view: 'creator', screen: 'landing', season: 'winter', account: 'new', gs: 'A', eng: false,
+    landing: null, landingLink: '', interestSent: false, accountRequested: false,
+    frId: 'f1', product: 'seasonal', tier: null, outcome: null, myReq: null,
+    adminTab: 'requests',
+    requests: seedRequests(), accounts: seedAccounts(), grads: seedGrads(), interest: seedInterest(), slots: seedSlots(),
+    inbox: []
+  });
+  let S = fresh();
+  const set = (p) => { Object.assign(S, p); render(); };
+  const toast = (m) => { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 2200); };
+
+  const season = () => SEASONS[S.season];
+  const price = (t) => Math.round(t.base * season().mult / 50) * 50;
+  const oneWeekPrice = () => Math.round(ONE_WEEK.base * season().mult / 50) * 50;
+  const fr = () => FUNDRAISERS.find((f) => f.id === S.frId);
+  const tierOf = (id) => TIERS.find((t) => t.id === id);
+  const slotsLeft = (tid) => { const s = S.slots[S.season][tid]; return s[0] - s[1]; };
+  const approved = () => S.account === 'approved';
+
+  // ---------- engineering notes ----------
+  const eng = (title, items, opts) => `
+    <aside class="eng" aria-label="Engineering notes">
+      <div class="h">${ic('code', 'icon-sm')} Engineering: ${title}</div>
+      <ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul>
+      ${opts ? `<div class="opts">${opts.map((o) => `<div class="o"><b>${o[0]}</b><br>${o[1]}</div>`).join('')}</div>` : ''}
+    </aside>`;
+
+  // ---------- creator screens ----------
+  const STEPS = [
+    ['landing', 'Ads landing page'],
+    ['dashboard', 'My fundraisers'],
+    ['page', 'Fundraiser page'],
+    ['packages', 'Choose a package'],
+    ['checkout', 'Checkout'],
+    ['result', 'Confirmation'],
+    ['email', 'Email']
+  ];
+
+  function siteHead() {
+    return `
+      <header class="site-head">
+        <span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span>
+        <span class="muted">Signed in as <b style="color:var(--n900)">${ACCOUNT_NAME}</b></span>
+      </header>
+      <nav class="steps" aria-label="Prototype screens">
+        ${STEPS.map(([k, l], i) => `<button class="step" data-go="${k}" ${S.screen === k ? 'aria-current="step"' : ''}><span class="n">${i + 1}</span> ${l}</button>`).join('')}
+      </nav>`;
+  }
+
+  function landing() {
+    const a = S.landing;
+    let follow = '';
+    if (a === 'yes') {
+      follow = approved()
+        ? `<div class="banner green">${ic('check')}<div class="body"><div class="banner-title">Your account is approved for ads</div><p>Every fundraiser you run can be promoted from your dashboard, including new ones. No link needed.</p></div><button class="btn btn-primary btn-sm" data-go="dashboard">Go to my fundraisers</button></div>`
+        : `<div class="banner neutral">${ic('info')}<div class="body"><div class="banner-title">Apply from your fundraiser</div><p>Open the fundraiser you want to promote from your dashboard. If it isn't eligible yet, request ads there and we'll review your account.</p></div><button class="btn btn-primary btn-sm" data-go="dashboard">Go to my fundraisers</button></div>`;
+    } else if (a === 'no') {
+      follow = S.interestSent
+        ? `<div class="banner green">${ic('check')}<div class="body"><div class="banner-title">You're on the list</div><p>We'll email you when your account is approved. Then you can promote any of your fundraisers from your dashboard.</p></div></div>`
+        : `<div class="card">
+            <label class="field">Which fundraiser do you want to promote?
+              <input class="input" id="lLink" placeholder="Paste your fundraiser link" value="${esc(S.landingLink)}">
+              <span class="hint">We use it to check your account. Once approved, you can promote any fundraiser you run, not just this one.</span>
+            </label>
+            <div><button class="btn btn-primary" data-act="sendInterest">Register interest</button></div>
+          </div>`;
+    }
+    return `
+      <div class="page">
+        <div class="season-head ${S.season}">
+          <div class="t"><span class="small" style="opacity:.8;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Advertise your fundraiser</span>
+          <h1 style="color:#fff">Reach your goal faster</h1>
+          <p style="opacity:.9">${season().pitch}</p></div>
+          <span class="pill">${season().name} · ${season().when}</span>
+        </div>
+        <div class="two">
+          <div class="main">
+            <div class="card">
+              <h2>Have you run ads with us before?</h2>
+              <div class="choice">
+                <button class="opt" data-landing="yes" aria-pressed="${a === 'yes'}"><div><b>Yes, I've run ads before</b><p class="muted">Promote straight from your fundraiser or your dashboard.</p></div></button>
+                <button class="opt" data-landing="no" aria-pressed="${a === 'no'}"><div><b>No, I'm new to ads</b><p class="muted">Tell us which fundraiser, and we'll let you know when you're approved.</p></div></button>
+              </div>
+            </div>
+            ${follow}
+          </div>
+          <div class="side">
+            <div class="card"><h3>How it works</h3>
+              <div class="line"><span>1. Get approved</span><span class="muted">once per account</span></div>
+              <div class="line"><span>2. Pick a fundraiser</span><span class="muted">any you run</span></div>
+              <div class="line"><span>3. Choose a package</span><span class="muted">pay online</span></div>
+            </div>
+          </div>
+        </div>
+        ${eng('landing page router', [
+          'Replaces the "Purchase an ad" link that goes to an external form today.',
+          '<b>Yes</b> sends existing creators to their dashboard. No link is asked for, because approval is by account (1A).',
+          '<b>No</b> stores the link as an interest record. It shows up in the admin <b>Interest list</b>, where staff approve the account.',
+          'Needs: somewhere to store interest records (new table or the existing sales tool), and an "approved" email trigger.'
+        ])}
+      </div>`;
+  }
+
+  function frAction(f) {
+    if (f.status !== 'live') return `<span class="muted small">Ended</span>`;
+    if (approved()) return `<button class="btn btn-primary btn-sm" data-promote="${f.id}" data-product="seasonal">${ic('mega', 'icon-sm')} Promote</button><span class="small muted">${season().short} ads available</span>`;
+    if (S.account === 'new' && f.invited) return `<button class="btn btn-brand btn-sm" data-promote="${f.id}" data-product="week">${ic('mega', 'icon-sm')} Promote for 1 week</button><span class="small muted">You're invited</span>`;
+    if (S.account === 'grad' && f.invited) return `<span class="badge b-green">1-week ad ended · 4.2x return</span>`;
+    return `<button class="btn btn-sm" data-go="landing" data-landing-preset="no">${ic('lock', 'icon-sm')} Request ads</button>`;
+  }
+
+  function dashboard() {
+    let top = '';
+    if (approved()) top = `<div class="banner green">${ic('spark')}<div class="body"><div class="banner-title">Reach your goal faster with ${season().name}</div><p>Your account is approved. Promote any live fundraiser below, including ones you launch later. ${season().length}, ${season().when.toLowerCase()}.</p></div></div>`;
+    else if (S.account === 'grad') top = S.accountRequested
+      ? `<div class="banner blue">${ic('clock')}<div class="body"><div class="banner-title">Account approval requested</div><p>We're reviewing your 1-week results. If approved, every fundraiser you run can be promoted with seasonal ads.</p></div></div>`
+      : `<div class="banner blue">${ic('spark')}<div class="body"><div class="banner-title">Your 1-week ad returned 4.2x what you spent</div><p>You may qualify for ${season().name.toLowerCase()} on all of your fundraisers. Request approval for your account.</p></div><button class="btn btn-primary btn-sm" data-act="requestAccount">Request approval</button></div>`;
+    else top = `<div class="banner neutral">${ic('info')}<div class="body"><div class="banner-title">Ads aren't on for your account yet</div><p>You've been invited to try a 1-week ad on one fundraiser. Good results can open up seasonal ads for your whole account.</p></div></div>`;
+    return `
+      <div class="page">
+        <div><h1>My fundraisers</h1><p class="muted" style="margin-top:4px">${ACCOUNT_NAME}</p></div>
+        ${top}
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${FUNDRAISERS.map((f) => `
+            <div class="row">
+              <div class="row-main">
+                <div class="row-title">${esc(f.title)}</div>
+                <div class="badges">
+                  <span class="badge ${f.status === 'live' ? 'b-green' : 'b-neutral'}">${f.status === 'live' ? 'Live' : 'Ended'}</span>
+                  ${f.fresh ? '<span class="badge b-blue">Created today</span>' : `<span class="badge b-neutral">Created ${f.created}</span>`}
+                </div>
+              </div>
+              <div class="row-stats">
+                <div style="display:flex;justify-content:space-between"><b>${money(f.raised)}</b><span class="muted">of ${money(f.goal)}</span></div>
+                <div class="bar"><span style="width:${Math.min(100, f.raised / f.goal * 100)}%"></span></div>
+              </div>
+              <div class="row-act">${frAction(f)}</div>
+            </div>`).join('')}
+        </div>
+        ${eng('who can promote what', [
+          'Today eligibility is a list of <b>fundraiser IDs</b>. "Flood emergency appeal" was created today, so it would not be on that list.',
+          '1-week ads stay <b>per fundraiser</b> (invite-based). Seasonal ads (standard, winter, Ramadan) become <b>per account</b>. Only one season sells at a time.',
+          'Open: a fundraiser that pays out to another organization. Is the "account" the creator or the payout account?'
+        ], [
+          ['Option 1: check the account', 'When the button renders, look up the owner\'s account ID in an approved-accounts list. New fundraisers are covered with no extra work. Needs a new list and a change to the eligibility check.'],
+          ['Option 2: copy fundraisers to the list', 'When an account is approved, and whenever it creates a fundraiser, add those fundraiser IDs to today\'s list. Keeps the current check. Needs a hook on fundraiser create (the "webhook" from the call).']
+        ])}
+      </div>`;
+  }
+
+  function fundraiserPage() {
+    const f = fr();
+    const canSeasonal = approved();
+    const canWeek = S.account === 'new' && f.invited;
+    let ownerBtn;
+    if (f.status !== 'live') ownerBtn = `<span class="muted">This fundraiser has ended.</span>`;
+    else if (canSeasonal) ownerBtn = `<button class="btn btn-sm" style="background:#fff;color:var(--n900)" data-promote="${f.id}" data-product="seasonal">Promote this fundraiser</button>`;
+    else if (canWeek) ownerBtn = `<button class="btn btn-sm" style="background:#fff;color:var(--n900)" data-promote="${f.id}" data-product="week">Promote for 1 week</button>`;
+    else ownerBtn = `<button class="btn btn-sm" style="background:transparent;color:#fff" data-go="landing" data-landing-preset="no">Request ads</button>`;
+    return `
+      <div class="page">
+        <label class="f muted" style="display:flex;gap:8px;align-items:center">Viewing
+          <select class="input" style="width:auto;min-height:36px;padding:4px 10px" id="frPick">
+            ${FUNDRAISERS.map((x) => `<option value="${x.id}" ${x.id === S.frId ? 'selected' : ''}>${esc(x.title)}</option>`).join('')}
+          </select>
+        </label>
+        <div class="owner-bar">${ic('mega')}<div class="t"><b>Only you see this.</b> <span style="opacity:.8">${canSeasonal ? `${season().name}: ${season().length}.` : canWeek ? 'You are invited to a 1-week ad on this fundraiser.' : 'Ads are not on for your account yet.'}</span></div>${ownerBtn}</div>
+        <div class="hero">
+          <div class="hero-img">${ic('heart')}</div>
+          <div class="hero-body">
+            <h1>${esc(f.title)}</h1>
+            <p class="muted">Organized by ${ACCOUNT_NAME}</p>
+            <div class="bar"><span style="width:${Math.min(100, f.raised / f.goal * 100)}%"></span></div>
+            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><b style="font-size:18px">${money(f.raised)} raised</b><span class="muted">of ${money(f.goal)} goal</span></div>
+            <div><button class="btn btn-brand" disabled>Donate</button></div>
+          </div>
+        </div>
+        ${eng('fundraiser page entry point', [
+          'This is the button that exists today. It uses the same eligibility check as the dashboard, so whichever option is picked there applies here too.',
+          'Switch to "Flood emergency appeal" with a pre-approved account: under Option 1 it shows Promote right away. Under Option 2 it depends on the create hook having run.'
+        ])}
+      </div>`;
+  }
+
+  function tierCard(t) {
+    const p = price(t);
+    const sel = S.tier === t.id;
+    let note = '', off = false, cta = '';
+    if (t.limited) {
+      if (S.gs === 'A') note = `<div class="note amber">${ic('clock', 'icon-sm')} Limited. Subject to approval. You won't be charged until approved.</div>`;
+      if (S.gs === 'B') { off = true; note = `<div class="note neutral">Ask your account manager to apply for ${t.name}.</div>`; cta = `<button class="btn btn-sm" data-act="contactAM">Contact account manager</button>`; }
+      if (S.gs === 'C') {
+        const left = slotsLeft(t.id), total = S.slots[S.season][t.id][0];
+        if (left <= 0) { off = true; note = `<div class="note red">Sold out for ${season().short.toLowerCase()} ads</div>`; }
+        else note = `<div class="note amber"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>${left} of ${total} left</span></div><div class="slots">${Array.from({ length: total }, (_, i) => `<i class="${i < total - left ? 'used' : ''}"></i>`).join('')}</div></div>`;
+      }
+    }
+    return `
+      <div class="tier ${off ? 'off' : ''}" ${off ? '' : `role="button" tabindex="0" data-tier="${t.id}" aria-pressed="${sel}"`}>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="name">${t.name}</span>${t.limited ? '<span class="badge b-gold">Limited</span>' : ''}</div>
+        <div class="price">${money(p)}</div>
+        <div class="small muted">${season().length}</div>
+        <ul>${t.feats.map((x) => `<li>${ic('check', 'icon-sm')}<span>${x}</span></li>`).join('')}</ul>
+        ${note}${cta}
+      </div>`;
+  }
+
+  function packages() {
+    const f = fr();
+    if (S.product === 'week') {
+      return `
+        <div class="page">
+          <div><p class="muted">Promoting</p><h1>${esc(f.title)}</h1></div>
+          <div class="tiers" style="grid-template-columns:minmax(220px,420px)">
+            <div class="tier" aria-pressed="true">
+              <div style="display:flex;justify-content:space-between"><span class="name">1-week ad</span><span class="badge b-green">Invited</span></div>
+              <div class="price">${money(oneWeekPrice())}</div>
+              <div class="small muted">7 days · price follows the ${season().short.toLowerCase()} season</div>
+              <ul>${ONE_WEEK.feats.map((x) => `<li>${ic('check', 'icon-sm')}<span>${x}</span></li>`).join('')}</ul>
+            </div>
+          </div>
+          <div><button class="btn btn-primary" data-go="checkout">Continue</button></div>
+          ${eng('1-week ads', [
+            'Stays per fundraiser and invite-based. This is the entry point for new creators.',
+            'Price changes with the season (ads team will share seasonal pricing).',
+            'A good return here is what moves an account to "pre-approved". See <b>Admin, Approved accounts</b>, "Ready to approve".'
+          ])}
+        </div>`;
+    }
+    return `
+      <div class="page">
+        <div class="season-head ${S.season}">
+          <div class="t"><span class="small" style="opacity:.8">Promoting</span><h2 style="color:#fff">${esc(f.title)}</h2><p style="opacity:.9">${season().pitch}</p></div>
+          <span class="pill">${season().name} · ${season().length}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h2>Choose a package</h2><span class="small muted">Sample prices</span></div>
+        <div class="tiers">${TIERS.map(tierCard).join('')}</div>
+        <div><button class="btn btn-primary" data-go="checkout" ${S.tier ? '' : 'disabled'}>Continue</button></div>
+        ${eng('season and tier limits', [
+          'One global "current season" setting, switched by the ads team. It decides which packages and prices show. Standard, winter and Ramadan never overlap.',
+          'Silver and Gold include the newsletter, which has limited segments: about 13 Silver and 9 Gold per block.'
+        ], [
+          ['A. Request, review, then pay', 'Anyone can request. No charge at checkout. Staff approve in admin (or approve a lower tier), then the creator pays from an email link. Needs: request state, review queue, a second payment entry point.'],
+          ['B. Account manager only', 'Silver and Gold leave self-serve. Smallest build. Most of the revenue stays manual.'],
+          ['C. Live slot count', 'Self-serve all the way, with "N left" and sold out. Needs slot counts per season and a hold when payment starts. The ads team said they can\'t call sold out until late in the block, which works against this.']
+        ])}
+      </div>`;
+  }
+
+  function checkout() {
+    const f = fr();
+    const isWeek = S.product === 'week';
+    const t = isWeek ? null : tierOf(S.tier);
+    if (!isWeek && !t) return `<div class="page"><div class="banner neutral">${ic('info')}<div class="body"><div class="banner-title">Pick a package first</div></div><button class="btn btn-sm" data-go="packages">Choose a package</button></div></div>`;
+    const amt = isWeek ? oneWeekPrice() : price(t);
+    const review = !isWeek && t.limited && S.gs === 'A' && !(S.myReq && S.myReq.status === 'approved');
+    const label = isWeek ? '1-week ad' : `${t.name}, ${season().name}`;
+    return `
+      <div class="page">
+        <h1>${review ? 'Request this package' : 'Checkout'}</h1>
+        <div class="two">
+          <div class="main">
+            <div class="card">
+              <h3>Billing details</h3>
+              <label class="field">Name<input class="input" value="Yusuf Karim"></label>
+              <label class="field">Email<input class="input" value="ads@crescentrelief.example"></label>
+              <label class="field">Organization<input class="input" value="${ACCOUNT_NAME}"></label>
+              ${review ? '' : `<label class="field">Card<input class="input" value="Sample card ending 4242" readonly></label>`}
+            </div>
+            ${review ? `<div class="banner amber">${ic('clock')}<div class="body"><div class="banner-title">${t.name} is limited and needs approval</div><p>Send your request now. We review every ${t.name} request and may offer a different package. You won't be charged until you're approved.</p></div></div>` : ''}
+          </div>
+          <div class="side">
+            <div class="card">
+              <h3>Summary</h3>
+              <div class="line"><span>Fundraiser</span><strong style="text-align:right">${esc(f.title)}</strong></div>
+              <div class="line"><span>Package</span><strong>${label}</strong></div>
+              <div class="line"><span>Runs</span><strong>${isWeek ? '7 days' : season().length}</strong></div>
+              <div class="line"><span>${review ? 'Due if approved' : 'Total'}</span><strong>${money(amt)}</strong></div>
+              <button class="btn btn-primary" data-act="${review ? 'submitReview' : 'pay'}">${review ? 'Send request' : `Pay ${money(amt)}`}</button>
+            </div>
+          </div>
+        </div>
+        ${eng('checkout', [
+          'Name, email and billing details are already filled in today, and fundraiser ID and account ID are passed to the sales tool. No change.',
+          'Option A adds a "request" path with no charge. The same screen is reused later from the approval email, when the button changes to Pay.'
+        ])}
+      </div>`;
+  }
+
+  function result() {
+    const o = S.outcome;
+    if (!o) return `<div class="page"><div class="banner neutral">${ic('info')}<div class="body"><div class="banner-title">Nothing submitted yet</div><p>Finish checkout to see this screen.</p></div><button class="btn btn-sm" data-go="checkout">Go to checkout</button></div></div>`;
+    if (o === 'review') return `
+      <div class="page" style="max-width:640px">
+        <span class="done-icon" style="background:var(--amber-50);color:var(--amber-700)">${ic('clock')}</span>
+        <h1>Request sent</h1>
+        <p class="muted">We'll review your ${tierOf(S.myReq.tier).name} request for "${esc(fr().title)}" and email you. You haven't been charged.</p>
+        <div class="card"><div class="line"><span>Status</span><span class="badge b-amber">Under review</span></div><div class="line"><span>Package</span><strong>${tierOf(S.myReq.tier).name}, ${season().name}</strong></div></div>
+        <div class="banner neutral">${ic('info')}<div class="body"><p>Try it: switch to <b>Admin</b> above and approve or adjust this request, then come back to <b>Email</b>.</p></div></div>
+        ${eng('the gap', [
+          'The creator leaves without paying. Payment depends on them coming back from the email. This is the seamlessness concern from the call.',
+          'Worth measuring in winter: how many approved requests convert to payment, and how long it takes.'
+        ])}
+      </div>`;
+    return `
+      <div class="page" style="max-width:640px">
+        <span class="done-icon" style="background:var(--brand-50);color:var(--brand-700)">${ic('check')}</span>
+        <h1>You're booked</h1>
+        <p class="muted">"${esc(fr().title)}" will be featured. ${S.product === 'week' ? 'Your 1-week ad starts within 2 days.' : `${season().name}: ${season().when.toLowerCase()}.`} We'll send your results when it ends.</p>
+        <div><button class="btn" data-go="dashboard">Back to my fundraisers</button></div>
+      </div>`;
+  }
+
+  function email() {
+    const msgs = S.inbox;
+    if (!msgs.length) return `<div class="page"><div class="banner neutral">${ic('mail')}<div class="body"><div class="banner-title">No emails yet</div><p>Emails appear here when staff approve an account or decide on a Silver or Gold request in Admin.</p></div></div></div>`;
+    return `<div class="page">${msgs.slice().reverse().map((m) => `
+      <div class="email">
+        <div class="email-meta"><span><b>From:</b> Ads team</span><span><b>Subject:</b> ${esc(m.subject)}</span></div>
+        <div class="email-body">${m.body}</div>
+      </div>`).join('')}</div>`;
+  }
+
+  function creator() {
+    const screens = { landing, dashboard, page: fundraiserPage, packages, checkout, result, email };
+    return siteHead() + screens[S.screen]();
+  }
+
+  // ---------- admin ----------
+  const ADMIN_TABS = [
+    ['requests', 'Tier requests'],
+    ['accounts', 'Approved accounts'],
+    ['interest', 'Interest list'],
+    ['slots', 'Slots']
+  ];
+  const roasCell = (r) => r == null ? '<span class="sub">No ads yet</span>' : `<span class="${r >= 2 ? 'roas-hi' : 'roas-lo'}">${r.toFixed(1)}x</span>`;
+  const statusTag = (s) => ({ pending: '<span class="tag t-yellow">Pending</span>', approved: '<span class="tag t-green">Approved</span>', adjusted: '<span class="tag t-blue">Offered Silver</span>', declined: '<span class="tag t-red">Declined</span>' }[s]);
+
+  function adminRequests() {
+    const pend = S.requests.filter((r) => r.status === 'pending').length;
+    return `
+      <div><h1>Tier requests</h1><p class="muted" style="margin-top:4px">Silver and Gold requests for ${season().name.toLowerCase()}. Creators pay only after approval.</p></div>
+      ${S.gs !== 'A' ? `<div class="banner amber">${ic('info')}<div class="body"><div class="banner-title">This queue is used by option A</div><p>Switch Gold &amp; Silver to "A. Request, review, then pay" to see requests from creators.</p></div></div>` : ''}
+      <div class="stats">
+        <div class="stat"><div class="k">Pending</div><div class="v">${pend}</div></div>
+        <div class="stat"><div class="k">Silver left</div><div class="v">${slotsLeft('silver')} / ${S.slots[S.season].silver[0]}</div></div>
+        <div class="stat"><div class="k">Gold left</div><div class="v">${slotsLeft('gold')} / ${S.slots[S.season].gold[0]}</div></div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Account</th><th>Fundraiser</th><th>Requested</th><th>Past return on ad spend</th><th>Raised</th><th>Status</th><th></th></tr></thead>
+        <tbody>${S.requests.map((r) => `
+          <tr${r.mine ? ' style="background:#FFFBEB"' : ''}>
+            <td class="strong">${esc(r.acct)}${r.mine ? '<div class="sub">From this prototype</div>' : ''}</td>
+            <td>${esc(r.fr)}<div class="sub">${r.when}</div></td>
+            <td><span class="tag ${r.tier === 'gold' ? 't-yellow' : 't-gray'}">${tierOf(r.tier).name}</span></td>
+            <td>${roasCell(r.roas)}</td>
+            <td>${money(r.raised)}</td>
+            <td>${statusTag(r.status)}</td>
+            <td>${r.status === 'pending' ? `<div class="acts">
+              <button class="abtn dark" data-req="${r.id}" data-dec="approved">Approve</button>
+              ${r.tier === 'gold' ? `<button class="abtn" data-req="${r.id}" data-dec="adjusted">Offer Silver</button>` : ''}
+              <button class="abtn" data-req="${r.id}" data-dec="declined">Decline</button></div>` : ''}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+      ${eng('tier requests', [
+        'New admin page. Fits existing table and badge components (same pattern as Boosts).',
+        'Approving a request uses up one slot. "Offer Silver" covers "approved for less than you applied for", which is in today\'s terms.',
+        'Needs: request records with status, approve/offer/decline endpoints, an email with a pay link, and a way to expire unpaid approvals so slots come back.'
+      ])}`;
+  }
+
+  function adminAccounts() {
+    const grads = S.grads.slice();
+    if (S.account === 'grad') grads.unshift({ acct: ACCOUNT_NAME, fr: FUNDRAISERS[0].title, roas: 4.2, spend: 300, mine: true, requested: S.accountRequested });
+    return `
+      <div><h1>Approved accounts</h1><p class="muted" style="margin-top:4px">Accounts that can buy seasonal ads on any fundraiser they run, including new ones.</p></div>
+      <h2>Ready to approve</h2>
+      <p class="muted" style="margin-top:-12px">Accounts whose 1-week ad returned at least 2x.</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Account</th><th>1-week ad</th><th>Spend</th><th>Return on ad spend</th><th></th></tr></thead>
+        <tbody>${grads.length ? grads.map((g, i) => `
+          <tr${g.mine ? ' style="background:#FFFBEB"' : ''}>
+            <td class="strong">${esc(g.acct)}${g.mine ? `<div class="sub">${g.requested ? 'Requested approval' : 'From this prototype'}</div>` : ''}</td>
+            <td>${esc(g.fr)}</td><td>${money(g.spend)}</td><td>${roasCell(g.roas)}</td>
+            <td><div class="acts"><button class="abtn dark" data-grad="${g.mine ? 'mine' : i - (S.account === 'grad' ? 1 : 0)}" ${g.roas < 2 ? 'disabled style="opacity:.4"' : ''}>Approve account</button></div></td>
+          </tr>`).join('') : '<tr><td colspan="5" class="empty">No accounts waiting.</td></tr>'}</tbody>
+      </table></div>
+      <h2>Approved</h2>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Account</th><th>Approved</th><th>Fundraisers covered</th><th>Last return on ad spend</th><th>How</th><th></th></tr></thead>
+        <tbody>${S.accounts.map((a, i) => `
+          <tr${a.mine ? ' style="background:#FFFBEB"' : ''}>
+            <td class="strong">${esc(a.acct)}</td><td>${a.since}</td><td>${a.frs} live</td><td>${roasCell(a.roas)}</td>
+            <td><span class="tag ${a.src.startsWith('Grad') ? 't-purple' : a.src.startsWith('Interest') ? 't-blue' : 't-gray'}">${a.src}</span></td>
+            <td><button class="abtn" data-revoke="${i}">Remove</button></td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+      ${eng('account approvals', [
+        'This list is the core of 1A. Everything else reads from it: dashboard buttons, fundraiser page button, landing page "Yes" path.',
+        '"Fundraisers covered" is counted live under Option 1, or the number of IDs copied under Option 2.',
+        'Removing an account should stop new purchases but not cancel ads already paid for.'
+      ])}`;
+  }
+
+  function adminInterest() {
+    return `
+      <div><h1>Interest list</h1><p class="muted" style="margin-top:4px">Creators new to ads who registered from the landing page.</p></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Account</th><th>Fundraiser link</th><th>Raised</th><th>Received</th><th>Status</th><th></th></tr></thead>
+        <tbody>${S.interest.map((r, i) => `
+          <tr${r.mine ? ' style="background:#FFFBEB"' : ''}>
+            <td class="strong">${esc(r.acct)}</td><td>${esc(r.link)}</td><td>${money(r.raised)}</td><td>${r.when}</td>
+            <td>${r.status === 'new' ? '<span class="tag t-yellow">New</span>' : r.status === 'week' ? '<span class="tag t-purple">Invited to 1-week</span>' : '<span class="tag t-green">Account approved</span>'}</td>
+            <td>${r.status === 'new' ? `<div class="acts"><button class="abtn dark" data-int="${i}" data-to="approved">Approve account</button><button class="abtn" data-int="${i}" data-to="week">Invite to 1-week ad</button></div>` : ''}</td>
+          </tr>`).join('')}</tbody>
+      </table></div>
+      ${eng('interest list', [
+        'Two outcomes: approve the account straight away, or start with a 1-week ad on the fundraiser they gave us.',
+        'Both send an email. "Approve account" adds them to Approved accounts.'
+      ])}`;
+  }
+
+  function adminSlots() {
+    return `
+      <div><h1>Slots</h1><p class="muted" style="margin-top:4px">Silver and Gold slots per season. Limited by newsletter segments.</p></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Season</th><th>Silver sold / total</th><th>Gold sold / total</th></tr></thead>
+        <tbody>${Object.keys(SEASONS).map((k) => `
+          <tr${k === S.season ? ' style="background:var(--n50)"' : ''}>
+            <td class="strong">${SEASONS[k].name}${k === S.season ? ' <span class="tag t-green">Selling now</span>' : ''}</td>
+            ${['silver', 'gold'].map((t) => `<td><span class="stepper"><button data-slot="${k}|${t}|-1" aria-label="Fewer sold">-</button><b>${S.slots[k][t][1]} / ${S.slots[k][t][0]}</b><button data-slot="${k}|${t}|1" aria-label="More sold">+</button></span></td>`).join('')}
+          </tr>`).join('')}</tbody>
+      </table></div>
+      ${eng('slots', [
+        'Option C reads these live on the package screen. Option A uses them as a guide in the review queue.',
+        'Try it: set winter Gold to 9 / 9 with option C to see "Sold out" on the package screen.'
+      ])}`;
+  }
+
+  function admin() {
+    const pend = S.requests.filter((r) => r.status === 'pending').length;
+    const views = { requests: adminRequests, accounts: adminAccounts, interest: adminInterest, slots: adminSlots };
+    return `
+      <div class="admin">
+        <aside class="sidebar">
+          <div class="logo"><span class="brand-mark" style="width:24px;height:24px">${ic('heart', 'icon-sm')}</span> Admin</div>
+          <div class="grp hide-m"><div class="gname">${ic('home')} Dashboard</div></div>
+          <div class="grp hide-m"><div class="gname">${ic('brief')} Management</div>
+            <span class="item dim">Fundraisers</span><span class="item dim">Users</span><span class="item dim">Flash tagging</span></div>
+          <div class="grp hide-m"><div class="gname">${ic('heart')} Giving</div><span class="item dim">Boosts</span></div>
+          <div class="grp"><div class="gname" style="color:#fff">${ic('mega')} Ads <span class="new">New</span></div>
+            ${ADMIN_TABS.map(([k, l]) => `<button class="item" data-tab="${k}" ${S.adminTab === k ? 'aria-current="page"' : ''}>${l}${k === 'requests' && pend ? `<span class="count">${pend}</span>` : ''}</button>`).join('')}
+          </div>
+          <div class="grp hide-m"><div class="gname">${ic('cog')} System</div><span class="item dim">Redirects</span></div>
+        </aside>
+        <main class="admin-main">${views[S.adminTab]()}</main>
+      </div>`;
+  }
+
+  // ---------- render ----------
+  function render() {
+    document.body.classList.toggle('show-eng', S.eng);
+    document.querySelectorAll('[data-view]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === S.view)));
+    document.getElementById('season').value = S.season;
+    document.getElementById('account').value = S.account;
+    document.getElementById('gs').value = S.gs;
+    document.getElementById('engToggle').checked = S.eng;
+    document.getElementById('app').innerHTML = S.view === 'creator' ? creator() : admin();
+  }
+
+  // ---------- actions ----------
+  function sendEmail(subject, body) { S.inbox.push({ subject, body }); }
+
+  function decide(id, dec) {
+    const r = S.requests.find((x) => x.id === id);
+    r.status = dec;
+    if (dec === 'approved' || dec === 'adjusted') {
+      const tid = dec === 'adjusted' ? 'silver' : r.tier;
+      const s = S.slots[S.season][tid];
+      if (s[1] < s[0]) s[1]++;
+    }
+    if (r.mine) {
+      S.myReq.status = dec;
+      const f = fr();
+      if (dec === 'approved') {
+        sendEmail(`You're approved for ${tierOf(r.tier).name}`, `<h2>You're approved for ${tierOf(r.tier).name}</h2><p>Your ${season().name.toLowerCase()} request for "${esc(f.title)}" is approved. Complete payment to lock in your slot.</p><div><button class="btn btn-primary" data-act="payFromEmail" data-tier="${r.tier}">Complete payment, ${money(price(tierOf(r.tier)))}</button></div><p class="small muted">If payment isn't completed, the slot may be offered to another fundraiser.</p>`);
+      } else if (dec === 'adjusted') {
+        sendEmail('We can offer you Silver', `<h2>Gold is full, but Silver is yours</h2><p>We couldn't fit "${esc(f.title)}" into Gold for ${season().name.toLowerCase()}. We can offer Silver instead.</p><div><button class="btn btn-primary" data-act="payFromEmail" data-tier="silver">Accept Silver, ${money(price(tierOf('silver')))}</button></div>`);
+      } else {
+        sendEmail(`About your ${tierOf(r.tier).name} request`, `<h2>We couldn't approve this request</h2><p>${tierOf(r.tier).name} for "${esc(f.title)}" isn't available this time. You can still choose Starter or Bronze.</p><div><button class="btn" data-act="backToPackages">See packages</button></div>`);
+      }
+    }
+    toast(r.mine ? 'Decision sent. Check Creator, Email.' : 'Decision saved');
+    render();
+  }
+
+  function approveAccount(name, src, frs) {
+    if (!S.accounts.some((a) => a.acct === name)) S.accounts.unshift({ acct: name, since: 'Nov 2026', frs, roas: null, src, mine: name === ACCOUNT_NAME });
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('button, [data-tier], [data-go]');
+    if (!t) return;
+    const d = t.dataset;
+    if (d.view) return set({ view: d.view });
+    if (d.go) {
+      const p = { screen: d.go, view: 'creator' };
+      if (d.landingPreset) Object.assign(p, { landing: d.landingPreset, interestSent: false });
+      window.scrollTo(0, 0);
+      return set(p);
+    }
+    if (d.landing) return set({ landing: d.landing, interestSent: false });
+    if (d.promote) { window.scrollTo(0, 0); return set({ frId: d.promote, product: d.product, tier: null, screen: 'packages', outcome: null }); }
+    if (d.tier && t.classList.contains('tier')) return set({ tier: d.tier });
+    if (d.tab) return set({ adminTab: d.tab });
+    if (d.req) return decide(d.req, d.dec);
+    if (d.grad !== undefined) {
+      if (d.grad === 'mine') {
+        approveAccount(ACCOUNT_NAME, 'Graduated from 1-week ads', 3);
+        sendEmail('Your account is approved for ads', `<h2>You're approved for seasonal ads</h2><p>Your 1-week ad returned 4.2x. You can now promote any fundraiser you run with ${season().name.toLowerCase()}, including new ones, straight from your dashboard.</p><div><button class="btn btn-primary" data-go="dashboard">Go to my fundraisers</button></div>`);
+        S.account = 'approved';
+        toast('Account approved. Creator view updated.');
+      } else {
+        const g = S.grads.splice(Number(d.grad), 1)[0];
+        approveAccount(g.acct, 'Graduated from 1-week ads', 2);
+        toast('Account approved');
+      }
+      return render();
+    }
+    if (d.revoke !== undefined) {
+      const a = S.accounts.splice(Number(d.revoke), 1)[0];
+      if (a.acct === ACCOUNT_NAME) S.account = 'new';
+      toast('Removed. Paid ads keep running.');
+      return render();
+    }
+    if (d.int !== undefined) {
+      const r = S.interest[Number(d.int)];
+      r.status = d.to;
+      if (r.mine) {
+        if (d.to === 'approved') {
+          approveAccount(ACCOUNT_NAME, 'Interest list', 3);
+          S.account = 'approved';
+          sendEmail("You're pre-approved for ads", `<h2>You're pre-approved for ads</h2><p>You can now promote any fundraiser you run, including new ones, from your dashboard.</p><div><button class="btn btn-primary" data-go="dashboard">Go to my fundraisers</button></div>`);
+        } else {
+          S.account = 'new';
+          sendEmail("Try a 1-week ad", `<h2>Try a 1-week ad on your fundraiser</h2><p>Start with 7 days of featured placement for ${money(oneWeekPrice())}. If it goes well, we'll open up seasonal ads for your whole account.</p><div><button class="btn btn-primary" data-go="dashboard">Go to my fundraisers</button></div>`);
+        }
+        toast('Sent. Check Creator, Email.');
+      } else {
+        if (d.to === 'approved') approveAccount(r.acct, 'Interest list', 1);
+        toast('Saved');
+      }
+      return render();
+    }
+    if (d.slot) {
+      const [k, tid, delta] = d.slot.split('|');
+      const s = S.slots[k][tid];
+      s[1] = Math.max(0, Math.min(s[0], s[1] + Number(delta)));
+      return render();
+    }
+    switch (d.act) {
+      case 'sendInterest': {
+        const link = (document.getElementById('lLink') || {}).value || 'fundraising.example/flood-emergency-appeal';
+        S.landingLink = link;
+        S.interest = S.interest.filter((x) => !x.mine);
+        S.interest.unshift({ acct: ACCOUNT_NAME, link, raised: 3100, when: 'Just now', status: 'new', mine: true });
+        S.interestSent = true;
+        toast('Added to Admin, Interest list');
+        return render();
+      }
+      case 'requestAccount': S.accountRequested = true; toast('Shows in Admin, Approved accounts'); return render();
+      case 'contactAM': return toast('Opens a message to their account manager');
+      case 'submitReview': {
+        S.requests = S.requests.filter((r) => !r.mine);
+        const req = { id: 'mine', acct: ACCOUNT_NAME, fr: fr().title, tier: S.tier, roas: 4.2, raised: fr().raised, when: 'Just now', status: 'pending', mine: true };
+        S.requests.unshift(req);
+        S.myReq = { tier: S.tier, status: 'pending' };
+        window.scrollTo(0, 0);
+        return set({ outcome: 'review', screen: 'result' });
+      }
+      case 'pay': {
+        if (S.product !== 'week' && S.gs === 'C' && tierOf(S.tier).limited) S.slots[S.season][S.tier][1]++;
+        window.scrollTo(0, 0);
+        return set({ outcome: 'paid', screen: 'result' });
+      }
+      case 'payFromEmail': S.myReq = { tier: d.tier, status: 'approved' }; window.scrollTo(0, 0); return set({ tier: d.tier, product: 'seasonal', screen: 'checkout' });
+      case 'backToPackages': return set({ screen: 'packages', tier: null });
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const t = e.target.closest('.tier[data-tier]');
+    if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); set({ tier: t.dataset.tier }); }
+  });
+  document.addEventListener('change', (e) => {
+    const id = e.target.id;
+    if (id === 'season') set({ season: e.target.value, tier: null });
+    if (id === 'account') set({ account: e.target.value, accountRequested: false });
+    if (id === 'gs') set({ gs: e.target.value, tier: null });
+    if (id === 'engToggle') set({ eng: e.target.checked });
+    if (id === 'frPick') set({ frId: e.target.value });
+  });
+  document.addEventListener('input', (e) => { if (e.target.id === 'lLink') S.landingLink = e.target.value; });
+  document.getElementById('reset').addEventListener('click', () => { S = fresh(); render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
