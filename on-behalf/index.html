@@ -230,7 +230,7 @@
   <aside aria-label="Admin view">
     <div class="ahead"><p class="eyebrow">Admin view</p><button type="button" class="x" data-action="toggle-admin" aria-label="Close admin view">&times;</button></div>
     <div class="panel"><p class="eyebrow" style="margin:0">Campaign record</p><div id="record" style="display:flex;flex-direction:column;gap:14px"></div></div>
-    <div class="panel"><p class="eyebrow" style="margin:0">Approvals for hand-off</p><div id="approvals" style="display:flex;flex-direction:column;gap:12px"></div></div>
+    <div class="panel"><p class="eyebrow" style="margin:0" id="approvals-title">Approvals for hand-off</p><div id="approvals" style="display:flex;flex-direction:column;gap:12px"></div></div>
     <div id="rule"></div>
   </aside>
 </div>
@@ -246,11 +246,13 @@
     { id: 'bKyc', title: 'Bilal KYC, org created', actor: 'Bilal · beneficiary' },
     { id: 'bPayout', title: 'Bilal adds payout account', actor: 'Bilal · beneficiary' },
     { id: 'aApprove', title: 'Aisha approves hand-off', actor: 'Aisha · organizer' },
-    { id: 'tns', title: 'Trust & Safety review', actor: 'Trust & Safety' },
+    { id: 'docs', title: "Attestation + Bilal's ID", actor: 'Aisha · organizer' },
     { id: 'done', title: 'Bilal owns the campaign', actor: 'Bilal · beneficiary' }
   ];
+  // With Aisha's payout attached, ownership never moves: the flow ends on her own fundraiser
+  var DONE_PAYOUT_A = { id: 'done', title: 'Aisha keeps the fundraiser', actor: 'Aisha · organizer' };
   var SKIP = ['invite', 'bJoin', 'bKyc', 'bPayout', 'aApprove'];
-  var BADGE = { 'Aisha · organizer': 'blue', 'Bilal · beneficiary': 'purple', 'Trust & Safety': 'yellow' };
+  var BADGE = { 'Aisha · organizer': 'blue', 'Bilal · beneficiary': 'purple' };
   var FORM = {
     title: "Help Bilal's family rebuild after the house fire", goal: '30,000',
     inviteName: 'Bilal Rahman', inviteDob: '1994-03-12', email: 'bilal@example.com', pw: 'password1',
@@ -258,12 +260,16 @@
     holder: 'Bilal Rahman', routing: '•••••0021', acct: '•••••7730'
   };
   var st;
-  function fresh() { st = { step: 'create', payoutA: false, forOther: true, f: Object.assign({}, FORM), c: { ownAcct: true, t1: false, t2: false, t3: false } }; }
+  function fresh() { st = { step: 'create', payoutA: false, forOther: true, f: Object.assign({}, FORM), c: { ownAcct: true }, up: { att: false, bid: false } }; }
   fresh();
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); }
   function norm(s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
-  function steps() { return ALL.filter(function (s) { return st.payoutA ? SKIP.indexOf(s.id) < 0 : s.id !== 'tns'; }); }
+  function steps() {
+    if (!st.payoutA) return ALL.filter(function (s) { return s.id !== 'docs'; });
+    return ALL.filter(function (s) { return SKIP.indexOf(s.id) < 0; }).map(function (s) { return s.id === 'done' ? DONE_PAYOUT_A : s; });
+  }
+  function docsIn() { return st.up.att && st.up.bid; }
   function idx() { var i = steps().findIndex(function (s) { return s.id === st.step; }); return i < 0 ? 0 : i; }
   function at(id) { var i = steps().findIndex(function (s) { return s.id === id; }); return i < 0 ? 999 : i; }
   function past(id) { return idx() > at(id); }
@@ -305,8 +311,8 @@
         + '<button type="button" class="option" data-action="payout-off" aria-pressed="' + !st.payoutA + '"><strong>Hold them for Bilal</strong><span>Funds wait until Bilal adds his own payout account. You can hand off any time.</span></button>'
         + '<button type="button" class="option" data-action="payout-on" aria-pressed="' + st.payoutA + '"><strong>Connect my payout account</strong><span>Funds reach your bank. This is permanent and can\'t be changed.</span></button>'
         + '</div></fieldset>'
-        + (st.payoutA ? banner('warning', 'Account ••4821 is attached to this campaign', "You can't invite Bilal to take over. Only a Trust & Safety review can transfer this campaign.") : '')
-        + '<div class="actions">' + btn('', 'Back', 'back') + (st.payoutA ? btn('btn-primary', 'Request Trust & Safety review', 'next') : btn('btn-primary', 'Invite Bilal to take over', 'next')) + '</div>';
+        + (st.payoutA ? banner('warning', 'Account ••4821 is attached to this fundraiser', "The fundraiser stays yours and you can't hand it to Bilal. To finish, upload a signed attestation and a copy of Bilal's ID.") : '')
+        + '<div class="actions">' + btn('', 'Back', 'back') + (st.payoutA ? btn('btn-primary', 'Continue to documents', 'next') : btn('btn-primary', 'Invite Bilal to take over', 'next')) + '</div>';
     },
     invite: function () {
       return head('Hand this campaign to Bilal', 'Enter his details as they appear on his ID. We check them against his identity verification before ownership moves.')
@@ -352,17 +358,27 @@
         + '<div style="display:flex;flex-direction:column;gap:10px"><b style="font-size:15px">When you approve</b>' + changes + '</div>'
         + '<div class="actions">' + btn('', "Edit Bilal's details", 'edit-invite') + btn('btn-brand', 'Approve hand-off', 'next', mismatch()) + '</div>';
     },
-    tns: function () {
-      var ready = st.c.t1 && st.c.t2 && st.c.t3;
-      return head('Ownership change after payout assigned', "Aisha asked to transfer this campaign to Bilal Rahman. Her account ••4821 is attached, so she can't invite him herself. This review is the only way to move ownership.", 'Trust & Safety queue · Case TS-20418')
-        + '<div class="grid3"><div class="stat"><small>Paid out to Aisha</small><b>$8,200</b></div><div class="stat"><small>Pending balance</small><b>$4,200</b></div><div class="stat"><small>Open disputes</small><b>0</b></div></div>'
-        + '<div style="display:flex;flex-direction:column;gap:8px">' + checkbox('t1', 'Reviewed payouts already sent to Aisha') + checkbox('t2', 'Confirmed Bilal is the beneficiary named in the story') + checkbox('t3', 'No refund or chargeback risk on the pending balance') + '</div>'
-        + '<div class="actions">' + btn('btn-danger', 'Reject') + btn('btn-brand', 'Approve ownership change', 'next', !ready, 'tns-next') + '</div>';
+    docs: function () {
+      function upload(key, title, sub, extra) {
+        var on = st.up[key];
+        return '<div class="upload"><div class="rec"><b>' + esc(title) + '</b><small>' + esc(sub) + '</small>' + (extra || '') + '</div>'
+          + (on ? '<div style="display:flex;align-items:center;gap:8px">' + badge('green', 'Uploaded', true) + btn('btn-sm btn-tertiary', 'Remove', 'up-' + key) + '</div>' : btn('btn-sm', 'Upload', 'up-' + key)) + '</div>';
+      }
+      return head("Confirm who you're raising for", "Donations go to your account ••4821, so you stay the owner of this fundraiser. Tell us who the funds are for with two documents.")
+        + upload('att', 'Signed attestation', 'You confirm the funds raised go to Bilal Rahman. PDF or photo.', '<button type="button" class="btn btn-tertiary btn-sm" style="align-self:flex-start;padding:0;min-height:28px;color:var(--brand-600)">Download the attestation form</button>')
+        + upload('bid', "Bilal's ID", "Passport, driver's license or national ID. The name must match the one in your story.")
+        + '<div class="actions">' + btn('', 'Back', 'back') + btn('btn-brand', 'Submit documents', 'next', !docsIn()) + '</div>';
     },
     done: function () {
-      return (st.payoutA
-          ? banner('success', 'The campaign is yours, Bilal', 'Trust & Safety moved the campaign to your personal organization. Add a payout account to receive future donations.')
-          : banner('success', 'The campaign is yours, Bilal', 'The transfer is approved. Future payouts go to your account ••7730.'))
+      if (st.payoutA) {
+        return banner('success', 'Documents received', "Your fundraiser stays live and keeps paying out to your account ••4821. The attestation and Bilal's ID are on file.")
+          + '<h1>' + esc(st.f.title) + '</h1>'
+          + '<div class="box"><div class="row" style="font-size:13px;font-weight:600;color:var(--n600)">Aisha Karim · personal organization</div>'
+          + '<div class="row"><b>Aisha Karim</b>' + badge('inverse', 'Owner') + '</div>'
+          + '<div class="row"><span><b>Bilal Rahman</b><br><small style="color:var(--n600)">Beneficiary · attestation and ID on file</small></span>' + badge('purple', 'Beneficiary') + '</div></div>'
+          + '<div class="actions">' + btn('', 'Run it again', 'reset') + btn('btn-primary', 'Go to fundraiser dashboard') + '</div>';
+      }
+      return banner('success', 'The campaign is yours, Bilal', 'The transfer is approved. Future payouts go to your account ••7730.')
         + '<h1>' + esc(st.f.title) + '</h1>'
         + '<div class="box"><div class="row" style="font-size:13px;font-weight:600;color:var(--n600)">Bilal Rahman · personal organization</div>'
         + '<div class="row"><b>Bilal Rahman</b>' + badge('inverse', 'Owner') + '</div><div class="row"><b>Aisha Karim</b>' + badge('neutral', 'Member') + '</div></div>'
@@ -372,22 +388,32 @@
 
   function renderSide() {
     var done = st.step === 'done';
-    var payoutVal = done ? (st.payoutA ? 'None yet · Bilal to add his' : 'Bilal · account ••7730')
-      : (st.payoutA && reached('live') ? 'Aisha · account ••4821' : (reached('live') ? 'None yet · funds held' : 'None'));
-    var rec = [
+    var payoutVal = st.payoutA && reached('live') ? 'Aisha · account ••4821'
+      : done ? 'Bilal · account ••7730' : (reached('live') ? 'None yet · funds held' : 'None');
+    var rec = st.payoutA ? [
+      ['Status', reached('live') ? 'Live' : (reached('kycA') ? 'Draft · awaiting KYC' : 'Draft')],
+      ['Owner', 'Aisha Karim · personal org'],
+      ['Pending owner', 'None · ownership stays with Aisha'],
+      ['Campaign payout account', payoutVal],
+      ['Beneficiary', 'Bilal Rahman · no account'],
+      ['Identity checks', past('kycA') ? 'Aisha approved' : 'Aisha pending']
+    ] : [
       ['Status', reached('live') ? 'Live' : (reached('kycA') ? 'Draft · awaiting KYC' : 'Draft')],
       ['Owner', done ? 'Bilal Rahman · personal org' : 'Aisha Karim · personal org'],
       ['Pending owner', reached('bKyc') && !done ? 'Bilal Rahman · personal org' : 'None'],
       ['Campaign payout account', payoutVal],
-      ["Bilal's personal org", reached('bKyc') || done ? 'Owner: Bilal · Member: Aisha' : 'Not created yet'],
+      ["Bilal's personal org", reached('bKyc') ? 'Owner: Bilal · Member: Aisha' : 'Not created yet'],
       ["Bilal's payout account (on his org)", past('bPayout') ? 'Saved · ••7730' : 'Not added'],
       ['Identity checks', (past('kycA') ? 'Aisha approved' : 'Aisha pending') + ' · ' + (past('bKyc') ? 'Bilal approved' : 'Bilal pending')]
     ];
     document.getElementById('record').innerHTML = rec.map(function (r) { return '<div class="rec"><small>' + esc(r[0]) + '</small><b>' + esc(r[1]) + '</b></div>'; }).join('');
-    var ap = st.payoutA ? [['Trust & Safety', past('tns')]] : [['Aisha (organizer)', past('aApprove')]];
-    document.getElementById('approvals').innerHTML = ap.map(function (a) { return '<div class="row" style="padding:0;border:0"><b>' + esc(a[0]) + '</b>' + badge(a[1] ? 'green' : 'neutral', a[1] ? 'Approved' : 'Waiting', true) + '</div>'; }).join('');
+    document.getElementById('approvals-title').textContent = st.payoutA ? 'Documents on file' : 'Approvals for hand-off';
+    var ap = st.payoutA
+      ? [['Signed attestation', st.up.att, 'Received'], ["Bilal's ID", st.up.bid, 'Received']]
+      : [['Aisha (organizer)', past('aApprove'), 'Approved']];
+    document.getElementById('approvals').innerHTML = ap.map(function (a) { return '<div class="row" style="padding:0;border:0"><b>' + esc(a[0]) + '</b>' + badge(a[1] ? 'green' : 'neutral', a[1] ? a[2] : 'Waiting', true) + '</div>'; }).join('');
     document.getElementById('rule').innerHTML = st.payoutA
-      ? '<div class="rule blocked"><p class="eyebrow" style="margin:0;color:inherit">Self-serve hand-off</p><b style="font-size:16px">Blocked</b><p>Aisha\'s payout account is attached, so she can\'t invite Bilal. Only a Trust &amp; Safety review can transfer the campaign.</p></div>'
+      ? '<div class="rule blocked"><p class="eyebrow" style="margin:0;color:inherit">Self-serve hand-off</p><b style="font-size:16px">Not available</b><p>Aisha\'s payout account is attached, so the fundraiser stays hers. She files a signed attestation and Bilal\'s ID instead.</p></div>'
       : '<div class="rule ok"><p class="eyebrow" style="margin:0;color:inherit">Self-serve hand-off</p><b style="font-size:16px">Allowed with approvals</b><p>No payout account is attached. Ownership moves as soon as Aisha approves.</p></div>';
   }
 
@@ -435,7 +461,7 @@
   function go(id) { st.step = id; ui.stepsOpen = false; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   function setPayout(on) {
     if (on && SKIP.indexOf(st.step) >= 0) st.step = 'live';
-    if (!on && st.step === 'tns') st.step = 'invite';
+    if (!on && st.step === 'docs') st.step = 'invite';
     st.payoutA = on; render();
   }
 
@@ -453,6 +479,8 @@
       case 'reset': fresh(); ui.settings = false; ui.stepsOpen = false; render(); break;
       case 'settings': ui.settings = !ui.settings; renderUi(); break;
       case 'toggle-steps': ui.stepsOpen = !ui.stepsOpen; render(); break;
+      case 'up-att': st.up.att = !st.up.att; render(); break;
+      case 'up-bid': st.up.bid = !st.up.bid; render(); break;
       case 'payout-on': setPayout(true); break;
       case 'payout-off': setPayout(false); break;
       case 'for-self': st.forOther = false; render(); break;
@@ -471,7 +499,6 @@
     if (!k) return;
     st.c[k] = e.target.checked;
     var p = document.getElementById('payout-next'); if (p) p.disabled = !st.c.ownAcct;
-    var t = document.getElementById('tns-next'); if (t) t.disabled = !(st.c.t1 && st.c.t2 && st.c.t3);
   });
 
   document.addEventListener('keydown', function (e) {
