@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fundraise on behalf of someone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand-50: #EDF7F0; --brand-500: #4AA567; --brand-600: #3C8653; --brand-700: #2C633D;
+    --n0: #FFFFFF; --n50: #FAFAFA; --n100: #F5F5F5; --n200: #E5E5E5; --n300: #D4D4D4;
+    --n400: #A3A3A3; --n500: #737373; --n600: #525252; --n700: #404040; --n800: #262626; --n900: #171717;
+    --red-50: #FEF2F2; --red-700: #B91C1C;
+    --yellow-50: #FEFCE8; --yellow-800: #854D0E;
+    --green-50: #F0FDF4; --green-700: #15803D;
+    --blue-50: #EFF6FF; --blue-700: #1D4ED8;
+    --indigo-50: #EEF2FF; --indigo-700: #4338CA;
+    --purple-50: #FAF5FF; --purple-700: #7E22CE;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--n50); color: var(--n900); font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+  button, input { font: inherit; }
+
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px; background: rgba(255,255,255,0.92); border-bottom: 1px solid var(--n200); }
+  .head-left, .head-right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .brand { display: inline-flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 800; letter-spacing: -0.025em; }
+  .brand-mark { width: 28px; height: 28px; border-radius: 9999px; background: var(--brand-500); display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+  .muted { font-size: 14px; color: var(--n600); font-weight: 600; }
+  .seg { display: flex; background: var(--n100); border-radius: 9999px; padding: 4px; gap: 4px; }
+  .seg button { border: 0; cursor: pointer; border-radius: 9999px; padding: 8px 14px; min-height: 36px; font-size: 13px; font-weight: 600; background: transparent; color: var(--n700); }
+  .seg button[aria-pressed="true"] { background: var(--n900); color: #fff; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 24px; border-radius: 9999px; font-size: 16px; font-weight: 600; cursor: pointer; border: 1px solid var(--n300); background: var(--n0); color: var(--n900); transition: background 150ms cubic-bezier(0.4,0,0.2,1); }
+  .btn:hover { background: var(--n100); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-primary { background: var(--n900); border-color: var(--n900); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--n800); }
+  .btn-brand { background: var(--brand-500); border-color: var(--brand-500); color: #fff; }
+  .btn-brand:hover:not(:disabled) { background: var(--brand-600); }
+  .btn-danger { background: var(--n0); border-color: var(--red-700); color: var(--red-700); }
+  .btn-tertiary { border-color: transparent; background: transparent; }
+  .btn-sm { min-height: 36px; padding: 6px 14px; font-size: 13px; }
+
+  .layout { display: flex; flex-wrap: wrap; gap: 24px; padding: 24px; max-width: 1440px; margin: 0 auto; align-items: flex-start; }
+  nav { flex: 1 1 260px; max-width: 300px; display: flex; flex-direction: column; gap: 4px; }
+  main { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  aside { flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 16px; }
+  @media (max-width: 900px) { nav, aside { max-width: none; } }
+
+  .eyebrow { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; color: var(--n600); text-transform: uppercase; }
+  .step { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 0; cursor: pointer; padding: 10px 12px; min-height: 48px; border-radius: 8px; background: transparent; }
+  .step:hover { background: var(--n100); }
+  .step[aria-current="step"] { background: var(--n0); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .dot { flex: none; width: 26px; height: 26px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--n200); color: var(--n700); }
+  .step.done .dot { background: var(--brand-500); color: #fff; }
+  .step[aria-current="step"] .dot { background: var(--n900); color: #fff; }
+  .step-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .step-title { font-size: 14px; font-weight: 600; color: var(--n600); }
+  .step.done .step-title, .step[aria-current="step"] .step-title { color: var(--n900); }
+  .step-actor { font-size: 12px; color: var(--n600); }
+
+  .viewing { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--n600); }
+  .card { background: var(--n0); border: 1px solid var(--n200); border-radius: 16px; padding: 32px; display: flex; flex-direction: column; gap: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .panel { background: var(--n0); border: 1px solid var(--n200); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  h1 { margin: 0; font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.01em; }
+  .lede { margin: 8px 0 0; font-size: 16px; line-height: 24px; color: var(--n600); }
+
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; line-height: 20px; white-space: nowrap; align-self: flex-start; }
+  .badge.dotted::before { content: ""; width: 6px; height: 6px; border-radius: 9999px; background: currentColor; }
+  .b-neutral { background: var(--n100); color: var(--n700); }
+  .b-inverse { background: var(--n900); color: #fff; }
+  .b-green { background: var(--green-50); color: var(--green-700); }
+  .b-red { background: var(--red-50); color: var(--red-700); }
+  .b-yellow { background: var(--yellow-50); color: var(--yellow-800); }
+  .b-blue { background: var(--blue-50); color: var(--blue-700); }
+  .b-indigo { background: var(--indigo-50); color: var(--indigo-700); }
+  .b-purple { background: var(--purple-50); color: var(--purple-700); }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 14px; font-weight: 600; }
+  .field input { min-height: 44px; padding: 10px 12px; border: 1px solid var(--n300); border-radius: 8px; font-size: 15px; color: var(--n900); background: var(--n0); }
+  .field input:focus { outline: none; border-color: var(--brand-500); box-shadow: 0 0 0 3px var(--brand-50); }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 560px) { .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); } }
+  .check { display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 32px; cursor: pointer; }
+  .check input { width: 18px; height: 18px; accent-color: var(--brand-600); }
+
+  .option { text-align: left; cursor: pointer; background: var(--n0); border-radius: 8px; padding: 16px; border: 2px solid var(--n200); display: flex; flex-direction: column; gap: 4px; }
+  .option[aria-pressed="true"] { border-color: var(--n900); }
+  .option strong { font-size: 15px; }
+  .option span { font-size: 13px; line-height: 20px; color: var(--n600); }
+
+  .banner { border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 21px; }
+  .banner strong { font-size: 14px; }
+  .banner.info { background: var(--blue-50); color: #1E3A8A; }
+  .banner.success { background: var(--green-50); color: #14532D; }
+  .banner.warning { background: var(--yellow-50); color: #713F12; }
+  .banner.error { background: var(--red-50); color: #7F1D1D; }
+
+  .box { border: 1px solid var(--n200); border-radius: 8px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--n100); font-size: 14px; }
+  .row:last-child { border-bottom: 0; }
+  .match { display: grid; grid-template-columns: 120px repeat(2, minmax(0, 1fr)) 90px; gap: 12px; padding: 14px 16px; align-items: center; font-size: 14px; border-bottom: 1px solid var(--n100); }
+  .match.head { font-size: 12px; font-weight: 600; color: var(--n600); border-bottom-color: var(--n200); padding: 12px 16px; }
+  .stat { background: var(--n100); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+  .stat small { font-size: 12px; color: var(--n600); }
+  .stat b { font-size: 20px; }
+  .progress { height: 6px; border-radius: 9999px; background: var(--n200); overflow: hidden; }
+  .progress span { display: block; height: 100%; background: var(--brand-500); border-radius: 9999px; }
+  .actions { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .email { background: var(--n100); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .list-item { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 22px; color: var(--n700); }
+  .rec { display: flex; flex-direction: column; gap: 2px; }
+  .rec small { font-size: 12px; color: var(--n600); }
+  .rec b { font-size: 14px; font-weight: 600; }
+  .rule { border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .rule.ok { background: var(--brand-50); color: var(--brand-700); }
+  .rule.blocked { background: var(--yellow-50); color: var(--yellow-800); }
+  .rule p { margin: 0; font-size: 13px; line-height: 20px; color: var(--n700); }
+  .upload { border: 1px dashed var(--n300); border-radius: 8px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<header>
+  <div class="head-left">
+    <span class="brand"><span class="brand-mark" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg></span>Fundraising</span>
+    <span class="muted">Prototype · Fundraise on behalf of someone</span>
+  </div>
+  <div class="head-right">
+    <span class="muted">Scenario</span>
+    <div class="seg" role="group" aria-label="Payout scenario">
+      <button type="button" data-action="payout-off" id="seg-off">No payout on campaign</button>
+      <button type="button" data-action="payout-on" id="seg-on">Aisha's payout attached</button>
+    </div>
+    <button type="button" class="btn btn-tertiary btn-sm" data-action="reset">Start over</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav aria-label="Flow steps">
+    <p class="eyebrow">Flow</p>
+    <div id="steps"></div>
+  </nav>
+  <main>
+    <div class="viewing" id="viewing"></div>
+    <section class="card" id="screen" aria-live="polite"></section>
+  </main>
+  <aside aria-label="Campaign record">
+    <div class="panel"><p class="eyebrow" style="margin:0">Campaign record</p><div id="record" style="display:flex;flex-direction:column;gap:14px"></div></div>
+    <div class="panel"><p class="eyebrow" style="margin:0">Approvals for hand-off</p><div id="approvals" style="display:flex;flex-direction:column;gap:12px"></div></div>
+    <div id="rule"></div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  var ALL = [
+    { id: 'create', title: 'Create campaign', actor: 'Aisha · organizer' },
+    { id: 'kycA', title: 'Aisha verifies (KYC)', actor: 'Aisha · organizer' },
+    { id: 'live', title: 'Campaign goes live', actor: 'Aisha · organizer' },
+    { id: 'invite', title: 'Invite Bilal + name and DOB', actor: 'Aisha · organizer' },
+    { id: 'bJoin', title: 'Bilal opens link, signs up', actor: 'Bilal · beneficiary' },
+    { id: 'bKyc', title: 'Bilal KYC, org created', actor: 'Bilal · beneficiary' },
+    { id: 'bPayout', title: 'Bilal adds payout account', actor: 'Bilal · beneficiary' },
+    { id: 'aApprove', title: 'Aisha approves hand-off', actor: 'Aisha · organizer' },
+    { id: 'tns', title: 'Trust & Safety review', actor: 'Trust & Safety' },
+    { id: 'done', title: 'Bilal owns the campaign', actor: 'Bilal · beneficiary' }
+  ];
+  var SKIP = ['invite', 'bJoin', 'bKyc', 'bPayout', 'aApprove'];
+  var BADGE = { 'Aisha · organizer': 'blue', 'Bilal · beneficiary': 'purple', 'Trust & Safety': 'yellow' };
+  var FORM = {
+    title: "Help Bilal's family rebuild after the house fire", goal: '30,000',
+    inviteName: 'Bilal Rahman', inviteDob: '1994-03-12', email: 'bilal@example.com', pw: 'password1',
+    kycName: 'Bilal Rahman', kycDob: '1994-03-12', country: 'United States', address: '[Street address]',
+    holder: 'Bilal Rahman', routing: '•••••0021', acct: '•••••7730'
+  };
+  var st;
+  function fresh() { st = { step: 'create', payoutA: false, forOther: true, f: Object.assign({}, FORM), c: { ownAcct: true, t1: false, t2: false, t3: false } }; }
+  fresh();
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); }
+  function norm(s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  function steps() { return ALL.filter(function (s) { return st.payoutA ? SKIP.indexOf(s.id) < 0 : s.id !== 'tns'; }); }
+  function idx() { var i = steps().findIndex(function (s) { return s.id === st.step; }); return i < 0 ? 0 : i; }
+  function at(id) { var i = steps().findIndex(function (s) { return s.id === id; }); return i < 0 ? 999 : i; }
+  function past(id) { return idx() > at(id); }
+  function reached(id) { return idx() >= at(id); }
+  function nameOk() { return norm(st.f.inviteName) === norm(st.f.kycName); }
+  function dobOk() { return st.f.inviteDob === st.f.kycDob; }
+  function mismatch() { return !(nameOk() && dobOk()); }
+
+  function badge(color, label, dotted) { return '<span class="badge b-' + color + (dotted ? ' dotted' : '') + '">' + esc(label) + '</span>'; }
+  function banner(tone, title, body) { return '<div class="banner ' + tone + '" role="' + (tone === 'error' ? 'alert' : 'status') + '"><strong>' + esc(title) + '</strong><span>' + esc(body) + '</span></div>'; }
+  function input(key, label, type) { return '<div class="field"><label for="f-' + key + '">' + esc(label) + '</label><input id="f-' + key + '" data-field="' + key + '" type="' + (type || 'text') + '" value="' + esc(st.f[key]) + '"></div>'; }
+  function checkbox(key, label) { return '<label class="check"><input type="checkbox" data-check="' + key + '"' + (st.c[key] ? ' checked' : '') + '>' + esc(label) + '</label>'; }
+  function head(title, lede, eyebrow) { return '<div>' + (eyebrow ? '<p class="eyebrow">' + esc(eyebrow) + '</p>' : '') + '<h1>' + esc(title) + '</h1>' + (lede ? '<p class="lede">' + esc(lede) + '</p>' : '') + '</div>'; }
+  function btn(cls, label, action, disabled, id) { return '<button type="button" class="btn ' + cls + '"' + (action ? ' data-action="' + action + '"' : '') + (id ? ' id="' + id + '"' : '') + (disabled ? ' disabled' : '') + '>' + esc(label) + '</button>'; }
+  var ARROW = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3C8653" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:1px"><path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>';
+
+  var SCREENS = {
+    create: function () {
+      return head('Start a fundraiser', "Tell donors what you're raising for. You can hand the campaign to the person it's for once you're live.")
+        + input('title', 'Campaign title') + input('goal', 'Goal (USD)')
+        + '<fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:12px"><legend style="font-size:14px;font-weight:600;margin-bottom:12px">Who are you raising for?</legend><div class="grid2">'
+        + '<button type="button" class="option" data-action="for-self" aria-pressed="' + !st.forOther + '"><strong>Myself</strong><span>You receive the funds.</span></button>'
+        + '<button type="button" class="option" data-action="for-other" aria-pressed="' + st.forOther + '"><strong>Someone else</strong><span>They take ownership after they verify.</span></button>'
+        + '</div></fieldset>'
+        + banner('info', 'You start as the owner', 'Your personal organization holds the campaign until Bilal verifies and takes it over.')
+        + '<div class="actions" style="justify-content:flex-end">' + btn('btn-primary', 'Continue to verification', 'next') + '</div>';
+    },
+    kycA: function () {
+      return head('Verify your identity', '[KYC vendor] checks every organizer before a campaign goes live. It takes about two minutes.')
+        + '<div class="box"><div class="row"><b>Aisha Karim</b>' + badge('green', 'Approved', true) + '</div>'
+        + '<div class="grid3" style="padding:16px"><div class="rec"><small>Photo ID</small><b>Passed</b></div><div class="rec"><small>Selfie match</small><b>Passed</b></div><div class="rec"><small>Watchlists</small><b>Clear</b></div></div></div>'
+        + '<div class="actions">' + btn('', 'Back', 'back') + btn('btn-brand', 'Launch campaign', 'next') + '</div>';
+    },
+    live: function () {
+      return '<div style="display:flex;flex-direction:column;gap:12px">' + badge('green', 'Live', true) + '<h1>' + esc(st.f.title) + '</h1>'
+        + '<div class="progress" role="progressbar" aria-valuenow="41" aria-valuemin="0" aria-valuemax="100" aria-label="Funded"><span style="width:41%"></span></div>'
+        + '<p style="margin:0;font-size:15px;color:var(--n600)"><strong style="color:var(--n900)">$12,400</strong> raised of $' + esc(st.f.goal) + ' · 86 donors</p></div>'
+        + '<fieldset style="border:0;margin:0;padding:0"><legend style="font-size:18px;font-weight:700;margin-bottom:12px">Where should donations go?</legend><div class="grid2">'
+        + '<button type="button" class="option" data-action="payout-off" aria-pressed="' + !st.payoutA + '"><strong>Hold them for Bilal</strong><span>Funds wait until Bilal adds his own payout account. You can hand off any time.</span></button>'
+        + '<button type="button" class="option" data-action="payout-on" aria-pressed="' + st.payoutA + '"><strong>Connect my payout account</strong><span>Funds reach your bank. This is permanent and can\'t be changed.</span></button>'
+        + '</div></fieldset>'
+        + (st.payoutA ? banner('warning', 'Account ••4821 is attached to this campaign', "You can't invite Bilal to take over. Only a Trust & Safety review can transfer this campaign.") : '')
+        + '<div class="actions">' + btn('', 'Back', 'back') + (st.payoutA ? btn('btn-primary', 'Request Trust & Safety review', 'next') : btn('btn-primary', 'Invite Bilal to take over', 'next')) + '</div>';
+    },
+    invite: function () {
+      return head('Hand this campaign to Bilal', 'Enter his details as they appear on his ID. We check them against his identity verification before ownership moves.')
+        + input('inviteName', "Beneficiary's full legal name")
+        + '<div class="grid2">' + input('inviteDob', 'Date of birth', 'date') + input('email', 'Email', 'email') + '</div>'
+        + '<div class="actions">' + btn('', 'Back', 'back') + btn('btn-primary', 'Send invite link', 'next') + '</div>';
+    },
+    bJoin: function () {
+      return '<div class="email"><span style="font-size:12px;color:var(--n600)">Email to ' + esc(st.f.email) + '</span><span style="font-size:18px;font-weight:700">Aisha Karim started a fundraiser for you</span>'
+        + '<span style="font-size:14px;line-height:22px;color:var(--n700)">“' + esc(st.f.title) + '” has raised $12,400 so far. Create an account to claim it and receive the funds.</span>'
+        + '<span style="font-size:13px;font-weight:600;color:var(--brand-600)">[claim link]/hb-7Q2K</span></div>'
+        + head('Create your account', "Next you'll verify your identity. That sets up your personal organization.")
+        + input('email', 'Email', 'email') + input('pw', 'Password', 'password')
+        + '<div class="actions">' + btn('btn-tertiary', 'I have an account. Log in', 'next') + btn('btn-primary', 'Create account', 'next') + '</div>';
+    },
+    bKyc: function () {
+      return banner('success', 'We set up your personal organization', '“Bilal Rahman” is now linked to this campaign as the pending owner. Aisha joins it as a member so she can keep posting updates.')
+        + head('Verify your identity', 'Use the name and date of birth on your ID. Aisha entered them too, and both must match.')
+        + input('kycName', 'Full legal name')
+        + '<div class="grid2">' + input('kycDob', 'Date of birth', 'date') + input('country', 'Country') + '</div>'
+        + input('address', 'Home address')
+        + '<div class="upload"><div class="rec"><b>Photo ID</b><small>Passport, driver\'s license or national ID</small></div>' + btn('btn-sm', 'Upload ID') + '</div>'
+        + '<div class="actions">' + btn('', 'Back', 'back') + btn('btn-primary', 'Submit for verification', 'next') + '</div>';
+    },
+    bPayout: function () {
+      return '<div style="display:flex;flex-direction:column;gap:12px">' + badge('green', 'Identity approved', true)
+        + head('Where should donations go?', "This account belongs to your organization. It takes over the campaign's payouts once the transfer is approved.") + '</div>'
+        + input('holder', 'Account holder')
+        + '<div class="grid2">' + input('routing', 'Routing number') + input('acct', 'Account number') + '</div>'
+        + checkbox('ownAcct', 'This account is in my name')
+        + '<div class="actions">' + btn('', 'Back', 'back') + btn('btn-primary', 'Ready to take ownership', 'next', !st.c.ownAcct, 'payout-next') + '</div>';
+    },
+    aApprove: function () {
+      var rows = [
+        ['Legal name', st.f.inviteName, st.f.kycName, nameOk()],
+        ['Date of birth', st.f.inviteDob, st.f.kycDob, dobOk()]
+      ].map(function (r) { return '<div class="match"><b>' + esc(r[0]) + '</b><span>' + esc(r[1]) + '</span><span>' + esc(r[2]) + '</span>' + badge(r[3] ? 'green' : 'red', r[3] ? 'Match' : 'No match') + '</div>'; }).join('');
+      var changes = ["Bilal's personal organization becomes the campaign owner.", "You stay on as a member of Bilal's organization.", "Payouts go to Bilal's account ••7730."]
+        .map(function (t) { return '<div class="list-item">' + ARROW + '<span>' + esc(t) + '</span></div>'; }).join('');
+      return head('Bilal is ready. Approve the hand-off?', 'He verified his identity and added a payout account. Check his details match what you entered.')
+        + '<div class="box"><div class="match head"><span></span><span>You entered</span><span>Bilal\'s ID</span><span>Result</span></div>' + rows + '</div>'
+        + (mismatch() ? banner('error', "These details don't match", "Fix what you entered, or ask Bilal to correct his verification. You can't approve until both match.") : '')
+        + '<div style="display:flex;flex-direction:column;gap:10px"><b style="font-size:15px">When you approve</b>' + changes + '</div>'
+        + '<div class="actions">' + btn('', "Edit Bilal's details", 'edit-invite') + btn('btn-brand', 'Approve hand-off', 'next', mismatch()) + '</div>';
+    },
+    tns: function () {
+      var ready = st.c.t1 && st.c.t2 && st.c.t3;
+      return head('Ownership change after payout assigned', "Aisha asked to transfer this campaign to Bilal Rahman. Her account ••4821 is attached, so she can't invite him herself. This review is the only way to move ownership.", 'Trust & Safety queue · Case TS-20418')
+        + '<div class="grid3"><div class="stat"><small>Paid out to Aisha</small><b>$8,200</b></div><div class="stat"><small>Pending balance</small><b>$4,200</b></div><div class="stat"><small>Open disputes</small><b>0</b></div></div>'
+        + '<div style="display:flex;flex-direction:column;gap:8px">' + checkbox('t1', 'Reviewed payouts already sent to Aisha') + checkbox('t2', 'Confirmed Bilal is the beneficiary named in the story') + checkbox('t3', 'No refund or chargeback risk on the pending balance') + '</div>'
+        + '<div class="actions">' + btn('btn-danger', 'Reject') + btn('btn-brand', 'Approve ownership change', 'next', !ready, 'tns-next') + '</div>';
+    },
+    done: function () {
+      return (st.payoutA
+          ? banner('success', 'The campaign is yours, Bilal', 'Trust & Safety moved the campaign to your personal organization. Add a payout account to receive future donations.')
+          : banner('success', 'The campaign is yours, Bilal', 'The transfer is approved. Future payouts go to your account ••7730.'))
+        + '<h1>' + esc(st.f.title) + '</h1>'
+        + '<div class="box"><div class="row" style="font-size:13px;font-weight:600;color:var(--n600)">Bilal Rahman · personal organization</div>'
+        + '<div class="row"><b>Bilal Rahman</b>' + badge('inverse', 'Owner') + '</div><div class="row"><b>Aisha Karim</b>' + badge('neutral', 'Member') + '</div></div>'
+        + '<div class="actions">' + btn('', 'Run it again', 'reset') + btn('btn-primary', 'Go to campaign dashboard') + '</div>';
+    }
+  };
+
+  function renderSide() {
+    var done = st.step === 'done';
+    var payoutVal = done ? (st.payoutA ? 'None yet · Bilal to add his' : 'Bilal · account ••7730')
+      : (st.payoutA && reached('live') ? 'Aisha · account ••4821' : (reached('live') ? 'None yet · funds held' : 'None'));
+    var rec = [
+      ['Status', reached('live') ? 'Live' : (reached('kycA') ? 'Draft · awaiting KYC' : 'Draft')],
+      ['Owner', done ? 'Bilal Rahman · personal org' : 'Aisha Karim · personal org'],
+      ['Pending owner', reached('bKyc') && !done ? 'Bilal Rahman · personal org' : 'None'],
+      ['Campaign payout account', payoutVal],
+      ["Bilal's personal org", reached('bKyc') || done ? 'Owner: Bilal · Member: Aisha' : 'Not created yet'],
+      ["Bilal's payout account (on his org)", past('bPayout') ? 'Saved · ••7730' : 'Not added'],
+      ['Identity checks', (past('kycA') ? 'Aisha approved' : 'Aisha pending') + ' · ' + (past('bKyc') ? 'Bilal approved' : 'Bilal pending')]
+    ];
+    document.getElementById('record').innerHTML = rec.map(function (r) { return '<div class="rec"><small>' + esc(r[0]) + '</small><b>' + esc(r[1]) + '</b></div>'; }).join('');
+    var ap = st.payoutA ? [['Trust & Safety', past('tns')]] : [['Aisha (organizer)', past('aApprove')]];
+    document.getElementById('approvals').innerHTML = ap.map(function (a) { return '<div class="row" style="padding:0;border:0"><b>' + esc(a[0]) + '</b>' + badge(a[1] ? 'green' : 'neutral', a[1] ? 'Approved' : 'Waiting', true) + '</div>'; }).join('');
+    document.getElementById('rule').innerHTML = st.payoutA
+      ? '<div class="rule blocked"><p class="eyebrow" style="margin:0;color:inherit">Self-serve hand-off</p><b style="font-size:16px">Blocked</b><p>Aisha\'s payout account is attached, so she can\'t invite Bilal. Only a Trust &amp; Safety review can transfer the campaign.</p></div>'
+      : '<div class="rule ok"><p class="eyebrow" style="margin:0;color:inherit">Self-serve hand-off</p><b style="font-size:16px">Allowed with approvals</b><p>No payout account is attached. Ownership moves as soon as Aisha approves.</p></div>';
+  }
+
+  function render() {
+    var list = steps(), i = idx(), cur = list[i];
+    document.getElementById('steps').innerHTML = list.map(function (s, n) {
+      var cls = 'step' + (n < i ? ' done' : '');
+      return '<button type="button" class="' + cls + '" data-go="' + s.id + '"' + (n === i ? ' aria-current="step"' : '') + '><span class="dot">' + (n < i ? '✓' : (n + 1)) + '</span><span class="step-text"><span class="step-title">' + esc(s.title) + '</span><span class="step-actor">' + esc(s.actor) + '</span></span></button>';
+    }).join('');
+    document.getElementById('viewing').innerHTML = '<span>Viewing as</span>' + badge(BADGE[cur.actor], cur.actor, true) + '<span>Step ' + (i + 1) + ' of ' + list.length + '</span>';
+    document.getElementById('screen').innerHTML = SCREENS[cur.id]();
+    document.getElementById('seg-off').setAttribute('aria-pressed', String(!st.payoutA));
+    document.getElementById('seg-on').setAttribute('aria-pressed', String(st.payoutA));
+    renderSide();
+  }
+
+  function go(id) { st.step = id; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function setPayout(on) {
+    if (on && SKIP.indexOf(st.step) >= 0) st.step = 'live';
+    if (!on && st.step === 'tns') st.step = 'invite';
+    st.payoutA = on; render();
+  }
+
+  document.addEventListener('click', function (e) {
+    var g = e.target.closest('[data-go]');
+    if (g) { go(g.getAttribute('data-go')); return; }
+    var a = e.target.closest('[data-action]');
+    if (!a || a.disabled) return;
+    var list = steps(), i = idx();
+    switch (a.getAttribute('data-action')) {
+      case 'next': if (i < list.length - 1) go(list[i + 1].id); break;
+      case 'back': if (i > 0) go(list[i - 1].id); break;
+      case 'reset': fresh(); render(); break;
+      case 'payout-on': setPayout(true); break;
+      case 'payout-off': setPayout(false); break;
+      case 'for-self': st.forOther = false; render(); break;
+      case 'for-other': st.forOther = true; render(); break;
+      case 'edit-invite': go('invite'); break;
+    }
+  });
+  document.addEventListener('input', function (e) {
+    var k = e.target.getAttribute('data-field');
+    if (k) { st.f[k] = e.target.value; renderSide(); }
+  });
+  document.addEventListener('change', function (e) {
+    var k = e.target.getAttribute('data-check');
+    if (!k) return;
+    st.c[k] = e.target.checked;
+    var p = document.getElementById('payout-next'); if (p) p.disabled = !st.c.ownAcct;
+    var t = document.getElementById('tns-next'); if (t) t.disabled = !(st.c.t1 && st.c.t2 && st.c.t3);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
