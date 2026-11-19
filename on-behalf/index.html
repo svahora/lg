@@ -160,6 +160,22 @@
   .rule p { margin: 0; font-size: 13px; line-height: 20px; color: var(--n700); }
   .upload { border: 1px dashed var(--n300); border-radius: 8px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
+  /* Beneficiary name switch and the public fundraiser page */
+  .switch-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--n200); border-radius: 8px; cursor: pointer; }
+  .switch { appearance: none; -webkit-appearance: none; flex: none; position: relative; width: 44px; height: 26px; margin: 0; border-radius: 9999px; background: var(--n300); cursor: pointer; transition: background 150ms; }
+  .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 9999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform 150ms; }
+  .switch:checked { background: var(--brand-500); }
+  .switch:checked::after { transform: translateX(18px); }
+  .switch:focus-visible { outline: 3px solid var(--brand-50); outline-offset: 2px; }
+  .hero { height: 180px; border-radius: 12px; background: linear-gradient(135deg, #DCEFE2, #F5E9D7); display: flex; align-items: flex-end; padding: 12px; }
+  .hero span { font-size: 12px; font-weight: 600; color: var(--n600); background: rgba(255,255,255,0.8); border-radius: 9999px; padding: 2px 10px; }
+  .verified { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 8px; background: var(--brand-50); color: var(--brand-700); border: 1px solid #CDE8D5; }
+  .verified b { font-size: 15px; color: var(--brand-700); }
+  .verified span { font-size: 14px; line-height: 21px; color: var(--n700); }
+  .organizer { display: flex; gap: 12px; align-items: center; font-size: 15px; line-height: 22px; color: var(--n700); }
+  .organizer b { color: var(--n900); }
+  .avatar { flex: none; width: 40px; height: 40px; border-radius: 9999px; background: var(--blue-50); color: var(--blue-700); display: inline-grid; place-items: center; font-size: 13px; font-weight: 700; }
+
   /* Narrower screens: the admin view slides over the page as a drawer */
   @media (max-width: 1100px) {
     .layout, body.hide-admin .layout { grid-template-columns: 240px minmax(0, 1fr); }
@@ -247,12 +263,13 @@
     { id: 'bPayout', title: 'Bilal adds payout account', actor: 'Bilal · beneficiary' },
     { id: 'aApprove', title: 'Aisha approves hand-off', actor: 'Aisha · organizer' },
     { id: 'docs', title: "Attestation + Bilal's ID", actor: 'Aisha · organizer' },
-    { id: 'done', title: 'Bilal owns the campaign', actor: 'Bilal · beneficiary' }
+    { id: 'done', title: 'Bilal owns the campaign', actor: 'Bilal · beneficiary' },
+    { id: 'page', title: 'Fundraiser page', actor: 'Donor view' }
   ];
   // With Aisha's payout attached, ownership never moves: the flow ends on her own fundraiser
   var DONE_PAYOUT_A = { id: 'done', title: 'Aisha keeps the fundraiser', actor: 'Aisha · organizer' };
   var SKIP = ['invite', 'bJoin', 'bKyc', 'bPayout', 'aApprove'];
-  var BADGE = { 'Aisha · organizer': 'blue', 'Bilal · beneficiary': 'purple' };
+  var BADGE = { 'Aisha · organizer': 'blue', 'Bilal · beneficiary': 'purple', 'Donor view': 'indigo' };
   var FORM = {
     title: "Help Bilal's family rebuild after the house fire", goal: '30,000',
     inviteName: 'Bilal Rahman', inviteDob: '1994-03-12', email: 'bilal@example.com', pw: 'password1',
@@ -260,13 +277,13 @@
     holder: 'Bilal Rahman', routing: '•••••0021', acct: '•••••7730'
   };
   var st;
-  function fresh() { st = { step: 'create', payoutA: false, forOther: true, f: Object.assign({}, FORM), c: { ownAcct: true }, up: { att: false, bid: false } }; }
+  function fresh() { st = { step: 'create', payoutA: false, forOther: true, f: Object.assign({}, FORM), c: { ownAcct: true, showBen: true }, up: { att: false, bid: false } }; }
   fresh();
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]; }); }
   function norm(s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
   function steps() {
-    if (!st.payoutA) return ALL.filter(function (s) { return s.id !== 'docs'; });
+    if (!st.payoutA) return ALL.filter(function (s) { return s.id !== 'docs' && s.id !== 'page'; });
     return ALL.filter(function (s) { return SKIP.indexOf(s.id) < 0; }).map(function (s) { return s.id === 'done' ? DONE_PAYOUT_A : s; });
   }
   function docsIn() { return st.up.att && st.up.bid; }
@@ -369,6 +386,21 @@
         + upload('bid', "Bilal's ID", "Passport, driver's license or national ID. The name must match the one in your story.")
         + '<div class="actions">' + btn('', 'Back', 'back') + btn('btn-brand', 'Submit documents', 'next', !docsIn()) + '</div>';
     },
+    page: function () {
+      var ben = st.c.showBen;
+      var SHIELD = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex:none"><path fill-rule="evenodd" d="M12.516 2.17a.75.75 0 0 0-1.032 0 11.209 11.209 0 0 1-7.877 3.08.75.75 0 0 0-.722.515A12.74 12.74 0 0 0 2.25 9.75c0 5.942 4.064 10.933 9.563 12.348a.749.749 0 0 0 .374 0c5.499-1.415 9.563-6.406 9.563-12.348 0-1.39-.223-2.73-.635-3.985a.75.75 0 0 0-.722-.516l-.143.001c-2.996 0-5.717-1.17-7.734-3.08Zm3.094 8.016a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clip-rule="evenodd"/></svg>';
+      return '<div class="hero" role="img" aria-label="Fundraiser cover photo"><span>Cover photo</span></div>'
+        + '<h1>' + esc(st.f.title) + '</h1>'
+        + '<div class="verified">' + SHIELD + '<div class="rec"><b>Verified beneficiary</b><span>' + (ben
+            ? 'Fundraising confirmed this fundraiser is for Bilal Rahman. We checked a signed attestation and his ID.'
+            : 'Fundraising confirmed who this fundraiser is for. We checked a signed attestation and the beneficiary\'s ID.') + '</span></div></div>'
+        + '<div class="organizer"><span class="avatar" aria-hidden="true">AK</span><span><b>Aisha Karim</b> is organizing this fundraiser' + (ben ? ' on behalf of <b>Bilal Rahman</b>' : '') + '.</span></div>'
+        + '<div style="display:flex;flex-direction:column;gap:8px"><div class="progress" role="progressbar" aria-valuenow="41" aria-valuemin="0" aria-valuemax="100" aria-label="Funded"><span style="width:41%"></span></div>'
+        + '<p style="margin:0;font-size:15px;color:var(--n600)"><strong style="color:var(--n900)">$12,400</strong> raised of $' + esc(st.f.goal) + ' · 86 donors</p></div>'
+        + '<p style="margin:0;font-size:15px;line-height:24px;color:var(--n700)">A fire destroyed ' + (ben ? "Bilal's" : 'the family\'s') + ' home in March. Donations cover temporary housing, clothing and rebuilding costs.</p>'
+        + '<div class="actions">' + btn('', 'Back', 'back') + btn('btn-brand', 'Donate now') + '</div>'
+        + '<div class="actions" style="justify-content:center">' + btn('btn-tertiary btn-sm', 'Run it again', 'reset') + '</div>';
+    },
     done: function () {
       if (st.payoutA) {
         return banner('success', 'Documents received', "Your fundraiser stays live and keeps paying out to your account ••4821. The attestation and Bilal's ID are on file.")
@@ -376,7 +408,11 @@
           + '<div class="box"><div class="row" style="font-size:13px;font-weight:600;color:var(--n600)">Aisha Karim · personal organization</div>'
           + '<div class="row"><b>Aisha Karim</b>' + badge('inverse', 'Owner') + '</div>'
           + '<div class="row"><span><b>Bilal Rahman</b><br><small style="color:var(--n600)">Beneficiary · attestation and ID on file</small></span>' + badge('purple', 'Beneficiary') + '</div></div>'
-          + '<div class="actions">' + btn('', 'Run it again', 'reset') + btn('btn-primary', 'Go to fundraiser dashboard') + '</div>';
+          + '<label class="switch-row"><span class="rec"><b>Show Bilal\'s name on the fundraiser page</b><small>' + (st.c.showBen
+              ? 'Donors see "Organized by Aisha Karim on behalf of Bilal Rahman".'
+              : 'Donors see "Organized by Aisha Karim" and a verified beneficiary, without his name.') + '</small></span>'
+          + '<input type="checkbox" role="switch" class="switch" data-check="showBen"' + (st.c.showBen ? ' checked' : '') + '></label>'
+          + '<div class="actions">' + btn('', 'Back', 'back') + btn('btn-primary', 'View fundraiser page', 'next') + '</div>';
       }
       return banner('success', 'The campaign is yours, Bilal', 'The transfer is approved. Future payouts go to your account ••7730.')
         + '<h1>' + esc(st.f.title) + '</h1>'
@@ -396,6 +432,8 @@
       ['Pending owner', 'None · ownership stays with Aisha'],
       ['Campaign payout account', payoutVal],
       ['Beneficiary', 'Bilal Rahman · no account'],
+      ['Beneficiary verified', docsIn() && past('docs') ? 'Yes · attestation and ID' : 'Not yet'],
+      ['Name on fundraiser page', st.c.showBen ? 'Shown' : 'Hidden'],
       ['Identity checks', past('kycA') ? 'Aisha approved' : 'Aisha pending']
     ] : [
       ['Status', reached('live') ? 'Live' : (reached('kycA') ? 'Draft · awaiting KYC' : 'Draft')],
@@ -462,6 +500,7 @@
   function setPayout(on) {
     if (on && SKIP.indexOf(st.step) >= 0) st.step = 'live';
     if (!on && st.step === 'docs') st.step = 'invite';
+    if (!on && st.step === 'page') st.step = 'done';
     st.payoutA = on; render();
   }
 
@@ -498,6 +537,7 @@
     var k = e.target.getAttribute('data-check');
     if (!k) return;
     st.c[k] = e.target.checked;
+    if (k === 'showBen') { render(); var s = document.querySelector('[data-check="showBen"]'); if (s) s.focus(); return; }
     var p = document.getElementById('payout-next'); if (p) p.disabled = !st.c.ownAcct;
   });
 
