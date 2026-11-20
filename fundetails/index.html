@@ -264,6 +264,7 @@ svg.i.sm{width:20px;height:20px}
 .dotk{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--brand-500);margin-right:6px}.dotk.pend{background:var(--brand-100);border:1px solid var(--brand-500)}
 .bsrc{padding:10px 0;border-bottom:1px solid var(--border-subtle)}.bsrc:last-child{border-bottom:0}.bsrc .lbl{display:flex;justify-content:space-between;gap:8px;font-size:14px;line-height:20px}.bsrc .lbl span{color:var(--text-secondary);text-align:right}.bsrc .prog{margin:6px 0}.bsrc .btn{margin-top:6px}
 .step .badge.bst{margin-top:4px;align-self:flex-start}
+textarea.crQ{min-height:112px;resize:vertical;font-size:16px;line-height:24px}
 .crFirst{border:1px solid var(--border-subtle);border-radius:var(--radius-2xl);padding:16px;background:#fff}.crFirstH{font-size:20px;line-height:28px;margin-bottom:10px}
 .ramban.plain{background:var(--neutral-100);color:var(--text-primary)}
 @media (max-width:860px){.body{flex-direction:column;align-items:center}.flist{width:100%;max-width:390px}.fscroll{max-height:420px}}
@@ -549,8 +550,8 @@ function create(){const c=S.cr;const steps=CR_STEPS;const doneN=steps.filter(k=>
  // story
  const sBody=c.story?`<div class="crStory">${c.story}</div>${c.storyCoach?'<p class="note">Highlighted words are yours.</p>':''}`:'';
  const Qs=['Who does this help?','What will the money buy?','Why does it matter now?'];
- const sEd=c.myself?`<textarea class="input" id="cr-story" rows="6" placeholder="Tell donors what’s happening and how their donation helps"></textarea><div class="acts"><button class="btn primary sm" data-act="crStoryOwn">Save story</button></div>`
-  :c.qi<3?coachBox(`${c.done.story?'Let’s rework your story.':'Salam Soheb. Let’s start with your story, because the rest of your page builds on it.'} Three quick questions, then I’ll draft it in your words. <b>${c.qi+1} of 3:</b> ${Qs[c.qi]}`,'')+`<input class="input" id="cr-q" value="${c.qs[c.qi]}" aria-label="${Qs[c.qi]}"><div class="acts"><button class="btn primary sm" data-act="crQ">${c.qi<2?'Next':'Draft my story'}</button></div>`
+ const sEd=c.myself?`<textarea class="input crQ" id="cr-story" rows="10" placeholder="Tell donors what’s happening and how their donation helps"></textarea><div class="acts"><button class="btn primary sm" data-act="crStoryOwn">Save story</button></div>`
+  :c.qi<3?coachBox(`${c.done.story?'Let’s rework your story.':'Salam Soheb. Let’s start with your story, because the rest of your page builds on it.'} Three quick questions, then I’ll draft it in your words. <b>${c.qi+1} of 3:</b> ${Qs[c.qi]}`,'')+`<textarea class="input crQ" id="cr-q" rows="4" aria-label="${Qs[c.qi]}">${c.qs[c.qi]}</textarea><div class="acts"><button class="btn primary sm" data-act="crQ">${c.qi<2?'Next':'Draft my story'}</button></div>`
   :coachBox('Here’s your story. I only used what you told me, and the highlighted words are yours. Change anything that doesn’t sound like you.',`<button class="btn primary sm" data-act="crStoryUse">Use this</button><button class="btn secondary sm" data-act="crStoryShort">Make it shorter</button><button class="btn tertiary sm" data-act="crStoryEdit">Edit myself</button>`);
  // offerings
  const OFF=[['One blanket',25],['A family winter kit',120],['A heater and fuel',300]];
