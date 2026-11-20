@@ -943,7 +943,7 @@ function render(){if(S.route==='create'&&S.crScroll){S.crScroll=false;setTimeout
  const ns=app.querySelector('.scroll');if(ns&&S.keepScroll)ns.scrollTop=top;S.keepScroll=false;
  const sb=app.querySelector('.sheet .sb');if(sb&&S.sheet==='coach')sb.scrollTop=sb.scrollHeight;
  document.querySelectorAll('[data-c]').forEach(b=>{const v=b.dataset.c==='staff'?String(+S.staff):S[b.dataset.c];b.setAttribute('aria-pressed',String(b.dataset.v===v));});}
-let tt;function toast(t){S.toast=t;clearTimeout(tt);tt=setTimeout(()=>{S.toast=null;render();},2600);}
+let tt;function toast(t){S.toast=t;clearTimeout(tt);tt=setTimeout(()=>{S.toast=null;S.keepScroll=true;render();},2600);}
 function go(r){const al={donations:'supporters/donors','grow/reach':'supporters/reach','donations/thanks':'supporters/thank'};if(al[r])r=al[r];if(r.startsWith('supporters:')){const f=r.split(':')[1];if(f==='reach'||f==='messaged'){S.sFilter=f;r='supporters/reach';}else r=f==='thank'?'supporters/thank':'supporters/donors';}S.route=r;S.sheet=null;render();}
 function ask(q){S.chat.push({w:'u',t:q});
  if(/climb/i.test(q)){S.chat.push({w:'a',t:'You’re #7 in Most raised tonight, $340 USD behind Masjid Al-Noor Food Drive. The last 10 nights reward momentum, so two things help most:<br>1. Message the 3 people close to you who haven’t heard from you yet (<button class="link" data-go="supporters:reach">Supporters</button>).<br>2. Post a short update after Taraweeh: “We’re #7 tonight, help us reach the top 5, inshaAllah.” <button class="link" data-act="update">Post update</button>'});}
@@ -987,7 +987,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-go],[data-
  if(t.dataset.send!=null){S.reach[+t.dataset.send].sent='Sent today';S.keepScroll=true;toast('Marked as sent. WhatsApp would open here.');render();return;}
  if(t.dataset.board){S.board=t.dataset.board;S.keepScroll=true;render();return;}
  if(t.dataset.crgo){S.cr.step=t.dataset.crgo;if(S.cr.step==='story'&&!S.cr.myself)S.cr.qi=3;S.crScroll=true;render();return;}
- if(t.dataset.crimg){S.cr.img=t.dataset.crimg==='upload'?'emergency':t.dataset.crimg;if(t.dataset.crimg==='upload')toast('Photo added');crNext();render();return;}
+ if(t.dataset.crimg){S.cr.img=t.dataset.crimg==='upload'?'emergency':t.dataset.crimg;crNext();render();return;}
  if(t.dataset.crgoal){S.cr.goal=+t.dataset.crgoal;S.keepScroll=true;render();return;}
  if(t.dataset.crzakat){S.cr.zakat=t.dataset.crzakat;S.keepScroll=true;render();return;}
  if(t.dataset.finfo){S.fopen=S.fopen===t.dataset.finfo?null:t.dataset.finfo;render();return;}
