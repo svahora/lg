@@ -1,8 +1,8 @@
-# Dashboard revamp
+# FunDetails
 
-A phone-first workspace for running one fundraiser. Home leads with a coach's next steps and a grid of six areas (Page, Supporters, Money, Grow, Insights, Team). The coach helps create the fundraiser on the page itself, suggests donation options from the story, and drafts messages and thank-yous in the owner's words.
+A phone-first workspace for running one fundraiser, opened from the dashboard (the list of all your fundraisers). Home leads with a coach's next steps and a grid of six areas (Page, Supporters, Money, Grow, Insights, Team). The coach helps create the fundraiser on the page itself, suggests donation options from the story, and drafts messages and thank-yous in the owner's words.
 
-Live: https://svahora.github.io/lg/dashboard-revamp/
+Live: https://svahora.github.io/lg/fundetails/
 
 What to try:
 - **Scope:** Today shows only what exists now. Must, Should and Could add features by priority. The feature list jumps to each one and explains it.
