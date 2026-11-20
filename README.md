@@ -9,6 +9,7 @@ Clickable product prototypes, one folder each. Served at https://svahora.github.
 | [dash-restructure](dash-restructure/) | A dashboard that lists every fundraiser a user created or helps run, whatever account it pays out to. | https://svahora.github.io/lg/dash-restructure/ |
 | [on-behalf](on-behalf/) | Fundraising on behalf of someone else: the organizer launches the campaign, then hands ownership to the beneficiary after identity checks and approvals. | https://svahora.github.io/lg/on-behalf/ |
 | [self-serve-ads](self-serve-ads/) | Self-serve ads approved by account: promote any fundraiser, seasonal packages, limited Gold and Silver tiers, and the admin review queue. | https://svahora.github.io/lg/self-serve-ads/ |
+| [dashboard-revamp](dashboard-revamp/) | A phone-first fundraiser workspace led by a coach: next steps on Home, creation on the page itself, suggested donation options, reach out and thank-yous. | https://svahora.github.io/lg/dashboard-revamp/ |
 
 ## Adding a prototype
 
