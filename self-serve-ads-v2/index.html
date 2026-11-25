@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-Serve Ads v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand-50: #EDF7F0; --brand-500: #4AA567; --brand-600: #3C8653; --brand-700: #2C633D;
+    --n0: #FFFFFF; --n50: #FAFAFA; --n100: #F5F5F5; --n200: #E5E5E5; --n300: #D4D4D4;
+    --n400: #A3A3A3; --n500: #737373; --n600: #525252; --n700: #404040; --n900: #171717; --n950: #0A0A0A;
+    --green-50: #F0FDF4; --green-700: #15803D;
+    --blue-50: #EFF6FF; --blue-700: #1D4ED8;
+    --amber-50: #FFFBEB; --amber-700: #B45309; --amber-800: #92400E;
+    --red-50: #FEF2F2; --red-700: #B91C1C;
+    --purple-50: #FAF5FF; --purple-700: #7E22CE;
+    --gold: #A16207; --gold-50: #FEFCE8;
+    --eng: #1E3A8A; --eng-50: #EEF2FF;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--n50); color: var(--n900); font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; font-size: 14px; line-height: 20px; }
+  button, select, input { font: inherit; color: inherit; }
+  button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--n900); outline-offset: 2px; }
+  .icon { width: 20px; height: 20px; flex: none; }
+  .icon-sm { width: 16px; height: 16px; flex: none; }
+  h1 { margin: 0; font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.01em; }
+  h2 { margin: 0; font-size: 18px; line-height: 26px; font-weight: 700; }
+  h3 { margin: 0; font-size: 16px; font-weight: 700; }
+  p { margin: 0; }
+  .muted { color: var(--n600); }
+  .small { font-size: 12px; line-height: 16px; }
+
+  /* Scenario bar */
+  .scenario { position: sticky; top: 0; z-index: 30; background: var(--n900); color: #fff; padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+  .scenario .label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--n400); }
+  .scenario label.f { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--n300); }
+  .scenario select { background: #262626; color: #fff; border: 1px solid #404040; border-radius: 9999px; padding: 6px 10px; min-height: 36px; font-weight: 600; }
+  .seg { display: inline-flex; background: #262626; border-radius: 9999px; padding: 3px; }
+  .seg button { border: 0; background: none; color: var(--n300); font-weight: 600; padding: 6px 14px; border-radius: 9999px; cursor: pointer; min-height: 32px; }
+  .seg button[aria-pressed="true"] { background: #fff; color: var(--n900); }
+  .scenario .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--n300); cursor: pointer; }
+  .scenario .toggle input { width: 16px; height: 16px; accent-color: #818CF8; }
+  .scenario .spacer { flex: 1; }
+  .scenario .reset { background: none; border: 1px solid #404040; color: var(--n300); border-radius: 9999px; padding: 6px 12px; cursor: pointer; }
+
+  /* Creator site */
+  .site-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 24px; background: var(--n0); border-bottom: 1px solid var(--n200); flex-wrap: wrap; }
+  .brand { display: inline-flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 800; letter-spacing: -0.025em; }
+  .brand-mark { width: 28px; height: 28px; border-radius: 9999px; background: var(--brand-500); display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+  .steps { display: flex; gap: 6px; overflow-x: auto; padding: 12px 24px; background: var(--n0); border-bottom: 1px solid var(--n200); }
+  .step { white-space: nowrap; border: 1px solid var(--n300); background: var(--n0); border-radius: 9999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--n700); }
+  .step[aria-current="step"] { background: var(--n900); border-color: var(--n900); color: #fff; }
+  .step .n { display: inline-block; min-width: 16px; color: var(--n400); }
+  .step[aria-current="step"] .n { color: var(--n400); }
+  .page { max-width: 1120px; margin: 0 auto; padding: 28px 16px 64px; display: flex; flex-direction: column; gap: 20px; }
+  .two { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .two > .main { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .two > .side { flex: 1 1 300px; display: flex; flex-direction: column; gap: 12px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 18px; border-radius: 9999px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid var(--n300); background: var(--n0); color: var(--n900); white-space: nowrap; }
+  .btn:hover { background: var(--n100); }
+  .btn-primary { background: var(--n900); border-color: var(--n900); color: #fff; }
+  .btn-primary:hover { background: #262626; }
+  .btn-brand { background: var(--brand-600); border-color: var(--brand-600); color: #fff; }
+  .btn-brand:hover { background: var(--brand-700); }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+  .btn-sm { min-height: 34px; padding: 6px 14px; font-size: 13px; }
+  .link { background: none; border: 0; padding: 0; color: var(--n900); font-weight: 600; text-decoration: underline; cursor: pointer; }
+
+  .card { background: var(--n0); border: 1px solid var(--n200); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; line-height: 20px; white-space: nowrap; }
+  .b-green { background: var(--green-50); color: var(--green-700); }
+  .b-neutral { background: var(--n100); color: var(--n700); }
+  .b-blue { background: var(--blue-50); color: var(--blue-700); }
+  .b-amber { background: var(--amber-50); color: var(--amber-700); }
+  .b-red { background: var(--red-50); color: var(--red-700); }
+  .b-gold { background: var(--gold-50); color: var(--gold); }
+  .b-purple { background: var(--purple-50); color: var(--purple-700); }
+  .banner { display: flex; gap: 12px; padding: 16px; border-radius: 8px; align-items: flex-start; flex-wrap: wrap; }
+  .banner .body { flex: 1 1 260px; }
+  .banner-title { font-weight: 700; }
+  .banner.blue { background: var(--blue-50); color: var(--blue-700); }
+  .banner.green { background: var(--brand-50); color: var(--brand-700); }
+  .banner.amber { background: var(--amber-50); color: var(--amber-800); }
+  .banner.neutral { background: var(--n100); color: var(--n700); }
+  .banner .body p { color: var(--n700); margin-top: 2px; }
+
+  .bar { height: 6px; border-radius: 9999px; background: var(--n200); overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--brand-500); }
+
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 20px; padding: 18px 20px; background: var(--n0); border: 1px solid var(--n200); border-radius: 8px; }
+  .row-main { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .row-title { font-size: 17px; line-height: 24px; font-weight: 700; }
+  .row-stats { flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; }
+  .row-act { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .choice { display: flex; flex-direction: column; gap: 10px; }
+  .opt { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px solid var(--n300); border-radius: 8px; background: var(--n0); cursor: pointer; text-align: left; width: 100%; }
+  .opt[aria-pressed="true"] { border-color: var(--n900); box-shadow: 0 0 0 1px var(--n900); }
+  .input { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--n300); border-radius: 8px; background: var(--n0); }
+  .field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+  .field .hint { font-weight: 400; color: var(--n500); font-size: 12px; }
+
+  .hero { border-radius: 12px; overflow: hidden; background: var(--n0); border: 1px solid var(--n200); }
+  .hero-img { height: 180px; background: linear-gradient(135deg, #2C633D 0%, #4AA567 55%, #A7D7B5 100%); position: relative; }
+  .hero-img svg { position: absolute; right: 24px; bottom: 16px; opacity: .35; }
+  .hero-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .owner-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: var(--n900); color: #fff; border-radius: 8px; }
+  .owner-bar .t { flex: 1 1 220px; }
+  .owner-bar .btn { border-color: #fff; }
+
+  .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .tier { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 18px; background: var(--n0); border: 1px solid var(--n200); border-radius: 10px; text-align: left; cursor: pointer; }
+  .tier[aria-pressed="true"] { border-color: var(--n900); box-shadow: 0 0 0 1px var(--n900); }
+  .tier.off { cursor: default; background: var(--n50); }
+  .tier .name { font-size: 16px; font-weight: 800; }
+  .tier .price { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .tier ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--n700); }
+  .tier li { display: flex; gap: 6px; }
+  .tier li svg { color: var(--brand-600); margin-top: 2px; }
+  .tier .note { font-size: 12px; font-weight: 600; padding: 8px 10px; border-radius: 6px; }
+  .note.amber { background: var(--amber-50); color: var(--amber-800); }
+  .note.neutral { background: var(--n100); color: var(--n700); }
+  .note.red { background: var(--red-50); color: var(--red-700); }
+  .slots { display: flex; gap: 3px; }
+  .slots i { width: 10px; height: 10px; border-radius: 2px; background: var(--gold); }
+  .slots i.used { background: var(--n200); }
+  .season-head { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; padding: 20px; border-radius: 10px; color: #fff; }
+  .season-head .t { flex: 1 1 260px; display: flex; flex-direction: column; gap: 4px; }
+  .season-head.standard { background: linear-gradient(120deg, #262626, #525252); }
+  .season-head.winter { background: linear-gradient(120deg, #1E3A8A, #3B82F6); }
+  .season-head.ramadan { background: linear-gradient(120deg, #312E81, #7C3AED 60%, #A16207); }
+  .season-head .pill { background: rgba(255,255,255,.18); padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 13px; }
+
+  .line { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--n200); }
+  .line:first-child { border-top: 0; }
+  .line strong { font-weight: 700; }
+  .done-icon { width: 48px; height: 48px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; }
+
+  .email { max-width: 640px; border: 1px solid var(--n200); border-radius: 10px; background: var(--n0); overflow: hidden; }
+  .email-meta { padding: 14px 20px; border-bottom: 1px solid var(--n200); background: var(--n50); font-size: 13px; color: var(--n600); display: flex; flex-direction: column; gap: 2px; }
+  .email-body { padding: 24px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* Engineering notes */
+  .eng { display: none; border: 1px solid #C7D2FE; background: var(--eng-50); color: var(--eng); border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 19px; }
+  body.show-eng .eng { display: block; }
+  .eng .h { font-weight: 800; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; display: flex; gap: 6px; align-items: center; }
+  .eng ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+  .eng b { color: #172554; }
+  .eng .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin-top: 8px; }
+  .eng .o { background: #fff; border: 1px solid #C7D2FE; border-radius: 6px; padding: 10px; }
+
+  /* Admin */
+  .admin { display: flex; min-height: calc(100vh - 56px); }
+  .sidebar { width: 256px; flex: none; background: var(--n950); color: #fff; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 20px; }
+  .sidebar .logo { height: 64px; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; padding: 0 8px; }
+  .sidebar .grp { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar .gname { display: flex; align-items: center; gap: 10px; padding: 8px; font-size: 14px; font-weight: 600; color: var(--n400); }
+  .sidebar .item { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 38px; border-radius: 6px; font-size: 14px; color: var(--n400); background: none; border: 0; text-align: left; cursor: pointer; width: 100%; }
+  .sidebar .item:hover { background: rgba(255,255,255,.05); color: #fff; }
+  .sidebar .item[aria-current="page"] { background: rgba(255,255,255,.08); color: #fff; font-weight: 600; }
+  .sidebar .item.dim { cursor: default; }
+  .sidebar .new { margin-left: auto; font-size: 11px; font-weight: 700; color: #A5B4FC; background: rgba(129,140,248,.15); padding: 1px 8px; border-radius: 9999px; }
+  .sidebar .count { margin-left: auto; font-size: 11px; color: var(--n400); background: rgba(255,255,255,.08); padding: 1px 8px; border-radius: 9999px; }
+  .admin-main { flex: 1; min-width: 0; padding: 32px; display: flex; flex-direction: column; gap: 20px; }
+  .admin-main h1 { font-size: 26px; }
+  .tbl-wrap { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.05); outline: 1px solid rgba(0,0,0,.05); overflow-x: auto; }
+  table { width: 100%; min-width: 880px; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-weight: 600; color: var(--n900); background: var(--n50); padding: 12px; white-space: nowrap; font-size: 13px; }
+  td { padding: 12px; border-top: 1px solid var(--n100); vertical-align: top; color: var(--n700); }
+  td.strong { color: var(--n900); font-weight: 600; }
+  td .sub { font-size: 12px; color: var(--n500); }
+  .tag { display: inline-flex; align-items: center; border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 500; white-space: nowrap; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+  .t-gray { background: var(--n50); color: var(--n600); }
+  .t-green { background: var(--green-50); color: var(--green-700); }
+  .t-yellow { background: #FEFCE8; color: #854D0E; }
+  .t-red { background: var(--red-50); color: var(--red-700); }
+  .t-blue { background: var(--blue-50); color: var(--blue-700); }
+  .t-purple { background: var(--purple-50); color: var(--purple-700); }
+  .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .abtn { border: 1px solid var(--n300); background: #fff; border-radius: 6px; padding: 5px 10px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .abtn:hover { background: var(--n50); }
+  .abtn.dark { background: var(--n900); color: #fff; border-color: var(--n900); }
+  .abtn.dark:hover { background: #262626; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .stat { background: #fff; border-radius: 8px; padding: 16px; outline: 1px solid rgba(0,0,0,.05); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  .stat .k { font-size: 13px; color: var(--n500); }
+  .stat .v { font-size: 24px; font-weight: 700; margin-top: 4px; color: var(--n900); }
+  .stepper { display: inline-flex; align-items: center; gap: 6px; }
+  .stepper button { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--n300); background: #fff; cursor: pointer; font-weight: 700; }
+  .roas-hi { color: var(--green-700); font-weight: 700; }
+  .roas-lo { color: var(--red-700); font-weight: 700; }
+  .empty { padding: 28px; text-align: center; color: var(--n500); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--n900); color: #fff; padding: 10px 18px; border-radius: 9999px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.2); z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+
+  @media (max-width: 860px) {
+    .admin { flex-direction: column; }
+    .sidebar { width: auto; padding-bottom: 12px; gap: 8px; }
+    .sidebar .logo { height: 48px; }
+    .sidebar .grp.hide-m { display: none; }
+    .admin-main { padding: 20px 16px; }
+    .row-act { align-items: flex-start; }
+  }
+  /* v2 additions */
+  .req { display: none; }
+  body.show-req .req { display: flex; }
+  body.show-req .req.block { display: block; }
+  .req-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--purple-700); background: var(--purple-50); border: 1px dashed #C084FC; padding: 2px 8px; border-radius: 9999px; }
+  .req-box { border: 1px dashed #C084FC; border-radius: 10px; padding: 16px; background: #FDFAFF; flex-direction: column; gap: 10px; }
+  .switch { position: relative; width: 40px; height: 22px; border-radius: 9999px; background: var(--n300); border: 0; cursor: pointer; flex: none; }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .switch[aria-checked="true"] { background: var(--brand-600); }
+  .switch[aria-checked="true"]::after { left: 21px; }
+  .seasons { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .scard { text-align: left; border: 1px solid var(--n200); background: #fff; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+  .scard[aria-pressed="true"] { border-color: var(--n900); box-shadow: 0 0 0 1px var(--n900); }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tabs button { border: 1px solid var(--n300); background: #fff; border-radius: 9999px; padding: 6px 14px; font-weight: 600; cursor: pointer; }
+  .tabs button[aria-pressed="true"] { background: var(--n900); border-color: var(--n900); color: #fff; }
+  textarea.input { min-height: 84px; resize: vertical; font-family: inherit; }
+  .addbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; background: #fff; padding: 16px; border-radius: 8px; outline: 1px solid rgba(0,0,0,.05); }
+  .addbar .field { flex: 1 1 260px; }
+  .open-q { display: none; border: 1px solid #FCA5A5; background: var(--red-50); color: var(--red-700); border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 19px; }
+  body.show-eng .open-q { display: block; }
+  .open-q b { color: #7F1D1D; }
+  .paym { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  /* event log */
+  .evlog { position: fixed; right: 16px; bottom: 16px; width: min(380px, calc(100vw - 32px)); max-height: 46vh; background: var(--n950); color: #E5E5E5; border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.3); z-index: 40; display: none; flex-direction: column; overflow: hidden; font-size: 12px; }
+  body.show-ev .evlog { display: flex; }
+  .evlog .hd { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #262626; font-weight: 700; }
+  .evlog .hd span { flex: 1; }
+  .evlog .hd button { background: none; border: 1px solid #404040; color: #D4D4D4; border-radius: 6px; padding: 2px 8px; cursor: pointer; font-size: 12px; }
+  .evlog ol { margin: 0; padding: 8px 12px 12px; list-style: none; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .evlog li { border-left: 3px solid #4AA567; padding-left: 8px; }
+  .evlog li.adm { border-color: #818CF8; }
+  .evlog code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #fff; font-size: 12px; }
+  .evlog .props { color: #A3A3A3; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; word-break: break-word; }
+  .evlog .empty { color: #737373; padding: 8px 0; }
+  @media (max-width: 640px) { .scenario { gap: 8px 12px; } .scenario label.f select { max-width: 200px; } .page { padding-top: 20px; } .tier .price { font-size: 22px; } }
+</style>
+</head>
+<body>
+<div class="scenario" role="region" aria-label="Prototype controls">
+  <span class="label">Prototype</span>
+  <div class="seg" role="group" aria-label="View">
+    <button type="button" data-view="creator" aria-pressed="true">Creator</button>
+    <button type="button" data-view="admin" aria-pressed="false">Admin</button>
+  </div>
+  <label class="f" for="who">Creator's fundraiser
+    <select id="who"></select>
+  </label>
+  <label class="toggle" for="reqToggle"><input type="checkbox" id="reqToggle"> Requested, not committed</label>
+  <label class="toggle" for="engToggle"><input type="checkbox" id="engToggle"> Engineering notes</label>
+  <label class="toggle" for="evToggle"><input type="checkbox" id="evToggle"> Data events</label>
+  <span class="spacer"></span>
+  <button type="button" class="reset" id="reset">Reset</button>
+</div>
+<div id="app"></div>
+<aside class="evlog" aria-label="Data events">
+  <div class="hd"><span>Data events</span><button type="button" id="evClear">Clear</button></div>
+  <ol id="evlist"><li class="empty" style="border:0">Click around. Each action logs the event it would send, with the shared IDs.</li></ol>
+</aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const esc = v => String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const money = n => '$' + n.toLocaleString('en-US');
+  const ICON = {
+    mega: 'M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535',
+    check: 'M4.5 12.75l6 6 9-13.5', heart: 'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z',
+    clock: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z', info: 'M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z'
+  };
+  const ic = (n, c = 'icon') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[n]}"/></svg>`;
+
+  const SEASONS = {
+    standard: { name: 'Standard', blurb: '14-day blocks, all year', start: 'Dec 16' },
+    winter: { name: 'Winter', blurb: 'Winter appeals block', start: 'Dec 2' },
+    ramadan: { name: 'Ramadan', blurb: 'The 30 nights', start: 'Feb 8' },
+    dhul: { name: 'Dhul Hijjah', blurb: 'First ten days and Qurbani', start: 'May 18' }
+  };
+  const FUND = {
+    'F-20418': { title: 'Winter Coats for Refugee Families', acct: 'A-3102', org: 'Hope Relief Fund', raised: 18400, goal: 40000 },
+    'F-20733': { title: 'Masjid Roof Repair', acct: 'A-1877', org: 'Northside Community Center', raised: 9200, goal: 25000 },
+    'F-21005': { title: 'Clean Water Wells', acct: 'A-2290', org: 'Wells of Mercy', raised: 31000, goal: 50000 },
+    'F-21140': { title: 'Orphan Sponsorship Drive', acct: 'A-3311', org: 'Bright Futures', raised: 4100, goal: 20000 }
+  };
+  const WHO = [
+    ['F-20418', 'On the seasonal list (Ads team added)'],
+    ['F-20733', 'Auto-added from an approved account'],
+    ['F-21005', 'On the test list'],
+    ['F-21140', 'Not on any list']
+  ];
+
+  let S;
+  function fresh() {
+    S = {
+      view: 'creator', who: 'F-20418', step: 'page', live: 'winter', adminTab: 'lists', listTab: 'seasonal', invTab: 'winter',
+      pkg: null, method: 'card', video: '', headline: '', contact: '',
+      packages: [
+        { id: 'w-basic', season: 'winter', name: 'Basic', price: 250, days: 14, slots: 40, sold: 12, on: true, perks: ['Homepage rotation', 'Weekly email mention'] },
+        { id: 'w-bronze', season: 'winter', name: 'Bronze', price: 500, days: 14, slots: 25, sold: 9, on: true, perks: ['Category page feature', 'Homepage rotation', 'Social post'] },
+        { id: 'w-silver', season: 'winter', name: 'Silver', price: 1000, days: 14, slots: 13, sold: 10, on: true, perks: ['Homepage hero', 'Email feature', 'Optional video'] },
+        { id: 'w-gold', season: 'winter', name: 'Gold', price: 2500, days: 14, slots: 9, sold: 9, on: true, perks: ['Top homepage hero', 'Dedicated email', 'Optional video'] },
+        { id: 's-basic', season: 'standard', name: 'Basic', price: 150, days: 14, slots: 40, sold: 4, on: true, perks: ['Homepage rotation'] },
+        { id: 's-bronze', season: 'standard', name: 'Bronze', price: 350, days: 14, slots: 25, sold: 2, on: true, perks: ['Category page feature', 'Homepage rotation'] },
+        { id: 's-silver', season: 'standard', name: 'Silver', price: 750, days: 14, slots: 13, sold: 1, on: true, perks: ['Homepage hero', 'Optional video'] },
+        { id: 's-gold', season: 'standard', name: 'Gold', price: 1800, days: 14, slots: 9, sold: 0, on: false, perks: ['Top homepage hero', 'Optional video'] },
+        { id: 'r-bronze', season: 'ramadan', name: 'Bronze', price: 900, days: 30, slots: 40, sold: 0, on: true, perks: ['Ramadan page feature'] },
+        { id: 'r-silver', season: 'ramadan', name: 'Silver', price: 2200, days: 30, slots: 20, sold: 0, on: true, perks: ['Ramadan hero', 'Optional video'] },
+        { id: 'r-gold', season: 'ramadan', name: 'Gold', price: 5000, days: 30, slots: 10, sold: 0, on: true, perks: ['Last ten nights hero', 'Optional video'] },
+        { id: 'd-bronze', season: 'dhul', name: 'Bronze', price: 600, days: 10, slots: 30, sold: 0, on: true, perks: ['Qurbani page feature'] },
+        { id: 'd-silver', season: 'dhul', name: 'Silver', price: 1400, days: 10, slots: 15, sold: 0, on: true, perks: ['Homepage hero', 'Optional video'] },
+        { id: 't-spot', season: 'test', name: '7-day Spotlight', price: 200, days: 7, slots: 15, sold: 3, on: true, perks: ['Homepage rotation for 7 days'] },
+        { id: 't-news', season: 'test', name: 'Newsletter feature', price: 400, days: 7, slots: 10, sold: 1, on: true, perks: ['Feature in one donor newsletter'] }
+      ],
+      list: [
+        { fid: 'F-20418', list: 'seasonal', source: 'ads', by: 'Sara (Ads team)', at: 'Nov 20', review: '', status: 'Not purchased' },
+        { fid: 'F-20733', list: 'seasonal', source: 'auto', by: 'Auto-added', at: 'Nov 24', review: 'pending', status: 'Not purchased' },
+        { fid: 'F-21005', list: 'test', source: 'ads', by: 'Omar (Ads team)', at: 'Nov 18', review: '', status: 'Not purchased' }
+      ],
+      accounts: [
+        { aid: 'A-1877', org: 'Northside Community Center', by: 'Lina (Compliance)', at: 'Nov 21', trial: false },
+        { aid: 'A-2550', org: 'Riverbend Relief', by: 'Lina (Compliance)', at: 'Nov 22', trial: true }
+      ],
+      autoSeq: 0
+    };
+  }
+  fresh();
+
+  // ---------- events ----------
+  const evs = [];
+  function ev(name, extra = {}, admin = false) {
+    const f = FUND[S.who] || {};
+    const entry = S.list.find(x => x.fid === S.who);
+    const base = admin ? {} : { fundraiser_id: S.who, account_id: f.acct, season: entry && entry.list === 'test' ? 'test' : S.live, list: entry ? entry.list : 'none', entry_point: S.entry || 'fundraiser_page_banner' };
+    evs.unshift({ name, props: { ...base, ...extra }, admin });
+    renderEv();
+  }
+  function renderEv() {
+    const ol = $('#evlist');
+    if (!evs.length) { ol.innerHTML = '<li class="empty" style="border:0">Click around. Each action logs the event it would send, with the shared IDs.</li>'; return; }
+    ol.innerHTML = evs.slice(0, 40).map(e => `<li class="${e.admin ? 'adm' : ''}"><code>${esc(e.name)}</code><div class="props">${esc(Object.entries(e.props).map(([k, v]) => `${k}: ${v}`).join(' · '))}</div></li>`).join('');
+  }
+  $('#evClear').onclick = () => { evs.length = 0; renderEv(); };
+
+  function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2200); }
+  const eng = (title, items) => `<div class="eng"><div class="h">Engineering</div><b>${esc(title)}</b><ul>${items.map(i => `<li>${i}</li>`).join('')}</ul></div>`;
+  const openQ = (q) => `<div class="open-q"><b>Open question.</b> ${q}</div>`;
+
+  // ---------- helpers ----------
+  const entryFor = fid => S.list.find(x => x.fid === fid && x.review !== 'rejected');
+  const pkgsFor = season => S.packages.filter(p => p.season === season);
+  const left = p => Math.max(0, p.slots - p.sold);
+
+  // ---------- creator ----------
+  const STEPS = [['page', 'Fundraiser'], ['packages', 'Package'], ['details', 'Details'], ['pay', 'Payment'], ['done', 'Done']];
+  function creator() {
+    const f = FUND[S.who], entry = entryFor(S.who);
+    const steps = entry ? `<nav class="steps" aria-label="Steps">${STEPS.map(([k, n], i) => `<button type="button" class="step" data-step="${k}" ${S.step === k ? 'aria-current="step"' : ''}><span class="n">${i + 1}</span> ${n}</button>`).join('')}</nav>` : '';
+    let body = '';
+    if (S.step === 'page' || !entry) body = pageView(f, entry);
+    else if (S.step === 'packages') body = packagesView(f, entry);
+    else if (S.step === 'details') body = detailsView(f, entry);
+    else if (S.step === 'pay') body = payView(f, entry);
+    else body = doneView(f, entry);
+    return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span class="muted small">Signed in as ${esc(f.org)}</span></header>${steps}<main class="page">${body}</main>`;
+  }
+
+  function pageView(f, entry) {
+    const pct = Math.round(f.raised / f.goal * 100);
+    const banner = entry ? `<div class="banner green"><span>${ic('mega')}</span><div class="body"><div class="banner-title">Reach more donors this ${entry.list === 'test' ? 'week' : SEASONS[S.live].name + ' season'}</div><p>Feature this fundraiser on the homepage and in donor emails. Pick a package and pay to book your spot.</p></div><button type="button" class="btn btn-brand" data-act="start" data-entry="fundraiser_page_banner">See packages</button></div>` : '';
+    const notOn = !entry ? `<div class="banner neutral"><span>${ic('info')}</span><div class="body"><div class="banner-title">No ad offer shown</div><p>This fundraiser isn't on a seasonal or test list, so it never sees an entry point.</p></div></div>` : '';
+    const reqDash = `<div class="req req-box"><span class="req-tag">Requested Nov 19, not committed</span><b>Creator dashboard: your fundraisers</b><div class="row" style="padding:12px 14px"><div class="row-main"><span class="row-title" style="font-size:15px">${esc(f.title)}</span><span class="muted small">${money(f.raised)} raised</span></div><div class="row-act"><button type="button" class="btn btn-sm" data-act="start" data-entry="dashboard_promote" ${entry ? '' : 'disabled'}>Promote</button></div></div></div>`;
+    if (entry && !S._viewed) { S._viewed = true; setTimeout(() => ev('ads_entry_point_viewed', { entry_point: 'fundraiser_page_banner' }), 0); }
+    return `
+      <div class="owner-bar"><span class="t"><b>You're viewing your fundraiser.</b> Donors don't see the ad offer.</span></div>
+      ${banner}${notOn}
+      ${entry && entry.source === 'auto' && entry.review === 'pending' ? openQ('This fundraiser was auto-added from an approved account and Compliance hasn\'t reviewed it yet. The creator can still buy. What happens if Compliance rejects it after payment? A live ad can\'t be cancelled or refunded.') : ''}
+      <div class="hero"><div class="hero-img"></div><div class="hero-body"><h1>${esc(f.title)}</h1><p class="muted">by ${esc(f.org)}</p><div class="bar"><span style="width:${pct}%"></span></div><p><b>${money(f.raised)}</b> <span class="muted">raised of ${money(f.goal)}</span></p></div></div>
+      ${reqDash}
+      ${eng('Entry points', ['Only fundraisers on the seasonal or test list see the banner. Others see nothing.', 'Fires <code>ads_entry_point_viewed</code> and <code>ads_entry_point_clicked</code> with the shared IDs.', 'Dashboard Promote is a request from Nov 19 and not committed.'])}`;
+  }
+
+  function packagesView(f, entry) {
+    const isTest = entry.list === 'test';
+    const season = isTest ? 'test' : S.live;
+    const visible = pkgsFor(season).filter(p => p.on);
+    const head = isTest
+      ? `<div class="season-head standard"><div class="t"><span class="pill" style="align-self:flex-start">Test</span><h2 style="color:#fff">Try a new package</h2><p style="opacity:.85">You've been picked to try a package we're testing.</p></div></div>`
+      : `<div class="season-head ${S.live === 'winter' ? 'winter' : S.live === 'ramadan' ? 'ramadan' : 'standard'}"><div class="t"><span class="pill" style="align-self:flex-start">${SEASONS[S.live].name}</span><h2 style="color:#fff">${SEASONS[S.live].blurb}</h2><p style="opacity:.85">Next block starts ${SEASONS[S.live].start}.</p></div></div>`;
+    const tiers = visible.map(p => {
+      const out = left(p) === 0;
+      if (out && !p._seen) { p._seen = true; setTimeout(() => ev('ads_sold_out_seen', { package: p.id }), 0); }
+      const roi = `<div class="req req-box" style="padding:8px 10px;gap:2px"><span class="req-tag" style="align-self:flex-start">Requested</span><span class="small"><b>2x expected:</b> for ${money(p.price)}, expect ${money(p.price * 2)} or more</span></div>`;
+      return `<button type="button" class="tier ${out ? 'off' : ''}" data-pkg="${p.id}" aria-pressed="${S.pkg === p.id}" ${out ? 'aria-disabled="true"' : ''}>
+        <span class="name">${esc(p.name)}</span><span class="price">${money(p.price)}</span><span class="muted small">${p.days} days</span>
+        <ul>${p.perks.map(x => `<li>${ic('check', 'icon-sm')}${esc(x)}</li>`).join('')}</ul>
+        ${out ? '<span class="note red">Sold out</span>' : left(p) <= 3 ? `<span class="note amber">${left(p)} left</span>` : ''}
+        ${roi}</button>`;
+    }).join('');
+    return `${head}
+      <div class="tiers">${tiers || '<div class="card">No packages are switched on for this season.</div>'}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-step="page">Back</button><button type="button" class="btn btn-primary" data-act="toDetails" ${S.pkg ? '' : 'disabled'}>Continue</button></div>
+      ${eng('Packages', ['Shows only packages the Ads team switched on for the live season (or test packages for the test list).', 'Sold out when sold reaches slots. Slots are set by hand in the admin.', 'Fires <code>ads_package_viewed</code>, <code>ads_package_selected</code>, <code>ads_sold_out_seen</code>.'])}
+      ${openQ('ROI display as a multiplier and in dollars is requested, not committed. Which multiplier applies to each package?')}`;
+  }
+
+  function detailsView(f, entry) {
+    const p = S.packages.find(x => x.id === S.pkg);
+    const videoOk = /Silver|Gold/.test(p.name);
+    return `<div class="two"><div class="main"><div class="card">
+        <h2>About your ad</h2>
+        <div class="req req-box" style="padding:10px 12px"><span class="req-tag" style="align-self:flex-start">Requested Nov 19, not committed</span><span class="small">Prefill: fundraiser, organization and contact filled in from what we already know.</span></div>
+        <label class="field" for="fContact">Contact email<input class="input" id="fContact" type="email" placeholder="you@example.org" value="${esc(S.contact)}"></label>
+        <label class="field" for="fHead">Headline for the ad<span class="hint">Up to 60 characters</span><input class="input" id="fHead" maxlength="60" placeholder="Keep a family warm this winter" value="${esc(S.headline)}"></label>
+        ${videoOk ? `<label class="field" for="fVideo">Video link <span class="hint">Optional for Silver and Gold</span><input class="input" id="fVideo" placeholder="https://" value="${esc(S.video)}"></label>` : ''}
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-step="packages">Back</button><button type="button" class="btn btn-primary" data-act="toPay">Continue to payment</button></div>
+      ${eng('Application', ['Fires <code>ads_application_started</code> on first field and <code>ads_application_submitted</code> on continue.', 'Application time = entry point viewed to submitted. Measure the baseline before setting a target.'])}
+      </div>${summary(f, p)}</div>`;
+  }
+
+  function summary(f, p) {
+    return `<aside class="side"><div class="card"><h3>Summary</h3>
+      <div><div class="line"><span class="muted">Fundraiser</span><strong>${esc(f.title)}</strong></div>
+      <div class="line"><span class="muted">Package</span><strong>${esc(p.name)}, ${p.days} days</strong></div>
+      <div class="line"><span class="muted">Starts</span><strong>${p.season === 'test' ? 'Next Monday' : SEASONS[p.season].start}</strong></div>
+      <div class="line"><span class="muted">Total</span><strong>${money(p.price)}</strong></div></div></div></aside>`;
+  }
+
+  function payView(f, entry) {
+    const p = S.packages.find(x => x.id === S.pkg);
+    return `<div class="two"><div class="main"><div class="card"><h2>Payment</h2>
+      <p class="muted">Your ad is booked once payment goes through. Nothing is featured before it's paid.</p>
+      <div class="paym">
+        <button type="button" class="opt" data-method="card" aria-pressed="${S.method === 'card'}"><div><b>Credit card</b><p class="muted small">Booked right away</p></div></button>
+        <button type="button" class="opt" data-method="bank" aria-pressed="${S.method === 'bank'}"><div><b>Bank payment</b><p class="muted small">Booked when the payment clears</p></div></button>
+      </div>
+      ${S.method === 'card' ? `<div class="grid2"><label class="field" for="cNum">Card number<input class="input" id="cNum" inputmode="numeric" placeholder="4242 4242 4242 4242"></label><label class="field" for="cExp">Expiry<input class="input" id="cExp" placeholder="MM / YY"></label></div>` : `<div class="banner neutral"><div class="body"><div class="banner-title">Pay from your bank</div><p>We'll show your bank details on the next screen. Your spot is held while the payment clears.</p></div></div>`}
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-step="details">Back</button><button type="button" class="btn btn-brand" data-act="pay">Pay ${money(p.price)}</button></div>
+      ${eng('Payment', ['Credit card and bank payment write the same payment record with fundraiser ID, account ID, package, season and list, so revenue needs no matching in the CRM.', 'Fires <code>ads_payment_started</code> and <code>ads_payment_completed</code> with the method.'])}
+      ${openQ('Bank payments can take days to clear. Does the ad wait, and is the slot held meanwhile?')}
+      </div>${summary(f, p)}</div>`;
+  }
+
+  function doneView(f, entry) {
+    const p = S.packages.find(x => x.id === S.pkg);
+    const bank = S.method === 'bank';
+    const pending = entry && entry.source === 'auto' && entry.review === 'pending';
+    return `<div class="card" style="align-items:flex-start">
+      <span class="done-icon" style="background:${bank ? 'var(--amber-50)' : 'var(--brand-50)'};color:${bank ? 'var(--amber-700)' : 'var(--brand-700)'}">${ic(bank ? 'clock' : 'check')}</span>
+      <h1>${bank ? 'Waiting for your bank payment' : 'You\'re booked'}</h1>
+      <p class="muted">${bank ? 'We\'ll confirm your spot once the payment clears.' : `Your ${esc(p.name)} ad for <b>${esc(f.title)}</b> starts ${p.season === 'test' ? 'next Monday' : SEASONS[p.season].start}.`}</p>
+      <button type="button" class="btn" data-act="restart">Back to fundraiser</button></div>
+      ${pending ? openQ('Compliance is still reviewing this auto-added fundraiser. If it rejects it now, what happens to the payment? A live ad can\'t be cancelled or refunded.') : ''}
+      <div class="card"><b>After purchase</b><span class="small">A one-question satisfaction survey (CSAT) appears here. Performance updates and credits follow the block, as today.</span></div>`;
+  }
+
+  // ---------- admin ----------
+  const NAV = [['lists', 'Fundraiser lists'], ['review', 'Compliance review'], ['accounts', 'Approved accounts'], ['inventory', 'Package inventory'], ['season', 'Live season']];
+  function admin() {
+    const pending = S.list.filter(x => x.review === 'pending').length;
+    const nav = NAV.map(([k, n]) => `<button type="button" class="item" data-tab="${k}" ${S.adminTab === k ? 'aria-current="page"' : ''}>${n}${k === 'review' && pending ? `<span class="count">${pending}</span>` : ''}</button>`).join('');
+    const main = { lists: listsView, review: reviewView, accounts: accountsView, inventory: inventoryView, season: seasonView }[S.adminTab]();
+    return `<div class="admin"><nav class="sidebar" aria-label="Admin"><div class="logo"><span class="brand-mark" style="width:24px;height:24px">${ic('heart', 'icon-sm')}</span> Admin</div><div class="grp"><div class="gname">Ads</div>${nav}</div></nav><main class="admin-main">${main}</main></div>`;
+  }
+
+  function listsView() {
+    const rows = S.list.filter(x => x.list === S.listTab).map(x => {
+      const f = FUND[x.fid] || { title: 'Unknown fundraiser', org: '', acct: '' };
+      const src = x.source === 'auto' ? '<span class="tag t-blue">Auto-added</span>' : x.source === 'trial' ? '<span class="tag t-purple">Trial graduate</span>' : '<span class="tag t-gray">Ads team</span>';
+      const rev = x.source !== 'auto' ? '<span class="sub">Not needed</span>' : x.review === 'pending' ? '<span class="tag t-yellow">Waiting for review</span>' : x.review === 'approved' ? '<span class="tag t-green">Approved</span>' : '<span class="tag t-red">Rejected</span>';
+      return `<tr><td class="strong">${esc(f.title)}<div class="sub">${esc(x.fid)} · ${esc(f.org)}</div></td><td>${src}</td><td>${esc(x.by)}<div class="sub">${esc(x.at)}</div></td><td>${rev}</td><td>${esc(x.status)}</td><td><div class="acts"><button type="button" class="abtn" data-remove="${x.fid}">Remove</button></div></td></tr>`;
+    }).join('');
+    return `<div><h1>Fundraiser lists</h1><p class="muted">Only fundraisers on a list see the ad entry points. The Ads team runs this page; no engineering needed.</p></div>
+      <div class="tabs" role="group" aria-label="List"><button type="button" data-ltab="seasonal" aria-pressed="${S.listTab === 'seasonal'}">Seasonal (${SEASONS[S.live].name})</button><button type="button" data-ltab="test" aria-pressed="${S.listTab === 'test'}">Test</button></div>
+      <div class="addbar"><label class="field" for="addIds">Add fundraiser IDs<span class="hint">Paste one or many, separated by commas or new lines</span><textarea class="input" id="addIds" placeholder="F-21140"></textarea></label><button type="button" class="btn btn-primary" data-act="addIds">Add to ${S.listTab === 'test' ? 'test' : 'seasonal'} list</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Fundraiser</th><th>Source</th><th>Added</th><th>Compliance</th><th>Purchase</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="empty">No fundraisers on this list yet.</td></tr>'}</tbody></table></div>
+      ${eng('Fundraiser lists', ['Replaces the spreadsheet and the automation that syncs it.', 'One table with a list column (seasonal or test), source (Ads team, auto-added, trial graduate), who added it and when.', 'Fires <code>ads_list_fundraiser_added</code> and <code>ads_list_fundraiser_removed</code>.'])}`;
+  }
+
+  function reviewView() {
+    const q = S.list.filter(x => x.source === 'auto');
+    const rows = q.map(x => {
+      const f = FUND[x.fid];
+      const st = x.review === 'pending' ? `<div class="acts"><button type="button" class="abtn dark" data-review="${x.fid}" data-to="approved">Approve</button><button type="button" class="abtn" data-review="${x.fid}" data-to="rejected">Reject</button></div>` : x.review === 'approved' ? '<span class="tag t-green">Approved</span>' : '<span class="tag t-red">Rejected</span>';
+      return `<tr><td class="strong">${esc(f.title)}<div class="sub">${esc(x.fid)}</div></td><td>${esc(f.org)}<div class="sub">${esc(f.acct)}</div></td><td>${esc(x.at)}</td><td>${esc(x.status)}</td><td>${st}</td></tr>`;
+    }).join('');
+    return `<div><h1>Compliance review</h1><p class="muted">New fundraisers from approved accounts are added to the seasonal list automatically. Review each one here, in parallel with the creator applying.</p></div>
+      ${openQ('What happens if Compliance rejects a fundraiser after the creator has paid? A live ad can\'t be cancelled or refunded. Does go-live wait for Compliance, how long does Compliance have before the block starts, and how are the cancellation, refund and slot handled?')}
+      <div class="tbl-wrap"><table><thead><tr><th>Fundraiser</th><th>Account</th><th>Added</th><th>Purchase</th><th>Decision</th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="empty">Nothing waiting.</td></tr>'}</tbody></table></div>
+      ${eng('Compliance review', ['Queue of auto-added fundraisers with their purchase status.', 'Fires <code>ads_compliance_decision</code> with the decision.'])}`;
+  }
+
+  function accountsView() {
+    const rows = S.accounts.map(a => `<tr><td class="strong">${esc(a.org)}<div class="sub">${esc(a.aid)}</div></td><td>${a.trial ? '<span class="tag t-purple">1-week trial graduate</span>' : '<span class="tag t-gray">Standard</span>'}</td><td>${esc(a.by)}<div class="sub">${esc(a.at)}</div></td><td><div class="acts"><button type="button" class="abtn" data-newfr="${a.aid}">Simulate: account creates a fundraiser</button></div></td></tr>`).join('');
+    return `<div><h1>Approved accounts</h1><p class="muted">Compliance approves accounts, not each fundraiser. Every new fundraiser from these accounts joins the seasonal list automatically.</p></div>
+      <div class="addbar"><label class="field" for="accId">Account ID<input class="input" id="accId" placeholder="A-3311"></label><label class="toggle" for="accTrial" style="color:var(--n700);font-weight:600"><input type="checkbox" id="accTrial"> Did well in the 1-week trial</label><button type="button" class="btn btn-primary" data-act="addAcc">Approve account</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Account</th><th>Type</th><th>Approved by</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      ${eng('Auto-add', ['When an approved account creates a fundraiser, add it to the seasonal list with source "auto-added" and review "waiting".', 'Trial graduates join case by case, approved by Compliance.', 'Fires <code>ads_fundraiser_auto_added</code>.'])}`;
+  }
+
+  function inventoryView() {
+    const tabs = [...Object.entries(SEASONS).map(([k, v]) => [k, v.name]), ['test', 'Test']];
+    const rows = pkgsFor(S.invTab).map(p => `<tr><td class="strong">${esc(p.name)}<div class="sub">${p.days} days</div></td><td>${money(p.price)}</td>
+      <td><span class="stepper"><button type="button" data-slot="${p.id}" data-d="-1" aria-label="Fewer slots">−</button><b>${p.slots}</b><button type="button" data-slot="${p.id}" data-d="1" aria-label="More slots">+</button></span></td>
+      <td>${p.sold}</td><td>${left(p) === 0 ? '<span class="tag t-red">Sold out</span>' : left(p)}</td>
+      <td><button type="button" class="switch" role="switch" aria-checked="${p.on}" data-toggle="${p.id}" aria-label="Show ${esc(p.name)} at checkout"></button></td></tr>`).join('');
+    return `<div><h1>Package inventory</h1><p class="muted">Set price, length and slots per package, and switch packages on or off at checkout. Slot counting is manual for now.</p></div>
+      <div class="tabs" role="group" aria-label="Season">${tabs.map(([k, n]) => `<button type="button" data-itab="${k}" aria-pressed="${S.invTab === k}">${n}${k === S.live ? ' · live' : ''}</button>`).join('')}</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Package</th><th>Price</th><th>Slots</th><th>Sold</th><th>Left</th><th>Show at checkout</th></tr></thead><tbody>${rows}</tbody></table></div>
+      ${eng('Package inventory', ['Each package: name, season, price, duration, slots, and a show or hide switch.', 'Checkout reads only switched-on packages for the live season, or test packages for the test list.', 'Fires <code>ads_package_visibility_changed</code> and <code>ads_package_slots_changed</code>.'])}`;
+  }
+
+  function seasonView() {
+    return `<div><h1>Live season</h1><p class="muted">Picks which season's packages checkout shows. Only one season is live at a time.</p></div>
+      <div class="seasons">${Object.entries(SEASONS).map(([k, v]) => `<button type="button" class="scard" data-season="${k}" aria-pressed="${S.live === k}"><b>${v.name}</b><span class="muted small">${v.blurb}. Block starts ${v.start}.</span>${S.live === k ? '<span class="tag t-green" style="align-self:flex-start">Live</span>' : ''}</button>`).join('')}</div>
+      ${openQ('Confirm with the Ads team that two seasons never need to be live at once.')}
+      ${eng('Live season setting', ['One admin setting. Switching it changes the seasonal checkout for every fundraiser on the seasonal list.', 'Fires <code>ads_live_season_changed</code>.'])}`;
+  }
+
+  // ---------- render + actions ----------
+  function render() {
+    document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view)));
+    $('#who').innerHTML = WHO.map(([id, n]) => `<option value="${id}" ${S.who === id ? 'selected' : ''}>${n}</option>`).join('');
+    $('#app').innerHTML = S.view === 'creator' ? creator() : admin();
+  }
+
+  document.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    const d = t.dataset;
+    if (d.view) { S.view = d.view; render(); return; }
+    if (d.step && !t.closest('.scenario')) { S.step = d.step; render(); return; }
+    if (d.act === 'start') { S.entry = d.entry; ev('ads_entry_point_clicked', { entry_point: d.entry }); S.step = 'packages'; render(); return; }
+    if (d.pkg) { if (t.getAttribute('aria-disabled') === 'true') return; S.pkg = d.pkg; ev('ads_package_selected', { package: d.pkg }); render(); return; }
+    if (d.act === 'toDetails') { S.step = 'details'; ev('ads_application_started', { package: S.pkg }); render(); return; }
+    if (d.act === 'toPay') { S.contact = ($('#fContact') || {}).value || ''; S.headline = ($('#fHead') || {}).value || ''; S.video = ($('#fVideo') || {}).value || ''; ev('ads_application_submitted', { package: S.pkg }); S.step = 'pay'; render(); return; }
+    if (d.method) { S.method = d.method; render(); return; }
+    if (d.act === 'pay') {
+      const p = S.packages.find(x => x.id === S.pkg);
+      ev('ads_payment_started', { package: p.id, method: S.method });
+      if (S.method === 'card') { p.sold = Math.min(p.slots, p.sold + 1); ev('ads_payment_completed', { package: p.id, method: 'card', amount: p.price }); }
+      const en = entryFor(S.who); if (en) en.status = S.method === 'card' ? `Paid, ${p.name}` : `Bank payment pending, ${p.name}`;
+      S.step = 'done'; render(); return;
+    }
+    if (d.act === 'restart') { S.step = 'page'; S.pkg = null; S._viewed = false; render(); return; }
+    if (d.tab) { S.adminTab = d.tab; render(); return; }
+    if (d.ltab) { S.listTab = d.ltab; render(); return; }
+    if (d.itab) { S.invTab = d.itab; render(); return; }
+    if (d.act === 'addIds') {
+      const ids = ($('#addIds').value || '').split(/[\s,]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
+      let n = 0;
+      ids.forEach(id => { if (!S.list.some(x => x.fid === id && x.list === S.listTab)) { S.list.push({ fid: id, list: S.listTab, source: 'ads', by: 'You (Ads team)', at: 'Today', review: '', status: 'Not purchased' }); n++; ev('ads_list_fundraiser_added', { fundraiser_id: id, list: S.listTab, source: 'ads_team' }, true); } });
+      toast(n ? `Added ${n} to the ${S.listTab} list` : 'Nothing new to add'); render(); return;
+    }
+    if (d.remove) { S.list = S.list.filter(x => !(x.fid === d.remove && x.list === S.listTab)); ev('ads_list_fundraiser_removed', { fundraiser_id: d.remove, list: S.listTab }, true); toast('Removed'); render(); return; }
+    if (d.review) { const x = S.list.find(y => y.fid === d.review && y.source === 'auto'); x.review = d.to; ev('ads_compliance_decision', { fundraiser_id: x.fid, account_id: FUND[x.fid].acct, decision: d.to, purchase: x.status }, true); toast(d.to === 'approved' ? 'Approved' : 'Rejected and removed from the list'); render(); return; }
+    if (d.act === 'addAcc') { const id = ($('#accId').value || '').trim().toUpperCase(); if (!id) { toast('Enter an account ID'); return; } const known = Object.values(FUND).find(f => f.acct === id); S.accounts.push({ aid: id, org: known ? known.org : 'New account', by: 'You (Compliance)', at: 'Today', trial: $('#accTrial').checked }); ev('ads_account_approved', { account_id: id, trial_graduate: $('#accTrial').checked }, true); toast('Account approved'); render(); return; }
+    if (d.newfr) {
+      const a = S.accounts.find(x => x.aid === d.newfr); S.autoSeq++;
+      const fid = 'F-2' + (2000 + S.autoSeq);
+      FUND[fid] = { title: 'New fundraiser ' + S.autoSeq, acct: a.aid, org: a.org, raised: 0, goal: 10000 };
+      S.list.push({ fid, list: 'seasonal', source: 'auto', by: 'Auto-added', at: 'Just now', review: 'pending', status: 'Not purchased' });
+      ev('ads_fundraiser_auto_added', { fundraiser_id: fid, account_id: a.aid, list: 'seasonal' }, true);
+      toast(`${fid} added to the seasonal list, waiting for Compliance`); render(); return;
+    }
+    if (d.slot) { const p = S.packages.find(x => x.id === d.slot); p.slots = Math.max(p.sold, p.slots + +d.d); ev('ads_package_slots_changed', { package: p.id, slots: p.slots }, true); render(); return; }
+    if (d.toggle) { const p = S.packages.find(x => x.id === d.toggle); p.on = !p.on; ev('ads_package_visibility_changed', { package: p.id, shown: p.on }, true); toast(`${p.name} ${p.on ? 'shown' : 'hidden'} at checkout`); render(); return; }
+    if (d.season) { if (S.live !== d.season) { S.live = d.season; S.invTab = d.season; ev('ads_live_season_changed', { season: d.season }, true); toast(`${SEASONS[d.season].name} is now live`); } render(); return; }
+  });
+
+  $('#who').addEventListener('change', e => { S.who = e.target.value; S.step = 'page'; S.pkg = null; S._viewed = false; S.view = 'creator'; render(); });
+  $('#reqToggle').addEventListener('change', e => document.body.classList.toggle('show-req', e.target.checked));
+  $('#engToggle').addEventListener('change', e => document.body.classList.toggle('show-eng', e.target.checked));
+  $('#evToggle').addEventListener('change', e => document.body.classList.toggle('show-ev', e.target.checked));
+  $('#reset').addEventListener('click', () => { fresh(); evs.length = 0; renderEv(); render(); toast('Reset'); });
+  render();
+})();
+</script>
+</body>
+</html>
