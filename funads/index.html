@@ -226,6 +226,11 @@
   textarea.input { min-height: 84px; resize: vertical; font-family: inherit; }
   .addbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; background: #fff; padding: 16px; border-radius: 8px; outline: 1px solid rgba(0,0,0,.05); }
   .addbar .field { flex: 1 1 260px; }
+  .adprev { border: 1px solid var(--n200); border-radius: 10px; overflow: hidden; max-width: 420px; background: #fff; }
+  .adprev-img { height: 120px; background: linear-gradient(135deg, #2C633D 0%, #4AA567 55%, #A7D7B5 100%); position: relative; }
+  .adprev-pill { position: absolute; left: 12px; top: 12px; background: rgba(255,255,255,.92); color: var(--n900); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; }
+  .adprev-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .adprev-body b { font-size: 16px; line-height: 22px; }
   .open-q { display: none; border: 1px solid #FCA5A5; background: var(--red-50); color: var(--red-700); border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 19px; }
   body.show-eng .open-q { display: block; }
   .open-q b { color: #7F1D1D; }
@@ -456,11 +461,13 @@
         <div class="req req-box" style="padding:10px 12px"><span class="req-tag" style="align-self:flex-start">Requested Nov 19, not committed</span><span class="small">Prefill: fundraiser, organization and contact filled in from what we already know.</span></div>
         <label class="field" for="fContact">Contact email<input class="input" id="fContact" type="email" placeholder="you@example.org" value="${esc(S.contact)}"></label>
         <label class="field" for="fHead">Headline for the ad<span class="hint">Up to 60 characters</span><input class="input" id="fHead" maxlength="60" placeholder="Keep a family warm this winter" value="${esc(S.headline)}"></label>
-        ${p.name === 'Bronze' ? `<label class="field" for="fAsset">Image for your ad <span class="hint">Optional</span><input class="input" id="fAsset" type="file" accept="image/*"></label>` : ''}
         ${videoOk ? `<label class="field" for="fVideo">Video link <span class="hint">Optional for Silver and Gold</span><input class="input" id="fVideo" placeholder="https://" value="${esc(S.video)}"></label>` : ''}
       </div>
+      <div class="card"><h3>Preview</h3><p class="muted small">We make the ad from your fundraiser. You don't need to upload anything.</p>
+        <div class="adprev"><div class="adprev-img"><span class="adprev-pill">Featured fundraiser</span></div><div class="adprev-body"><b id="pvHead">${esc(S.headline || f.title)}</b><span class="muted small">${esc(f.title)} · by ${esc(f.org)}</span><div class="bar"><span style="width:${Math.round(f.raised / f.goal * 100)}%"></span></div><span class="small"><b>${money(f.raised)}</b> raised of ${money(f.goal)}</span><span class="btn btn-brand btn-sm" style="align-self:flex-start;pointer-events:none">Donate</span></div></div>
+        <p class="muted small">Shown in: ${esc(p.perks.filter(x => !/video/i.test(x)).join(', '))}.</p></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-step="packages">Back</button><button type="button" class="btn btn-primary" data-act="toPay">Continue to payment</button></div>
-      ${eng('Application', ['Fires <code>ads_application_started</code> on first field and <code>ads_application_submitted</code> on continue.', 'Application time = entry point viewed to submitted. Measure the baseline before setting a target.'])}
+      ${eng('Application', ['Fires <code>ads_application_started</code> on first field and <code>ads_application_submitted</code> on continue.', 'Application time = entry point viewed to submitted. Measure the baseline before setting a target.', 'The preview is built from the fundraiser\'s existing title, cover, organization and progress, plus the headline. No image upload.'])}
       </div>${summary(f, p)}</div>`;
   }
 
@@ -671,6 +678,7 @@
     if (d.sales) { const x = S.sets.find(y => y.id === d.sales); x.open = !x.open; ev(x.open ? 'ads_season_sales_opened' : 'ads_season_sales_closed', { set: x.id }, true); toast(`${x.name} sales ${x.open ? 'open' : 'closed'}`); render(); return; }
   });
 
+  document.addEventListener('input', e => { if (e.target.id === 'fHead') { const el = $('#pvHead'); if (el) el.textContent = e.target.value || FUND[S.who].title; } });
   $('#who').addEventListener('change', e => { S.who = e.target.value; S.step = 'page'; S.pkg = null; S._viewed = false; S.bell = false; S.read = false; S.view = 'creator'; render(); });
   $('#reqToggle').addEventListener('change', e => document.body.classList.toggle('show-req', e.target.checked));
   $('#engToggle').addEventListener('change', e => document.body.classList.toggle('show-eng', e.target.checked));

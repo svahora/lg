@@ -6,7 +6,7 @@ Live: https://svahora.github.io/lg/funads/
 
 What to try:
 - **Creator's fundraiser:** switch between a fundraiser on the seasonal list, one auto-added from an approved account, one on the test list, and one on no list (no offer shown).
-- **Buy an ad:** See packages, pick one (Gold is sold out), add details, pay by card or bank. The masjid fundraiser sees 3 tiers; other categories see 4. Bronze has an optional image upload.
+- **Buy an ad:** See packages, pick one (Gold is sold out), add details, pay by card or bank. The masjid fundraiser sees 3 tiers; other categories see 4. The details step previews the ad from the fundraiser's own content, with no upload.
 - **Three nudges:** a fundraiser on a list gets a page alert, an in-app notification (Notifications) and an email. Each opens packages with its own entry point.
 - **Package sets:** create a set from scratch or as a copy, add packages, then make it live or schedule it. "Simulate" jumps to the scheduled date.
 - **Season sold out:** open Winter and lower the cap below what's sold, or switch sales off. The creator's page alert, notification and email all disappear.
