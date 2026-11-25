@@ -1,8 +1,8 @@
-# Self-serve ads v2
+# FunAds
 
 A clickable prototype of everything in the self-serve ads v2 build: the admin pages the ads team runs, auto-added fundraisers from approved accounts, the compliance review queue, the package inventory, the live season setting, and the creator checkout with card or bank payment.
 
-Live: https://svahora.github.io/lg/self-serve-ads-v2/
+Live: https://svahora.github.io/lg/funads/
 
 What to try:
 - **Creator's fundraiser:** switch between a fundraiser on the seasonal list, one auto-added from an approved account, one on the test list, and one on no list (no offer shown).
