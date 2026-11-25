@@ -436,22 +436,10 @@
     const head = `<div><h1>Ads</h1><p class="muted">Tuesday, November 24, 2026 · Jumada al-Akhirah 14, 1448</p></div>`;
     if (S.appOpen != null && S.purchases[S.appOpen]) return dashShell(f, head + appDetail(S.purchases[S.appOpen]));
     const mine = Object.entries(FUND).filter(([, x]) => x.acct === acct);
-    const tabs = `<div class="utabs" role="tablist"><button type="button" role="tab" data-adstab="ads" aria-selected="${S.adsTab !== 'promote' && S.adsTab !== 'insights'}">Your ads</button><button type="button" role="tab" data-adstab="promote" aria-selected="${S.adsTab === 'promote'}">Promote a fundraiser</button><button type="button" role="tab" data-adstab="insights" aria-selected="${S.adsTab === 'insights'}">Insights</button></div>`;
+    const tabs = `<div class="utabs" role="tablist"><button type="button" role="tab" data-adstab="ads" aria-selected="${S.adsTab !== 'promote' && S.adsTab !== 'insights'}">Your ads</button><button type="button" role="tab" data-adstab="promote" aria-selected="${S.adsTab === 'promote'}">Promote a fundraiser</button></div>`;
     const season = `<div class="banner ${out ? 'neutral' : 'green'}"><div class="body"><div class="banner-title">${live ? (out ? `${esc(live.name)} is sold out` : `${esc(live.name)} is open`) : 'No season is open'}</div><p>${live ? (out ? 'New packages open with the next season.' : `The block starts ${esc(live.start)}. Applications close 24 hours after it starts.`) : ''}</p></div></div>`;
     let body;
-    if (S.adsTab === 'insights') {
-      const rows = S.purchases.filter(x => FUND[x.fid] && FUND[x.fid].acct === acct && x.adDon != null && (!S.q || FUND[x.fid].title.toLowerCase().includes(S.q.toLowerCase())));
-      const tDon = rows.reduce((t, x) => t + x.adDon, 0), tPaid = rows.reduce((t, x) => t + x.amount, 0);
-      const ret = tPaid ? (tDon / tPaid) : 0;
-      if (!S._insViewed) { S._insViewed = true; setTimeout(() => ev('ads_insights_viewed', { entry_point: 'dashboard_ads_page' }), 0); }
-      body = `<div class="card" style="background:var(--n50)"><h2>Ad donations</h2><p style="font-size:26px;font-weight:800;color:var(--brand-600)">${money(tDon)}</p>
-          <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px"><li>Return: ${ret ? ret.toFixed(1) + 'x' : 'n/a'}, ${money(tDon)} from ${money(tPaid)} paid</li><li>Total paid: ${money(tPaid)}</li><li>Donations: ${rows.reduce((t, x) => t + x.dons, 0)}</li><li>Donors: ${rows.reduce((t, x) => t + x.donors, 0)}</li></ul>
-          <p class="muted small"><i>All values in USD</i></p></div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"><input class="input" id="insQ" style="flex:1 1 240px;max-width:420px" placeholder="Search by fundraiser or country" value="${esc(S.q || '')}"><span class="muted small">From Jan 1, 2026 to Nov 24, 2026</span><button type="button" class="btn btn-sm" data-act="insDl">Download</button></div>
-        <p class="muted small"><b>Last refreshed:</b> November 24, 2026 12:00 am ET</p>
-        <div class="tbl-wrap"><table style="min-width:760px"><thead><tr><th>Fundraiser</th><th>Ad donations</th><th>Paid</th><th>Return</th><th>Feature start</th><th>Feature end</th><th>Country</th></tr></thead><tbody>${rows.map(x => `<tr><td class="strong">${esc(FUND[x.fid].title)}<div class="sub">${esc(x.days)} Day ${esc(x.pkg)}</div></td><td>${money(x.adDon)}</td><td>${money(x.amount)}</td><td><b>${(x.adDon / x.amount).toFixed(1)}x</b><div class="sub">${money(x.adDon)} from ${money(x.amount)}</div></td><td>${esc(x.start)}</td><td>${esc(x.end)}</td><td>United States</td></tr>`).join('') || '<tr><td colspan="7" class="empty">No finished ads yet. Results appear here once an ad starts.</td></tr>'}</tbody></table></div>
-        ${eng('Insights (exists today)', ['Kept as is, with copy fixes: "Return" instead of mixing ROI and ROAS, "Total paid" instead of "Total invoice" once payment is upfront, and "Fundraiser" instead of "Campaign".', 'Shows return as a multiplier and in dollars, since creators didn\'t know what ROAS means.', 'Its ad-donation attribution is what the ROAS data requirement needs. Reuse it rather than building new attribution.', 'Fires <code>ads_insights_viewed</code> and <code>ads_insights_downloaded</code>.'])}`;
-    } else if (S.adsTab === 'promote') {
+    if (S.adsTab === 'promote') {
       body = mine.map(([fid, x]) => {
         const en = entryFor(fid), ok = offerOn(en);
         const where = en ? `<span class="tag ${en.list === 'test' ? 't-purple' : 't-gray'}">${en.list === 'test' ? 'Test' : live ? esc(live.name) : 'Seasonal'}</span>` : '<span class="tag t-gray">Not eligible</span>';
@@ -459,9 +447,22 @@
         return `<div class="row" style="padding:14px 16px"><div class="row-main"><span class="row-title" style="font-size:15px">${esc(x.title)}</span><span class="muted small">${money(x.raised)} raised · ${esc(fid)}</span></div><div class="badges">${where}</div><div class="row-act">${act}</div></div>`;
       }).join('') + '<p class="muted small">Every fundraiser your account can buy ads for. New fundraisers from an approved account appear here automatically.</p>';
     } else {
-      const rows = S.purchases.map((x, i) => [x, i]).filter(([x]) => FUND[x.fid] && FUND[x.fid].acct === acct)
-        .map(([x, i]) => `<tr data-app="${i}" class="clickrow"><td class="strong">${esc(FUND[x.fid].title)}<div class="sub">${esc(x.fid)}</div></td><td>${esc(x.days)} Day ${esc(x.pkg)}<div class="sub">${esc(x.set)}</div></td><td><span class="badge ${STATUS[x.status][0]}">${esc(x.status)}</span></td><td>${money(x.amount)}</td><td><button type="button" class="abtn" data-app="${i}">View</button></td></tr>`).join('');
-      body = `<div class="tbl-wrap"><table style="min-width:620px"><thead><tr><th>Fundraiser</th><th>Package</th><th>Status</th><th>Total</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="empty">No ads yet. Open Promote a fundraiser to buy one.</td></tr>'}</tbody></table></div>`;
+      const all = S.purchases.map((x, i) => [x, i]).filter(([x]) => FUND[x.fid] && FUND[x.fid].acct === acct);
+      const rows = all.filter(([x]) => !S.q || FUND[x.fid].title.toLowerCase().includes(S.q.toLowerCase()));
+      const res = all.map(([x]) => x).filter(x => x.adDon != null);
+      const tDon = res.reduce((t, x) => t + x.adDon, 0), tPaid = res.reduce((t, x) => t + x.amount, 0);
+      const summary = `<div class="card" style="background:var(--n50)"><h2>Ad donations</h2><p style="font-size:26px;font-weight:800;color:var(--brand-600)">${money(tDon)}</p>
+          <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px"><li>Return: ${tPaid ? (tDon / tPaid).toFixed(1) + 'x' : 'n/a'}, ${money(tDon)} from ${money(tPaid)} paid</li><li>Ads bought: ${all.length}</li><li>Donations: ${res.reduce((t, x) => t + x.dons, 0)}</li><li>Donors: ${res.reduce((t, x) => t + x.donors, 0)}</li></ul>
+          <p class="muted small"><i>All values in USD. Results count ads that have started.</i></p></div>`;
+      const tr = ([x, i]) => `<tr><td class="strong">${esc(FUND[x.fid].title)}<div class="sub">${esc(x.days)} Day ${esc(x.pkg)} · ${esc(x.set)}</div></td><td><span class="badge ${STATUS[x.status][0]}">${esc(x.status)}</span></td><td>${money(x.amount)}</td>
+        <td>${x.adDon != null ? money(x.adDon) : '<span class="sub">Not started</span>'}</td><td>${x.adDon != null ? `<b>${(x.adDon / x.amount).toFixed(1)}x</b><div class="sub">${money(x.adDon)} from ${money(x.amount)}</div>` : ''}</td>
+        <td>${esc(x.period)}</td><td><button type="button" class="abtn" data-app="${i}">View</button></td></tr>`;
+      if (!S._insViewed) { S._insViewed = true; setTimeout(() => ev('ads_results_viewed', { entry_point: 'dashboard_ads_page' }), 0); }
+      body = `${summary}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"><input class="input" id="insQ" style="flex:1 1 240px;max-width:420px" placeholder="Search by fundraiser or country" value="${esc(S.q || '')}"><span class="muted small">From Jan 1, 2026 to Nov 24, 2026</span><button type="button" class="btn btn-sm" data-act="insDl">Download</button></div>
+        <p class="muted small"><b>Last refreshed:</b> November 24, 2026 12:00 am ET</p>
+        <div class="tbl-wrap"><table style="min-width:820px"><thead><tr><th>Fundraiser</th><th>Status</th><th>Paid</th><th>Ad donations</th><th>Return</th><th>Feature period</th><th></th></tr></thead><tbody>${rows.map(tr).join('') || '<tr><td colspan="7" class="empty">No ads yet. Open Promote a fundraiser to buy one.</td></tr>'}</tbody></table></div>
+        ${eng('Your ads (with results)', ['One table for status and results: replaces today\'s Application tab and Insights tab.', 'Summary: ad donations, return as a multiplier and in dollars, ads bought, donations and donors.', 'Results reuse the existing Insights attribution. Copy: one word for return, Total paid instead of Total invoice, Fundraiser instead of Campaign.', 'Fires <code>ads_results_viewed</code> and <code>ads_insights_downloaded</code>.'])}`;
     }
     return dashShell(f, `${head}${tabs}${S.adsTab === 'insights' ? '' : season}${body}
       ${eng('Ads page', ['Today this page shows one application. With approval by account it lists every purchase and every fundraiser the account can promote.', 'Statuses: booked, waiting for bank payment, Compliance review, live, ended, cancelled and refunded. Each has its own color.', 'Fires <code>ads_page_viewed</code>; Promote carries <code>entry_point: dashboard_ads_page</code>.'])}
@@ -711,7 +712,7 @@
     const d = t.dataset;
     if (d.view) { S.view = d.view; render(); return; }
     if (d.step && !t.closest('.scenario')) { S.step = d.step; render(); return; }
-    if (d.cview) { S.cview = d.cview; S.bell = false; S._adsViewed = false; S.appOpen = null; render(); return; }
+    if (d.cview) { S.cview = d.cview; if (d.cview === 'ads') S.adsTab = 'ads'; S.bell = false; S._adsViewed = false; S._insViewed = false; S.appOpen = null; render(); return; }
     if (d.adstab) { S.cview = 'ads'; S.adsTab = d.adstab; S.appOpen = null; S._insViewed = false; render(); return; }
     if (d.act === 'insDl') { ev('ads_insights_downloaded', { entry_point: 'dashboard_ads_page' }); toast('Download starts here (prototype)'); return; }
     if (d.app != null && d.app !== undefined && d.app !== '') { S.appOpen = +d.app; S.csat = 0; render(); return; }
