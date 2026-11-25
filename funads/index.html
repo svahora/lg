@@ -351,7 +351,7 @@
         { fid: 'F-20418', list: 'seasonal', source: 'ads', by: 'Sara (Ads team)', at: 'Nov 20', review: '', status: 'Not purchased' },
         { fid: 'F-20733', list: 'seasonal', source: 'auto', by: 'Auto-added', at: 'Nov 24', review: 'pending', status: 'Not purchased' },
         { fid: 'F-20734', list: 'seasonal', source: 'auto', by: 'Auto-added', at: 'Nov 22', review: 'approved', status: 'Not purchased' },
-        { fid: 'F-21005', list: 'test', source: 'ads', by: 'Omar (Ads team)', at: 'Nov 18', review: '', status: 'Not purchased' }
+        { fid: 'F-21005', list: 'test', source: 'ads', by: 'Omar (Ads team)', at: 'Nov 18', review: 'approved', status: 'Not purchased' }
       ],
       accounts: [
         { aid: 'A-1877', org: 'Northside Community Center', by: 'Lina (Compliance)', at: 'Nov 21', trial: false },
@@ -396,7 +396,8 @@
   const left = p => Math.max(0, p.slots - p.sold);
   const revenue = id => pkgsFor(id).reduce((t, p) => t + p.sold * p.price, 0);
   const soldOut = id => { const x = S.sets.find(y => y.id === id); return !x || !x.open || revenue(id) >= x.cap; };
-  const offerOn = entry => !!entry && (entry.list === 'test' || (!!S.live && !soldOut(S.live)));
+  const real0 = fid => S.list.find(x => x.fid === fid && x.review !== 'rejected');
+  const offerOn = entry => !!entry && (entry.list === 'test' ? entry.review === 'approved' : (!!S.live && !soldOut(S.live)));
   function makeLive(id, how) {
     S.sets.forEach(x => { if (x.status === 'live') x.status = 'ended'; });
     const x = S.sets.find(y => y.id === id); x.status = 'live'; delete x.goLive;
@@ -444,7 +445,7 @@
       body = mine.map(([fid, x]) => {
         const en = entryFor(fid), ok = offerOn(en);
         const where = en ? `<span class="tag ${en.list === 'test' ? 't-purple' : 't-gray'}">${en.list === 'test' ? 'Test' : live ? esc(live.name) : 'Seasonal'}</span>` : '<span class="tag t-gray">Not eligible</span>';
-        const act = ok ? `<button type="button" class="btn btn-sm btn-brand" data-promote="${fid}">See packages</button>` : en ? '<span class="tag t-red">Sold out</span>' : '<span class="sub">Not on a list</span>';
+        const act = ok ? `<button type="button" class="btn btn-sm btn-brand" data-promote="${fid}">See packages</button>` : en && en.list === 'test' ? '<span class="tag t-yellow">Waiting for Compliance</span>' : en ? '<span class="tag t-red">Sold out</span>' : '<span class="sub">Not on a list</span>';
         return `<div class="row" style="padding:14px 16px"><div class="row-main"><span class="row-title" style="font-size:15px">${esc(x.title)}</span><span class="muted small">${money(x.raised)} raised · ${esc(fid)}</span></div><div class="badges">${where}</div><div class="row-act">${act}</div></div>`;
       }).join('') + '<p class="muted small">Every fundraiser your account can buy ads for. New fundraisers from an approved account appear here automatically.</p>';
     } else {
@@ -510,7 +511,7 @@
   function pageView(f, entry) {
     const pct = Math.round(f.raised / f.goal * 100);
     const banner = entry ? `<div class="banner green"><span>${ic('mega')}</span><div class="body"><div class="banner-title">Reach more donors this ${entry.list === 'test' ? 'week' : SEASONS[S.live].name + ' season'}</div><p>Feature this fundraiser on the homepage and in donor emails. Pick a package and pay to book your spot.</p></div><button type="button" class="btn btn-brand" data-act="start" data-entry="fundraiser_page_alert">See packages</button></div>` : '';
-    const notOn = !entry ? `<div class="banner neutral"><span>${ic('info')}</span><div class="body"><div class="banner-title">No ad offer shown</div><p>${S._closed ? `${SEASONS[S.live].name} is sold out, so the page alert, in-app notification and email are all off.` : 'This fundraiser isn\'t on a seasonal or test list, so it never sees an entry point.'}</p></div></div>` : '';
+    const notOn = !entry ? `<div class="banner neutral"><span>${ic('info')}</span><div class="body"><div class="banner-title">No ad offer shown</div><p>${S._closed && real0(S.who) && real0(S.who).list === 'test' ? 'This test fundraiser is waiting for Compliance. The page alert, in-app notification and email start once it\'s approved.' : S._closed ? `${SEASONS[S.live].name} is sold out, so the page alert, in-app notification and email are all off.` : 'This fundraiser isn\'t on a seasonal or test list, so it never sees an entry point.'}</p></div></div>` : '';
     const reqDash = `<div class="req req-box"><span class="req-tag">Requested Nov 19, not committed</span><b>Creator dashboard: your fundraisers</b><div class="row" style="padding:12px 14px"><div class="row-main"><span class="row-title" style="font-size:15px">${esc(f.title)}</span><span class="muted small">${money(f.raised)} raised</span></div><div class="row-act"><button type="button" class="btn btn-sm" data-act="start" data-entry="dashboard_promote" ${entry ? '' : 'disabled'}>Promote</button></div></div></div>`;
     if (entry && !S._viewed) { S._viewed = true; setTimeout(() => ev('ads_entry_point_viewed', { entry_point: 'fundraiser_page_alert' }), 0); }
     return `
@@ -616,7 +617,7 @@
     const rows = S.list.filter(x => x.list === S.listTab).map(x => {
       const f = FUND[x.fid] || { title: 'Unknown fundraiser', org: '', acct: '' };
       const src = x.source === 'auto' ? '<span class="tag t-blue">Auto-added</span>' : x.source === 'trial' ? '<span class="tag t-purple">Trial graduate</span>' : '<span class="tag t-gray">Ads team</span>';
-      const rev = x.source !== 'auto' ? '<span class="sub">Not needed</span>' : x.review === 'pending' ? '<span class="tag t-yellow">Waiting for review</span>' : x.review === 'approved' ? '<span class="tag t-green">Approved</span>' : '<span class="tag t-red">Rejected</span>';
+      const rev = x.source !== 'auto' && x.list !== 'test' ? '<span class="sub">Not needed</span>' : x.review === 'pending' ? '<span class="tag t-yellow">Waiting for review</span>' : x.review === 'approved' ? '<span class="tag t-green">Approved</span>' : '<span class="tag t-red">Rejected</span>';
       return `<tr><td class="strong">${esc(f.title)}<div class="sub">${esc(x.fid)} · ${esc(f.org)}</div></td><td>${src}</td><td>${esc(x.by)}<div class="sub">${esc(x.at)}</div></td><td>${rev}</td><td>${esc(x.status)}</td><td><div class="acts"><button type="button" class="abtn" data-remove="${x.fid}">Remove</button></div></td></tr>`;
     }).join('');
     return `<div><h1>Fundraiser lists</h1><p class="muted">Only fundraisers on a list see the ad entry points. The Ads team runs this page; no engineering needed.</p></div>
@@ -627,16 +628,17 @@
   }
 
   function reviewView() {
-    const q = S.list.filter(x => x.source === 'auto');
+    const q = S.list.filter(x => x.source === 'auto' || x.list === 'test');
     const rows = q.map(x => {
       const f = FUND[x.fid];
       const st = x.review === 'pending' ? `<div class="acts"><button type="button" class="abtn dark" data-review="${x.fid}" data-to="approved">Approve</button><button type="button" class="abtn" data-review="${x.fid}" data-to="rejected">Reject</button></div>` : x.review === 'approved' ? '<span class="tag t-green">Approved</span>' : '<span class="tag t-red">Rejected</span>';
-      return `<tr><td class="strong">${esc(f.title)}<div class="sub">${esc(x.fid)}</div></td><td>${esc(f.org)}<div class="sub">${esc(f.acct)}</div></td><td>${esc(x.at)}</td><td>${esc(x.status)}</td><td>${st}</td></tr>`;
+      const why = x.list === 'test' ? '<span class="tag t-purple">Test</span><div class="sub">Approve before the offer shows</div>' : '<span class="tag t-blue">Auto-added</span><div class="sub">In parallel with buying</div>';
+      return `<tr><td class="strong">${esc(f.title)}<div class="sub">${esc(x.fid)}</div></td><td>${why}</td><td>${esc(f.org)}<div class="sub">${esc(f.acct)}</div></td><td>${esc(x.at)}</td><td>${esc(x.status)}</td><td>${st}</td></tr>`;
     }).join('');
-    return `<div><h1>Compliance review</h1><p class="muted">New fundraisers from approved accounts are added to the seasonal list automatically. Review each one here, in parallel with the creator applying.</p></div>
+    return `<div><h1>Compliance review</h1><p class="muted">One queue for both checks. Test fundraisers wait here until approved, then the creator sees the offer. Auto-added fundraisers from approved accounts are reviewed in parallel with the creator applying.</p></div>
       ${openQ('What happens if Compliance rejects a fundraiser after the creator has paid? A live ad can\'t be cancelled or refunded. Does go-live wait for Compliance, how long does Compliance have before the block starts, and how are the cancellation, refund and slot handled?')}
-      <div class="tbl-wrap"><table><thead><tr><th>Fundraiser</th><th>Account</th><th>Added</th><th>Purchase</th><th>Decision</th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="empty">Nothing waiting.</td></tr>'}</tbody></table></div>
-      ${eng('Compliance review', ['Queue of auto-added fundraisers with their purchase status.', 'Fires <code>ads_compliance_decision</code> with the decision.'])}`;
+      <div class="tbl-wrap"><table><thead><tr><th>Fundraiser</th><th>Type</th><th>Account</th><th>Added</th><th>Purchase</th><th>Decision</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="empty">Nothing waiting.</td></tr>'}</tbody></table></div>
+      ${eng('Compliance review', ['One queue: test fundraisers (blocking, approve before the offer shows) and auto-added fundraisers (in parallel with buying).', 'Fires <code>ads_compliance_decision</code> with the decision.'])}`;
   }
 
   function accountsView() {
@@ -745,11 +747,11 @@
     if (d.act === 'addIds') {
       const ids = ($('#addIds').value || '').split(/[\s,]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
       let n = 0;
-      ids.forEach(id => { if (!S.list.some(x => x.fid === id && x.list === S.listTab)) { S.list.push({ fid: id, list: S.listTab, source: 'ads', by: 'You (Ads team)', at: 'Today', review: '', status: 'Not purchased' }); n++; ev('ads_list_fundraiser_added', { fundraiser_id: id, list: S.listTab, source: 'ads_team' }, true); if (S.listTab === 'test' || !soldOut(S.live)) ev('ads_creator_notified', { fundraiser_id: id, channels: 'page_alert, in_app, email' }, true); } });
-      toast(n ? `Added ${n} to the ${S.listTab} list. ${S.listTab === 'seasonal' && soldOut(S.live) ? 'Season sold out, so no one was notified' : 'Creators notified'}` : 'Nothing new to add'); render(); return;
+      ids.forEach(id => { if (!S.list.some(x => x.fid === id && x.list === S.listTab)) { S.list.push({ fid: id, list: S.listTab, source: 'ads', by: 'You (Ads team)', at: 'Today', review: S.listTab === 'test' ? 'pending' : '', status: 'Not purchased' }); n++; ev('ads_list_fundraiser_added', { fundraiser_id: id, list: S.listTab, source: 'ads_team' }, true); if (S.listTab === 'seasonal' && !soldOut(S.live)) ev('ads_creator_notified', { fundraiser_id: id, channels: 'page_alert, in_app, email' }, true); } });
+      toast(n ? `Added ${n} to the ${S.listTab} list. ${S.listTab === 'test' ? 'Waiting for Compliance before creators are notified' : soldOut(S.live) ? 'Season sold out, so no one was notified' : 'Creators notified'}` : 'Nothing new to add'); render(); return;
     }
     if (d.remove) { S.list = S.list.filter(x => !(x.fid === d.remove && x.list === S.listTab)); ev('ads_list_fundraiser_removed', { fundraiser_id: d.remove, list: S.listTab }, true); toast('Removed'); render(); return; }
-    if (d.review) { const x = S.list.find(y => y.fid === d.review && y.source === 'auto'); x.review = d.to; ev('ads_compliance_decision', { fundraiser_id: x.fid, account_id: FUND[x.fid].acct, decision: d.to, purchase: x.status }, true); toast(d.to === 'approved' ? 'Approved' : 'Rejected and removed from the list'); render(); return; }
+    if (d.review) { const x = S.list.find(y => y.fid === d.review && (y.source === 'auto' || y.list === 'test') && y.review === 'pending'); x.review = d.to; if (d.to === 'approved' && x.list === 'test') ev('ads_creator_notified', { fundraiser_id: x.fid, channels: 'page_alert, in_app, email' }, true); ev('ads_compliance_decision', { fundraiser_id: x.fid, account_id: FUND[x.fid].acct, decision: d.to, purchase: x.status }, true); toast(d.to === 'approved' ? 'Approved' : 'Rejected and removed from the list'); render(); return; }
     if (d.act === 'addAcc') { const id = ($('#accId').value || '').trim().toUpperCase(); if (!id) { toast('Enter an account ID'); return; } const known = Object.values(FUND).find(f => f.acct === id); S.accounts.push({ aid: id, org: known ? known.org : 'New account', by: 'You (Compliance)', at: 'Today', trial: $('#accTrial').checked }); ev('ads_account_approved', { account_id: id, trial_graduate: $('#accTrial').checked }, true); toast('Account approved'); render(); return; }
     if (d.newfr) {
       const a = S.accounts.find(x => x.aid === d.newfr); S.autoSeq++;

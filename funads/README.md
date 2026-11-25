@@ -13,6 +13,7 @@ What to try:
 - **Season sold out:** open Winter and lower the cap below what's sold, or switch sales off. The creator's page alert, notification and email all disappear.
 - **Admin to creator loop:** hide a package or change slots in a set, then go back to the creator checkout.
 - **Auto-add:** in Approved accounts, simulate an account creating a fundraiser, then approve or reject it in Compliance review.
+- **Test approval:** add a fundraiser to the test list. It waits in Compliance review and the creator sees no offer until it's approved.
 - **Requested, not committed:** shows the dashboard Promote button, prefill and the ROI display, marked as requests.
 - **Engineering notes:** build notes and open questions on every screen.
 - **Data events:** logs the event each action would send, with the shared IDs.
