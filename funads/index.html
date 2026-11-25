@@ -292,6 +292,7 @@
     'F-21005': { title: 'Clean Water Wells', acct: 'A-2290', org: 'Wells of Mercy', raised: 31000, goal: 50000 },
     'F-21140': { title: 'Orphan Sponsorship Drive', acct: 'A-3311', org: 'Bright Futures', raised: 4100, goal: 20000 }
   };
+  Object.values(FUND).forEach(f => { f.group = /Masjid|School|Art/.test(f.title) ? 'A' : 'B'; });
   const WHO = [
     ['F-20418', 'On the seasonal list (Ads team added)'],
     ['F-20733', 'Auto-added from an approved account'],
@@ -340,7 +341,7 @@
   function ev(name, extra = {}, admin = false) {
     const f = FUND[S.who] || {};
     const entry = S.list.find(x => x.fid === S.who);
-    const base = admin ? {} : { fundraiser_id: S.who, account_id: f.acct, season: entry && entry.list === 'test' ? 'test' : S.live, list: entry ? entry.list : 'none', entry_point: S.entry || 'fundraiser_page_banner' };
+    const base = admin ? {} : { fundraiser_id: S.who, account_id: f.acct, season: entry && entry.list === 'test' ? 'test' : S.live, list: entry ? entry.list : 'none', entry_point: S.entry || 'fundraiser_page_alert' };
     evs.unshift({ name, props: { ...base, ...extra }, admin });
     renderEv();
   }
@@ -366,36 +367,52 @@
     const f = FUND[S.who], entry = entryFor(S.who);
     const steps = entry ? `<nav class="steps" aria-label="Steps">${STEPS.map(([k, n], i) => `<button type="button" class="step" data-step="${k}" ${S.step === k ? 'aria-current="step"' : ''}><span class="n">${i + 1}</span> ${n}</button>`).join('')}</nav>` : '';
     let body = '';
-    if (S.step === 'page' || !entry) body = pageView(f, entry);
+    if (S.step === 'email' && entry) body = emailView(f, entry);
+    else if (S.step === 'page' || !entry) body = pageView(f, entry);
     else if (S.step === 'packages') body = packagesView(f, entry);
     else if (S.step === 'details') body = detailsView(f, entry);
     else if (S.step === 'pay') body = payView(f, entry);
     else body = doneView(f, entry);
-    return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span class="muted small">Signed in as ${esc(f.org)}</span></header>${steps}<main class="page">${body}</main>`;
+    return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button type="button" class="btn btn-sm" data-act="bell" aria-expanded="${!!S.bell}">Notifications${entry && !S.read ? ' <span class="badge b-red">1</span>' : ''}</button><span class="muted small">Signed in as ${esc(f.org)}</span></span></header>${S.bell ? bellPanel(f, entry) : ''}${steps}<main class="page">${body}</main>`;
+  }
+
+  function bellPanel(f, entry) {
+    const item = entry
+      ? `<div class="row" style="padding:12px 14px"><div class="row-main"><b>${esc(f.title)} can be featured this ${entry.list === 'test' ? 'week' : SEASONS[S.live].name + ' season'}</b><span class="muted small">Pick a package and pay to book your spot.</span></div><div class="row-act"><button type="button" class="btn btn-sm btn-brand" data-act="start" data-entry="in_app_notification">See packages</button></div></div><button type="button" class="link small" data-act="email">We also emailed you. View the email</button>`
+      : '<p class="muted">No notifications.</p>';
+    return `<div style="max-width:1120px;margin:12px auto 0;padding:0 16px"><div class="card"><h3>Notifications</h3>${item}</div></div>`;
+  }
+
+  function emailView(f, entry) {
+    return `<div class="email"><div class="email-meta"><span><b>Subject:</b> Feature ${esc(f.title)} this ${entry.list === 'test' ? 'week' : SEASONS[S.live].name + ' season'}</span><span>To: ${esc(f.org)}</span></div>
+      <div class="email-body"><p>Salaam,</p><p>Your fundraiser <b>${esc(f.title)}</b> can now be featured on the homepage and in donor emails. Spots are limited, and applications close 24 hours after the block starts.</p><div><button type="button" class="btn btn-brand" data-act="start" data-entry="email">See packages</button></div><p class="muted small">You're getting this because your fundraiser was approved for ads.</p></div></div>
+      <div><button type="button" class="btn" data-act="restart">Back to fundraiser</button></div>
+      ${eng('Notifications', ['Sent when a fundraiser is approved onto a list, along with the page alert and the in-app notification.', 'The link carries <code>entry_point: email</code>, so email clicks compare with the page alert and in-app notification.'])}`;
   }
 
   function pageView(f, entry) {
     const pct = Math.round(f.raised / f.goal * 100);
-    const banner = entry ? `<div class="banner green"><span>${ic('mega')}</span><div class="body"><div class="banner-title">Reach more donors this ${entry.list === 'test' ? 'week' : SEASONS[S.live].name + ' season'}</div><p>Feature this fundraiser on the homepage and in donor emails. Pick a package and pay to book your spot.</p></div><button type="button" class="btn btn-brand" data-act="start" data-entry="fundraiser_page_banner">See packages</button></div>` : '';
+    const banner = entry ? `<div class="banner green"><span>${ic('mega')}</span><div class="body"><div class="banner-title">Reach more donors this ${entry.list === 'test' ? 'week' : SEASONS[S.live].name + ' season'}</div><p>Feature this fundraiser on the homepage and in donor emails. Pick a package and pay to book your spot.</p></div><button type="button" class="btn btn-brand" data-act="start" data-entry="fundraiser_page_alert">See packages</button></div>` : '';
     const notOn = !entry ? `<div class="banner neutral"><span>${ic('info')}</span><div class="body"><div class="banner-title">No ad offer shown</div><p>This fundraiser isn't on a seasonal or test list, so it never sees an entry point.</p></div></div>` : '';
     const reqDash = `<div class="req req-box"><span class="req-tag">Requested Nov 19, not committed</span><b>Creator dashboard: your fundraisers</b><div class="row" style="padding:12px 14px"><div class="row-main"><span class="row-title" style="font-size:15px">${esc(f.title)}</span><span class="muted small">${money(f.raised)} raised</span></div><div class="row-act"><button type="button" class="btn btn-sm" data-act="start" data-entry="dashboard_promote" ${entry ? '' : 'disabled'}>Promote</button></div></div></div>`;
-    if (entry && !S._viewed) { S._viewed = true; setTimeout(() => ev('ads_entry_point_viewed', { entry_point: 'fundraiser_page_banner' }), 0); }
+    if (entry && !S._viewed) { S._viewed = true; setTimeout(() => ev('ads_entry_point_viewed', { entry_point: 'fundraiser_page_alert' }), 0); }
     return `
       <div class="owner-bar"><span class="t"><b>You're viewing your fundraiser.</b> Donors don't see the ad offer.</span></div>
       ${banner}${notOn}
       ${entry && entry.source === 'auto' && entry.review === 'pending' ? openQ('This fundraiser was auto-added from an approved account and Compliance hasn\'t reviewed it yet. The creator can still buy. What happens if Compliance rejects it after payment? A live ad can\'t be cancelled or refunded.') : ''}
       <div class="hero"><div class="hero-img"></div><div class="hero-body"><h1>${esc(f.title)}</h1><p class="muted">by ${esc(f.org)}</p><div class="bar"><span style="width:${pct}%"></span></div><p><b>${money(f.raised)}</b> <span class="muted">raised of ${money(f.goal)}</span></p></div></div>
       ${reqDash}
-      ${eng('Entry points', ['Only fundraisers on the seasonal or test list see the banner. Others see nothing.', 'Fires <code>ads_entry_point_viewed</code> and <code>ads_entry_point_clicked</code> with the shared IDs.', 'Dashboard Promote is a request from Nov 19 and not committed.'])}`;
+      ${eng('Entry points', ['Only fundraisers on the seasonal or test list see the offer. Others see nothing.', 'When a fundraiser is approved onto a list, the creator gets three nudges: this page alert, an in-app notification and an email.', 'Fires <code>ads_entry_point_viewed</code> and <code>ads_entry_point_clicked</code> with the shared IDs.', 'Dashboard Promote is a request from Nov 19 and not committed.'])}`;
   }
 
   function packagesView(f, entry) {
     const isTest = entry.list === 'test';
     const season = isTest ? 'test' : S.live;
-    const visible = pkgsFor(season).filter(p => p.on);
+    let visible = pkgsFor(season).filter(p => p.on);
+    if (!isTest && f.group === 'A') visible = visible.slice(-3);
     const head = isTest
       ? `<div class="season-head standard"><div class="t"><span class="pill" style="align-self:flex-start">Test</span><h2 style="color:#fff">Try a new package</h2><p style="opacity:.85">You've been picked to try a package we're testing.</p></div></div>`
-      : `<div class="season-head ${S.live === 'winter' ? 'winter' : S.live === 'ramadan' ? 'ramadan' : 'standard'}"><div class="t"><span class="pill" style="align-self:flex-start">${SEASONS[S.live].name}</span><h2 style="color:#fff">${SEASONS[S.live].blurb}</h2><p style="opacity:.85">Next block starts ${SEASONS[S.live].start}.</p></div></div>`;
+      : `<div class="season-head ${S.live === 'winter' ? 'winter' : S.live === 'ramadan' ? 'ramadan' : 'standard'}"><div class="t"><span class="pill" style="align-self:flex-start">${SEASONS[S.live].name}</span><h2 style="color:#fff">${SEASONS[S.live].blurb}</h2><p style="opacity:.85">Next block starts ${SEASONS[S.live].start}. Applications close 24 hours after it starts.</p></div></div>`;
     const tiers = visible.map(p => {
       const out = left(p) === 0;
       if (out && !p._seen) { p._seen = true; setTimeout(() => ev('ads_sold_out_seen', { package: p.id }), 0); }
@@ -408,8 +425,9 @@
     }).join('');
     return `${head}
       <div class="tiers">${tiers || '<div class="card">No packages are switched on for this season.</div>'}</div>
+      ${!isTest ? `<p class="muted small">${f.group === 'A' ? 'Masjid, education and creative fundraisers see 3 tiers.' : 'Fundraisers in this category see 4 tiers.'}</p>` : ''}
       <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-step="page">Back</button><button type="button" class="btn btn-primary" data-act="toDetails" ${S.pkg ? '' : 'disabled'}>Continue</button></div>
-      ${eng('Packages', ['Shows only packages the Ads team switched on for the live season (or test packages for the test list).', 'Sold out when sold reaches slots. Slots are set by hand in the admin.', 'Fires <code>ads_package_viewed</code>, <code>ads_package_selected</code>, <code>ads_sold_out_seen</code>.'])}
+      ${eng('Packages', ['Shows only packages the Ads team switched on for the live season (or test packages for the test list).', 'Sold out when sold reaches slots. Slots are set by hand in the admin.', 'Tiers by category: Group A (masjid, education, creative) sees 3, Group B sees 4. Edge cases go to manual review.', 'Applications close 24 hours after the block starts.', 'Fires <code>ads_package_viewed</code>, <code>ads_package_selected</code>, <code>ads_sold_out_seen</code>.'])}
       ${openQ('ROI display as a multiplier and in dollars is requested, not committed. Which multiplier applies to each package?')}`;
   }
 
@@ -421,6 +439,7 @@
         <div class="req req-box" style="padding:10px 12px"><span class="req-tag" style="align-self:flex-start">Requested Nov 19, not committed</span><span class="small">Prefill: fundraiser, organization and contact filled in from what we already know.</span></div>
         <label class="field" for="fContact">Contact email<input class="input" id="fContact" type="email" placeholder="you@example.org" value="${esc(S.contact)}"></label>
         <label class="field" for="fHead">Headline for the ad<span class="hint">Up to 60 characters</span><input class="input" id="fHead" maxlength="60" placeholder="Keep a family warm this winter" value="${esc(S.headline)}"></label>
+        ${p.name === 'Bronze' ? `<label class="field" for="fAsset">Image for your ad <span class="hint">Optional</span><input class="input" id="fAsset" type="file" accept="image/*"></label>` : ''}
         ${videoOk ? `<label class="field" for="fVideo">Video link <span class="hint">Optional for Silver and Gold</span><input class="input" id="fVideo" placeholder="https://" value="${esc(S.video)}"></label>` : ''}
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-step="packages">Back</button><button type="button" class="btn btn-primary" data-act="toPay">Continue to payment</button></div>
@@ -447,7 +466,7 @@
       ${S.method === 'card' ? `<div class="grid2"><label class="field" for="cNum">Card number<input class="input" id="cNum" inputmode="numeric" placeholder="4242 4242 4242 4242"></label><label class="field" for="cExp">Expiry<input class="input" id="cExp" placeholder="MM / YY"></label></div>` : `<div class="banner neutral"><div class="body"><div class="banner-title">Pay from your bank</div><p>We'll show your bank details on the next screen. Your spot is held while the payment clears.</p></div></div>`}
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-step="details">Back</button><button type="button" class="btn btn-brand" data-act="pay">Pay ${money(p.price)}</button></div>
-      ${eng('Payment', ['Credit card and bank payment write the same payment record with fundraiser ID, account ID, package, season and list, so revenue needs no matching in the CRM.', 'Fires <code>ads_payment_started</code> and <code>ads_payment_completed</code> with the method.'])}
+      ${eng('Payment', ['The payment vendor has to turn on bank payments before launch.', 'Credit card and bank payment write the same payment record with fundraiser ID, account ID, package, season and list, so revenue needs no matching in the CRM.', 'Fires <code>ads_payment_started</code> and <code>ads_payment_completed</code> with the method.'])}
       ${openQ('Bank payments can take days to clear. Does the ad wait, and is the slot held meanwhile?')}
       </div>${summary(f, p)}</div>`;
   }
@@ -485,7 +504,7 @@
       <div class="tabs" role="group" aria-label="List"><button type="button" data-ltab="seasonal" aria-pressed="${S.listTab === 'seasonal'}">Seasonal (${SEASONS[S.live].name})</button><button type="button" data-ltab="test" aria-pressed="${S.listTab === 'test'}">Test</button></div>
       <div class="addbar"><label class="field" for="addIds">Add fundraiser IDs<span class="hint">Paste one or many, separated by commas or new lines</span><textarea class="input" id="addIds" placeholder="F-21140"></textarea></label><button type="button" class="btn btn-primary" data-act="addIds">Add to ${S.listTab === 'test' ? 'test' : 'seasonal'} list</button></div>
       <div class="tbl-wrap"><table><thead><tr><th>Fundraiser</th><th>Source</th><th>Added</th><th>Compliance</th><th>Purchase</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="empty">No fundraisers on this list yet.</td></tr>'}</tbody></table></div>
-      ${eng('Fundraiser lists', ['Replaces the spreadsheet and the automation that syncs it.', 'One table with a list column (seasonal or test), source (Ads team, auto-added, trial graduate), who added it and when.', 'Fires <code>ads_list_fundraiser_added</code> and <code>ads_list_fundraiser_removed</code>.'])}`;
+      ${eng('Fundraiser lists', ['Replaces the spreadsheet and the automation that syncs it.', 'One table with a list column (seasonal or test), source (Ads team, auto-added, trial graduate), who added it and when.', 'Adding a fundraiser notifies the creator: page alert, in-app notification and email. Fires <code>ads_creator_notified</code>.', 'Fires <code>ads_list_fundraiser_added</code> and <code>ads_list_fundraiser_removed</code>.'])}`;
   }
 
   function reviewView() {
@@ -540,7 +559,9 @@
     const d = t.dataset;
     if (d.view) { S.view = d.view; render(); return; }
     if (d.step && !t.closest('.scenario')) { S.step = d.step; render(); return; }
-    if (d.act === 'start') { S.entry = d.entry; ev('ads_entry_point_clicked', { entry_point: d.entry }); S.step = 'packages'; render(); return; }
+    if (d.act === 'bell') { S.bell = !S.bell; if (S.bell && entryFor(S.who) && !S.read) { S.read = true; ev('ads_notification_opened', { entry_point: 'in_app_notification' }); } render(); return; }
+    if (d.act === 'email') { S.bell = false; S.step = 'email'; ev('ads_email_opened', { entry_point: 'email' }); render(); return; }
+    if (d.act === 'start') { S.bell = false; S.entry = d.entry; ev('ads_entry_point_clicked', { entry_point: d.entry }); S.step = 'packages'; render(); return; }
     if (d.pkg) { if (t.getAttribute('aria-disabled') === 'true') return; S.pkg = d.pkg; ev('ads_package_selected', { package: d.pkg }); render(); return; }
     if (d.act === 'toDetails') { S.step = 'details'; ev('ads_application_started', { package: S.pkg }); render(); return; }
     if (d.act === 'toPay') { S.contact = ($('#fContact') || {}).value || ''; S.headline = ($('#fHead') || {}).value || ''; S.video = ($('#fVideo') || {}).value || ''; ev('ads_application_submitted', { package: S.pkg }); S.step = 'pay'; render(); return; }
@@ -552,15 +573,15 @@
       const en = entryFor(S.who); if (en) en.status = S.method === 'card' ? `Paid, ${p.name}` : `Bank payment pending, ${p.name}`;
       S.step = 'done'; render(); return;
     }
-    if (d.act === 'restart') { S.step = 'page'; S.pkg = null; S._viewed = false; render(); return; }
+    if (d.act === 'restart') { S.step = 'page'; S.pkg = null; S._viewed = false; S.bell = false; render(); return; }
     if (d.tab) { S.adminTab = d.tab; render(); return; }
     if (d.ltab) { S.listTab = d.ltab; render(); return; }
     if (d.itab) { S.invTab = d.itab; render(); return; }
     if (d.act === 'addIds') {
       const ids = ($('#addIds').value || '').split(/[\s,]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
       let n = 0;
-      ids.forEach(id => { if (!S.list.some(x => x.fid === id && x.list === S.listTab)) { S.list.push({ fid: id, list: S.listTab, source: 'ads', by: 'You (Ads team)', at: 'Today', review: '', status: 'Not purchased' }); n++; ev('ads_list_fundraiser_added', { fundraiser_id: id, list: S.listTab, source: 'ads_team' }, true); } });
-      toast(n ? `Added ${n} to the ${S.listTab} list` : 'Nothing new to add'); render(); return;
+      ids.forEach(id => { if (!S.list.some(x => x.fid === id && x.list === S.listTab)) { S.list.push({ fid: id, list: S.listTab, source: 'ads', by: 'You (Ads team)', at: 'Today', review: '', status: 'Not purchased' }); n++; ev('ads_list_fundraiser_added', { fundraiser_id: id, list: S.listTab, source: 'ads_team' }, true); ev('ads_creator_notified', { fundraiser_id: id, channels: 'page_alert, in_app, email' }, true); } });
+      toast(n ? `Added ${n} to the ${S.listTab} list. Creators notified` : 'Nothing new to add'); render(); return;
     }
     if (d.remove) { S.list = S.list.filter(x => !(x.fid === d.remove && x.list === S.listTab)); ev('ads_list_fundraiser_removed', { fundraiser_id: d.remove, list: S.listTab }, true); toast('Removed'); render(); return; }
     if (d.review) { const x = S.list.find(y => y.fid === d.review && y.source === 'auto'); x.review = d.to; ev('ads_compliance_decision', { fundraiser_id: x.fid, account_id: FUND[x.fid].acct, decision: d.to, purchase: x.status }, true); toast(d.to === 'approved' ? 'Approved' : 'Rejected and removed from the list'); render(); return; }
@@ -571,6 +592,7 @@
       FUND[fid] = { title: 'New fundraiser ' + S.autoSeq, acct: a.aid, org: a.org, raised: 0, goal: 10000 };
       S.list.push({ fid, list: 'seasonal', source: 'auto', by: 'Auto-added', at: 'Just now', review: 'pending', status: 'Not purchased' });
       ev('ads_fundraiser_auto_added', { fundraiser_id: fid, account_id: a.aid, list: 'seasonal' }, true);
+      ev('ads_creator_notified', { fundraiser_id: fid, channels: 'page_alert, in_app, email' }, true);
       toast(`${fid} added to the seasonal list, waiting for Compliance`); render(); return;
     }
     if (d.slot) { const p = S.packages.find(x => x.id === d.slot); p.slots = Math.max(p.sold, p.slots + +d.d); ev('ads_package_slots_changed', { package: p.id, slots: p.slots }, true); render(); return; }
@@ -578,7 +600,7 @@
     if (d.season) { if (S.live !== d.season) { S.live = d.season; S.invTab = d.season; ev('ads_live_season_changed', { season: d.season }, true); toast(`${SEASONS[d.season].name} is now live`); } render(); return; }
   });
 
-  $('#who').addEventListener('change', e => { S.who = e.target.value; S.step = 'page'; S.pkg = null; S._viewed = false; S.view = 'creator'; render(); });
+  $('#who').addEventListener('change', e => { S.who = e.target.value; S.step = 'page'; S.pkg = null; S._viewed = false; S.bell = false; S.read = false; S.view = 'creator'; render(); });
   $('#reqToggle').addEventListener('change', e => document.body.classList.toggle('show-req', e.target.checked));
   $('#engToggle').addEventListener('change', e => document.body.classList.toggle('show-eng', e.target.checked));
   $('#evToggle').addEventListener('change', e => document.body.classList.toggle('show-ev', e.target.checked));
