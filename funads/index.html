@@ -231,6 +231,24 @@
   .adprev-pill { position: absolute; left: 12px; top: 12px; background: rgba(255,255,255,.92); color: var(--n900); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; }
   .adprev-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
   .adprev-body b { font-size: 16px; line-height: 22px; }
+  .dash { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: calc(100vh - 120px); }
+  .dnav { border-right: 1px solid var(--n200); background: var(--n0); padding: 20px 14px; display: flex; flex-direction: column; gap: 18px; }
+  .acct { border: 1px solid var(--n200); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .dnav nav { display: flex; flex-direction: column; gap: 2px; }
+  .ditem { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 8px; border: 0; background: none; text-align: left; font-size: 15px; color: var(--n700); cursor: pointer; }
+  .ditem.off { cursor: default; color: var(--n500); }
+  .ditem.on { font-weight: 700; color: var(--n900); background: var(--n100); }
+  .newpill { font-size: 11px; font-weight: 700; color: #fff; background: #F59E0B; border-radius: 9999px; padding: 1px 8px; }
+  .dmain { padding: 28px 24px 64px; display: flex; flex-direction: column; gap: 18px; min-width: 0; max-width: 1120px; }
+  .utabs { display: flex; gap: 22px; border-bottom: 1px solid var(--n200); }
+  .utabs button { border: 0; background: none; padding: 10px 0; font-weight: 600; color: var(--n500); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .utabs button[aria-selected="true"] { color: var(--n900); border-color: var(--n900); }
+  .clickrow { cursor: pointer; } .clickrow:hover td { background: var(--n50); }
+  .stars { display: flex; gap: 10px; flex-wrap: wrap; }
+  .star { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; background: none; font-size: 34px; line-height: 1; color: var(--n300); cursor: pointer; }
+  .star span { font-size: 13px; color: var(--n600); }
+  .star:hover, .star.on { color: #F59E0B; }
+  @media (max-width: 760px) { .dash { grid-template-columns: 1fr; } .dnav { border-right: 0; border-bottom: 1px solid var(--n200); padding: 12px 16px; gap: 10px; } .dnav nav { flex-direction: row; overflow-x: auto; } .ditem { white-space: nowrap; } .ditem.off { display: none; } .dmain { padding: 20px 16px 48px; } }
   .open-q { display: none; border: 1px solid #FCA5A5; background: var(--red-50); color: var(--red-700); border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 19px; }
   body.show-eng .open-q { display: block; }
   .open-q b { color: #7F1D1D; }
@@ -340,7 +358,7 @@
         { aid: 'A-2550', org: 'Riverbend Relief', by: 'Lina (Compliance)', at: 'Nov 22', trial: true }
       ],
       autoSeq: 0, cview: 'fundraiser',
-      purchases: [{ fid: 'F-20733', pkg: 'Bronze', set: 'Standard', amount: 350, method: 'Card', status: 'Ended', at: 'Nov 4' }],
+      purchases: [{ fid: 'F-20733', pkg: 'Bronze', set: 'Standard', amount: 350, days: 14, period: 'Nov 4 to Nov 18', method: 'Card', status: 'Ended', at: 'Nov 18, 9:00 AM UTC' }], adsTab: 'ads', appOpen: null, csat: 0,
       sets: [
         { id: 'winter', name: 'Winter', blurb: 'Winter appeals block', salesOpen: 'Nov 23', start: 'Dec 2', status: 'live', cap: 45000, open: true },
         { id: 'standard', name: 'Standard', blurb: '14-day blocks, all year', salesOpen: 'Dec 9', start: 'Dec 16', status: 'scheduled', goLive: 'Dec 9', cap: 105000, open: true },
@@ -393,7 +411,7 @@
     S._closed = !!real && !entry;
     const steps = entry ? `<nav class="steps" aria-label="Steps">${STEPS.map(([k, n], i) => `<button type="button" class="step" data-step="${k}" ${S.step === k ? 'aria-current="step"' : ''}><span class="n">${i + 1}</span> ${n}</button>`).join('')}</nav>` : '';
     let body = '';
-    if (S.cview === 'ads') return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="tabs" role="group" aria-label="Dashboard"><button type="button" data-cview="fundraiser" aria-pressed="false">Fundraiser</button><button type="button" data-cview="ads" aria-pressed="true">Ads</button></span><span class="muted small">Signed in as ${esc(f.org)}</span></span></header><main class="page">${adsPage(f)}</main>`;
+    if (S.cview === 'ads') return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span class="muted small">Signed in as ${esc(f.org)}</span></header>${adsPage(f)}`;
     if (S.step === 'email' && entry) body = emailView(f, entry);
     else if (S.step === 'page' || !entry) body = pageView(f, entry);
     else if (S.step === 'packages') body = packagesView(f, entry);
@@ -403,23 +421,62 @@
     return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="tabs" role="group" aria-label="Dashboard"><button type="button" data-cview="fundraiser" aria-pressed="${S.cview === 'fundraiser'}">Fundraiser</button><button type="button" data-cview="ads" aria-pressed="${S.cview === 'ads'}">Ads</button></span><button type="button" class="btn btn-sm" data-act="bell" aria-expanded="${!!S.bell}">Notifications${entry && !S.read ? ' <span class="badge b-red">1</span>' : ''}</button><span class="muted small">Signed in as ${esc(f.org)}</span></span></header>${S.bell ? bellPanel(f, entry) : ''}${steps}<main class="page">${body}</main>`;
   }
 
+  const STATUS = {
+    'Booked': ['b-green', 'Your ad is booked'], 'Live': ['b-green', 'Your ad is live'], 'Ended': ['b-neutral', 'Your ad has ended'],
+    'Waiting for bank payment': ['b-amber', 'Waiting for your bank payment'], 'Compliance review': ['b-blue', 'We\'re reviewing your fundraiser'],
+    'Cancelled and refunded': ['b-red', 'This ad was cancelled and refunded']
+  };
+  function dashShell(f, inner) {
+    const nav = ['Home', 'Dhul Hijjah', 'Qurbani', 'Ramadan', 'Fundraisers', 'Communities', 'Donations', 'Recurring', 'Influencers', 'Ads', 'Payouts', 'Reports'];
+    return `<div class="dash"><aside class="dnav"><div class="acct"><b>${esc(f.org)}</b><span class="muted small">#${esc(f.acct.slice(2))} · US · USD</span></div><nav aria-label="Dashboard">${nav.map(n => n === 'Ads' ? `<button type="button" class="ditem on" data-adstab="ads" aria-current="page">Ads <span class="newpill">New</span></button>` : n === 'Fundraisers' ? `<button type="button" class="ditem" data-cview="fundraiser">Fundraisers</button>` : `<span class="ditem off">${n}</span>`).join('')}</nav></aside><main class="dmain">${inner}</main></div>`;
+  }
   function adsPage(f) {
     const acct = f.acct, live = S.live ? SEASONS[S.live] : null, out = !live || soldOut(S.live);
-    const mine = Object.entries(FUND).filter(([, x]) => x.acct === acct);
-    const tagFor = st => ({ 'Booked': 't-green', 'Live': 't-green', 'Ended': 't-gray', 'Waiting for bank payment': 't-yellow', 'Compliance review': 't-blue', 'Cancelled and refunded': 't-red' }[st] || 't-gray');
-    const buys = S.purchases.filter(x => FUND[x.fid] && FUND[x.fid].acct === acct).map(x => `<tr><td class="strong">${esc(FUND[x.fid].title)}<div class="sub">${esc(x.fid)}</div></td><td>${esc(x.pkg)}<div class="sub">${esc(x.set)}</div></td><td><span class="tag ${tagFor(x.status)}">${esc(x.status)}</span></td><td>${money(x.amount)}<div class="sub">${esc(x.method)}</div></td><td>${esc(x.at)}</td></tr>`).join('');
-    const elig = mine.map(([fid, x]) => {
-      const en = entryFor(fid); const ok = offerOn(en);
-      const where = en ? `<span class="tag ${en.list === 'test' ? 't-purple' : 't-gray'}">${en.list === 'test' ? 'Test' : live ? esc(live.name) : 'Seasonal'}</span>` : '<span class="tag t-gray">Not eligible</span>';
-      const act = ok ? `<button type="button" class="btn btn-sm btn-brand" data-promote="${fid}">See packages</button>` : en ? '<span class="tag t-red">Sold out</span>' : '<span class="sub">Not on a list</span>';
-      return `<div class="row" style="padding:14px 16px"><div class="row-main"><span class="row-title" style="font-size:15px">${esc(x.title)}</span><span class="muted small">${money(x.raised)} raised · ${esc(fid)}</span></div><div class="badges">${where}</div><div class="row-act">${act}</div></div>`;
-    }).join('');
     if (!S._adsViewed) { S._adsViewed = true; setTimeout(() => ev('ads_page_viewed', { entry_point: 'dashboard_ads_page' }), 0); }
-    return `<div><h1>Ads</h1><p class="muted">${live ? (out ? `${esc(live.name)} is sold out. New packages open with the next season.` : `${esc(live.name)} is open. The block starts ${esc(live.start)}, and applications close 24 hours after.`) : 'No season is open right now.'}</p></div>
-      <div class="card"><h2>Your ads</h2><div class="tbl-wrap" style="box-shadow:none;outline:0"><table style="min-width:560px"><thead><tr><th>Fundraiser</th><th>Package</th><th>Status</th><th>Paid</th><th>Date</th></tr></thead><tbody>${buys || '<tr><td colspan="5" class="empty">No ads yet. Pick a fundraiser below to promote it.</td></tr>'}</tbody></table></div></div>
-      <div style="display:flex;flex-direction:column;gap:10px"><h2>Fundraisers you can promote</h2><p class="muted small">Every fundraiser your account can buy ads for. New fundraisers from an approved account appear here automatically.</p>${elig}</div>
-      ${eng('Ads page in the dashboard', ['Account-level: lists every purchase and every eligible fundraiser for the signed-in account.', 'Purchase status: booked, waiting for bank payment, Compliance review, live, ended, cancelled and refunded.', 'Eligible fundraisers come from the seasonal and test lists. Offers turn off when the season is sold out.', 'Fires <code>ads_page_viewed</code>; See packages carries <code>entry_point: dashboard_ads_page</code>.'])}
-      ${openQ('Which statuses does the creator see while Compliance reviews an auto-added fundraiser, and what does a rejection after payment look like here?')}`;
+    const head = `<div><h1>Ads</h1><p class="muted">Tuesday, November 24, 2026 · Jumada al-Akhirah 14, 1448</p></div>`;
+    if (S.appOpen != null && S.purchases[S.appOpen]) return dashShell(f, head + appDetail(S.purchases[S.appOpen]));
+    const mine = Object.entries(FUND).filter(([, x]) => x.acct === acct);
+    const tabs = `<div class="utabs" role="tablist"><button type="button" role="tab" data-adstab="ads" aria-selected="${S.adsTab !== 'promote'}">Your ads</button><button type="button" role="tab" data-adstab="promote" aria-selected="${S.adsTab === 'promote'}">Promote a fundraiser</button></div>`;
+    const season = `<div class="banner ${out ? 'neutral' : 'green'}"><div class="body"><div class="banner-title">${live ? (out ? `${esc(live.name)} is sold out` : `${esc(live.name)} is open`) : 'No season is open'}</div><p>${live ? (out ? 'New packages open with the next season.' : `The block starts ${esc(live.start)}. Applications close 24 hours after it starts.`) : ''}</p></div></div>`;
+    let body;
+    if (S.adsTab === 'promote') {
+      body = mine.map(([fid, x]) => {
+        const en = entryFor(fid), ok = offerOn(en);
+        const where = en ? `<span class="tag ${en.list === 'test' ? 't-purple' : 't-gray'}">${en.list === 'test' ? 'Test' : live ? esc(live.name) : 'Seasonal'}</span>` : '<span class="tag t-gray">Not eligible</span>';
+        const act = ok ? `<button type="button" class="btn btn-sm btn-brand" data-promote="${fid}">See packages</button>` : en ? '<span class="tag t-red">Sold out</span>' : '<span class="sub">Not on a list</span>';
+        return `<div class="row" style="padding:14px 16px"><div class="row-main"><span class="row-title" style="font-size:15px">${esc(x.title)}</span><span class="muted small">${money(x.raised)} raised · ${esc(fid)}</span></div><div class="badges">${where}</div><div class="row-act">${act}</div></div>`;
+      }).join('') + '<p class="muted small">Every fundraiser your account can buy ads for. New fundraisers from an approved account appear here automatically.</p>';
+    } else {
+      const rows = S.purchases.map((x, i) => [x, i]).filter(([x]) => FUND[x.fid] && FUND[x.fid].acct === acct)
+        .map(([x, i]) => `<tr data-app="${i}" class="clickrow"><td class="strong">${esc(FUND[x.fid].title)}<div class="sub">${esc(x.fid)}</div></td><td>${esc(x.days)} Day ${esc(x.pkg)}<div class="sub">${esc(x.set)}</div></td><td><span class="badge ${STATUS[x.status][0]}">${esc(x.status)}</span></td><td>${money(x.amount)}</td><td><button type="button" class="abtn" data-app="${i}">View</button></td></tr>`).join('');
+      body = `<div class="tbl-wrap"><table style="min-width:620px"><thead><tr><th>Fundraiser</th><th>Package</th><th>Status</th><th>Total</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="5" class="empty">No ads yet. Open Promote a fundraiser to buy one.</td></tr>'}</tbody></table></div>`;
+    }
+    return dashShell(f, `${head}${tabs}${season}${body}
+      ${eng('Ads page', ['Today this page shows one application. With approval by account it lists every purchase and every fundraiser the account can promote.', 'Statuses: booked, waiting for bank payment, Compliance review, live, ended, cancelled and refunded. Each has its own color.', 'Fires <code>ads_page_viewed</code>; Promote carries <code>entry_point: dashboard_ads_page</code>.'])}
+      ${openQ('Which status does the creator see while Compliance reviews an auto-added fundraiser, and what does a rejection after payment look like here?')}`);
+  }
+  function appDetail(x) {
+    const [cls, title] = STATUS[x.status];
+    const rate = Math.round(x.amount / x.days);
+    const stars = [1, 2, 3, 4, 5].map(n => `<button type="button" class="star ${S.csat >= n ? 'on' : ''}" data-csat="${n}" aria-label="${n} of 5">★<span>${n}</span></button>`).join('');
+    return `<div><button type="button" class="link small" data-act="appBack">← All your ads</button></div>
+      <div class="two"><div class="main"><div class="card">
+        <span class="badge ${cls}" style="align-self:flex-start">● ${esc(x.status)}</span>
+        <h2>${esc(title)}</h2><p class="muted small">Last updated ${esc(x.at)}</p>
+        <hr style="border:0;border-top:1px solid var(--n200);width:100%;margin:4px 0">
+        <h3>How was applying for your ad?</h3>
+        ${S.csat ? `<p>Thanks for rating it ${S.csat} of 5.</p>` : `<p class="muted small">1 = Not at all satisfied, 5 = Very satisfied</p><div class="stars">${stars}</div>`}
+      </div></div>
+      <aside class="side"><div class="card" style="background:var(--n50)"><h3>Your ad feature</h3>
+        <div><div class="line"><span class="muted">Fundraiser</span><strong>${esc(FUND[x.fid].title)}</strong></div>
+        <div class="line"><span class="muted">Package</span><strong>${esc(x.days)} Day ${esc(x.pkg)}</strong></div>
+        <div class="line"><span class="muted">Rate</span><strong>${money(rate)} / day × ${esc(x.days)}</strong></div>
+        <div class="line"><span class="muted">Feature period</span><strong>${esc(x.period)}</strong></div>
+        <div class="line"><span class="muted">Total</span><strong>${money(x.amount)}</strong></div>
+        <div class="line"><span class="muted">Paid by</span><strong>${esc(x.method)}</strong></div></div>
+        <div class="card" style="padding:12px 14px"><span class="muted small">Billing contact</span><span>billing@example.org</span></div></div>
+        <div class="card"><b>Need help?</b><span class="muted small">Contact the ads team from Help.</span></div></aside></div>
+      ${eng('Application detail', ['Status pill colors follow the status: green for booked and live, amber for waiting, blue for review, red for cancelled. Today the live page shows "Not approved" in green.', 'Rate is shown per day, as creators preferred in interviews. The total label should match the package length, not always "Week total".', 'CSAT stays embedded here (FUN-424) and fires <code>ads_csat_submitted</code>.'])}`;
   }
 
   function bellPanel(f, entry) {
@@ -464,7 +521,7 @@
       if (out && !p._seen) { p._seen = true; setTimeout(() => ev('ads_sold_out_seen', { package: p.id }), 0); }
       const roi = `<div class="req req-box" style="padding:8px 10px;gap:2px"><span class="req-tag" style="align-self:flex-start">Requested</span><span class="small"><b>2x expected:</b> for ${money(p.price)}, expect ${money(p.price * 2)} or more</span></div>`;
       return `<button type="button" class="tier ${out ? 'off' : ''}" data-pkg="${p.id}" aria-pressed="${S.pkg === p.id}" ${out ? 'aria-disabled="true"' : ''}>
-        <span class="name">${esc(p.name)}</span><span class="price">${money(p.price)}</span><span class="muted small">${p.days} days</span>
+        <span class="name">${esc(p.name)}</span><span class="price">${money(p.price)}</span><span class="muted small">${money(Math.round(p.price / p.days))} / day × ${p.days} days</span>
         <ul>${p.perks.map(x => `<li>${ic('check', 'icon-sm')}${esc(x)}</li>`).join('')}</ul>
         ${out ? '<span class="note red">Sold out</span>' : left(p) <= 3 ? `<span class="note amber">${left(p)} left</span>` : ''}
         ${roi}</button>`;
@@ -642,7 +699,11 @@
     const d = t.dataset;
     if (d.view) { S.view = d.view; render(); return; }
     if (d.step && !t.closest('.scenario')) { S.step = d.step; render(); return; }
-    if (d.cview) { S.cview = d.cview; S.bell = false; S._adsViewed = false; render(); return; }
+    if (d.cview) { S.cview = d.cview; S.bell = false; S._adsViewed = false; S.appOpen = null; render(); return; }
+    if (d.adstab) { S.cview = 'ads'; S.adsTab = d.adstab; S.appOpen = null; render(); return; }
+    if (d.app != null && d.app !== undefined && d.app !== '') { S.appOpen = +d.app; S.csat = 0; render(); return; }
+    if (d.act === 'appBack') { S.appOpen = null; render(); return; }
+    if (d.csat) { S.csat = +d.csat; ev('ads_csat_submitted', { score: S.csat, entry_point: 'dashboard_ads_page' }); render(); return; }
     if (d.promote) { S.who = d.promote; S.cview = 'fundraiser'; S.entry = 'dashboard_ads_page'; S.pkg = null; S._viewed = true; ev('ads_entry_point_clicked', { entry_point: 'dashboard_ads_page' }); S.step = 'packages'; render(); return; }
     if (d.act === 'bell') { S.bell = !S.bell; if (S.bell && entryFor(S.who) && !S.read) { S.read = true; ev('ads_notification_opened', { entry_point: 'in_app_notification' }); } render(); return; }
     if (d.act === 'email') { S.bell = false; S.step = 'email'; ev('ads_email_opened', { entry_point: 'email' }); render(); return; }
@@ -660,7 +721,7 @@
         if (p.season !== 'test' && !was && soldOut(p.season)) { ev('ads_season_sold_out', { set: p.season, revenue: revenue(p.season) }, true); setTimeout(() => toast(`${SEASONS[p.season].name} just sold out. Offers and emails are off`), 300); }
       }
       const en = entryFor(S.who); if (en) en.status = S.method === 'card' ? `Paid, ${p.name}` : `Bank payment pending, ${p.name}`;
-      S.purchases.unshift({ fid: S.who, pkg: p.name, set: (S.sets.find(x => x.id === p.season) || {}).name || '', amount: p.price, method: S.method === 'card' ? 'Card' : 'Bank', status: S.method === 'bank' ? 'Waiting for bank payment' : (en && en.source === 'auto' && en.review === 'pending') ? 'Compliance review' : 'Booked', at: 'Today' });
+      S.purchases.unshift({ fid: S.who, pkg: p.name, set: (S.sets.find(x => x.id === p.season) || {}).name || '', amount: p.price, days: p.days, period: p.season === 'test' ? `Next Monday for ${p.days} days` : `${SEASONS[p.season].start} for ${p.days} days`, method: S.method === 'card' ? 'Card' : 'Bank', status: S.method === 'bank' ? 'Waiting for bank payment' : (en && en.source === 'auto' && en.review === 'pending') ? 'Compliance review' : 'Booked', at: 'Today, 10:42 AM UTC' });
       S.step = 'done'; render(); return;
     }
     if (d.act === 'restart') { S.step = 'page'; S.pkg = null; S._viewed = false; S.bell = false; render(); return; }
