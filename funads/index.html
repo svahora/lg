@@ -294,13 +294,15 @@
   const FUND = {
     'F-20418': { title: 'Winter Coats for Refugee Families', acct: 'A-3102', org: 'Hope Relief Fund', raised: 18400, goal: 40000 },
     'F-20733': { title: 'Masjid Roof Repair', acct: 'A-1877', org: 'Northside Community Center', raised: 9200, goal: 25000 },
+    'F-20734': { title: 'Youth Quran Program', acct: 'A-1877', org: 'Northside Community Center', raised: 3600, goal: 15000 },
     'F-21005': { title: 'Clean Water Wells', acct: 'A-2290', org: 'Wells of Mercy', raised: 31000, goal: 50000 },
     'F-21140': { title: 'Orphan Sponsorship Drive', acct: 'A-3311', org: 'Bright Futures', raised: 4100, goal: 20000 }
   };
-  Object.values(FUND).forEach(f => { f.group = /Masjid|School|Art/.test(f.title) ? 'A' : 'B'; });
+  Object.values(FUND).forEach(f => { f.group = /Masjid|School|Quran|Art/.test(f.title) ? 'A' : 'B'; });
   const WHO = [
     ['F-20418', 'On the seasonal list (Ads team added)'],
     ['F-20733', 'Auto-added from an approved account'],
+    ['F-20734', 'Same approved account, second fundraiser'],
     ['F-21005', 'On the test list'],
     ['F-21140', 'Not on any list']
   ];
@@ -330,13 +332,15 @@
       list: [
         { fid: 'F-20418', list: 'seasonal', source: 'ads', by: 'Sara (Ads team)', at: 'Nov 20', review: '', status: 'Not purchased' },
         { fid: 'F-20733', list: 'seasonal', source: 'auto', by: 'Auto-added', at: 'Nov 24', review: 'pending', status: 'Not purchased' },
+        { fid: 'F-20734', list: 'seasonal', source: 'auto', by: 'Auto-added', at: 'Nov 22', review: 'approved', status: 'Not purchased' },
         { fid: 'F-21005', list: 'test', source: 'ads', by: 'Omar (Ads team)', at: 'Nov 18', review: '', status: 'Not purchased' }
       ],
       accounts: [
         { aid: 'A-1877', org: 'Northside Community Center', by: 'Lina (Compliance)', at: 'Nov 21', trial: false },
         { aid: 'A-2550', org: 'Riverbend Relief', by: 'Lina (Compliance)', at: 'Nov 22', trial: true }
       ],
-      autoSeq: 0,
+      autoSeq: 0, cview: 'fundraiser',
+      purchases: [{ fid: 'F-20733', pkg: 'Bronze', set: 'Standard', amount: 350, method: 'Card', status: 'Ended', at: 'Nov 4' }],
       sets: [
         { id: 'winter', name: 'Winter', blurb: 'Winter appeals block', salesOpen: 'Nov 23', start: 'Dec 2', status: 'live', cap: 45000, open: true },
         { id: 'standard', name: 'Standard', blurb: '14-day blocks, all year', salesOpen: 'Dec 9', start: 'Dec 16', status: 'scheduled', goLive: 'Dec 9', cap: 105000, open: true },
@@ -389,13 +393,33 @@
     S._closed = !!real && !entry;
     const steps = entry ? `<nav class="steps" aria-label="Steps">${STEPS.map(([k, n], i) => `<button type="button" class="step" data-step="${k}" ${S.step === k ? 'aria-current="step"' : ''}><span class="n">${i + 1}</span> ${n}</button>`).join('')}</nav>` : '';
     let body = '';
+    if (S.cview === 'ads') return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="tabs" role="group" aria-label="Dashboard"><button type="button" data-cview="fundraiser" aria-pressed="false">Fundraiser</button><button type="button" data-cview="ads" aria-pressed="true">Ads</button></span><span class="muted small">Signed in as ${esc(f.org)}</span></span></header><main class="page">${adsPage(f)}</main>`;
     if (S.step === 'email' && entry) body = emailView(f, entry);
     else if (S.step === 'page' || !entry) body = pageView(f, entry);
     else if (S.step === 'packages') body = packagesView(f, entry);
     else if (S.step === 'details') body = detailsView(f, entry);
     else if (S.step === 'pay') body = payView(f, entry);
     else body = doneView(f, entry);
-    return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button type="button" class="btn btn-sm" data-act="bell" aria-expanded="${!!S.bell}">Notifications${entry && !S.read ? ' <span class="badge b-red">1</span>' : ''}</button><span class="muted small">Signed in as ${esc(f.org)}</span></span></header>${S.bell ? bellPanel(f, entry) : ''}${steps}<main class="page">${body}</main>`;
+    return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="tabs" role="group" aria-label="Dashboard"><button type="button" data-cview="fundraiser" aria-pressed="${S.cview === 'fundraiser'}">Fundraiser</button><button type="button" data-cview="ads" aria-pressed="${S.cview === 'ads'}">Ads</button></span><button type="button" class="btn btn-sm" data-act="bell" aria-expanded="${!!S.bell}">Notifications${entry && !S.read ? ' <span class="badge b-red">1</span>' : ''}</button><span class="muted small">Signed in as ${esc(f.org)}</span></span></header>${S.bell ? bellPanel(f, entry) : ''}${steps}<main class="page">${body}</main>`;
+  }
+
+  function adsPage(f) {
+    const acct = f.acct, live = S.live ? SEASONS[S.live] : null, out = !live || soldOut(S.live);
+    const mine = Object.entries(FUND).filter(([, x]) => x.acct === acct);
+    const tagFor = st => ({ 'Booked': 't-green', 'Live': 't-green', 'Ended': 't-gray', 'Waiting for bank payment': 't-yellow', 'Compliance review': 't-blue', 'Cancelled and refunded': 't-red' }[st] || 't-gray');
+    const buys = S.purchases.filter(x => FUND[x.fid] && FUND[x.fid].acct === acct).map(x => `<tr><td class="strong">${esc(FUND[x.fid].title)}<div class="sub">${esc(x.fid)}</div></td><td>${esc(x.pkg)}<div class="sub">${esc(x.set)}</div></td><td><span class="tag ${tagFor(x.status)}">${esc(x.status)}</span></td><td>${money(x.amount)}<div class="sub">${esc(x.method)}</div></td><td>${esc(x.at)}</td></tr>`).join('');
+    const elig = mine.map(([fid, x]) => {
+      const en = entryFor(fid); const ok = offerOn(en);
+      const where = en ? `<span class="tag ${en.list === 'test' ? 't-purple' : 't-gray'}">${en.list === 'test' ? 'Test' : live ? esc(live.name) : 'Seasonal'}</span>` : '<span class="tag t-gray">Not eligible</span>';
+      const act = ok ? `<button type="button" class="btn btn-sm btn-brand" data-promote="${fid}">See packages</button>` : en ? '<span class="tag t-red">Sold out</span>' : '<span class="sub">Not on a list</span>';
+      return `<div class="row" style="padding:14px 16px"><div class="row-main"><span class="row-title" style="font-size:15px">${esc(x.title)}</span><span class="muted small">${money(x.raised)} raised · ${esc(fid)}</span></div><div class="badges">${where}</div><div class="row-act">${act}</div></div>`;
+    }).join('');
+    if (!S._adsViewed) { S._adsViewed = true; setTimeout(() => ev('ads_page_viewed', { entry_point: 'dashboard_ads_page' }), 0); }
+    return `<div><h1>Ads</h1><p class="muted">${live ? (out ? `${esc(live.name)} is sold out. New packages open with the next season.` : `${esc(live.name)} is open. The block starts ${esc(live.start)}, and applications close 24 hours after.`) : 'No season is open right now.'}</p></div>
+      <div class="card"><h2>Your ads</h2><div class="tbl-wrap" style="box-shadow:none;outline:0"><table style="min-width:560px"><thead><tr><th>Fundraiser</th><th>Package</th><th>Status</th><th>Paid</th><th>Date</th></tr></thead><tbody>${buys || '<tr><td colspan="5" class="empty">No ads yet. Pick a fundraiser below to promote it.</td></tr>'}</tbody></table></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px"><h2>Fundraisers you can promote</h2><p class="muted small">Every fundraiser your account can buy ads for. New fundraisers from an approved account appear here automatically.</p>${elig}</div>
+      ${eng('Ads page in the dashboard', ['Account-level: lists every purchase and every eligible fundraiser for the signed-in account.', 'Purchase status: booked, waiting for bank payment, Compliance review, live, ended, cancelled and refunded.', 'Eligible fundraisers come from the seasonal and test lists. Offers turn off when the season is sold out.', 'Fires <code>ads_page_viewed</code>; See packages carries <code>entry_point: dashboard_ads_page</code>.'])}
+      ${openQ('Which statuses does the creator see while Compliance reviews an auto-added fundraiser, and what does a rejection after payment look like here?')}`;
   }
 
   function bellPanel(f, entry) {
@@ -503,7 +527,7 @@
       <span class="done-icon" style="background:${bank ? 'var(--amber-50)' : 'var(--brand-50)'};color:${bank ? 'var(--amber-700)' : 'var(--brand-700)'}">${ic(bank ? 'clock' : 'check')}</span>
       <h1>${bank ? 'Waiting for your bank payment' : 'You\'re booked'}</h1>
       <p class="muted">${bank ? 'We\'ll confirm your spot once the payment clears.' : `Your ${esc(p.name)} ad for <b>${esc(f.title)}</b> starts ${p.season === 'test' ? 'next Monday' : SEASONS[p.season].start}.`}</p>
-      <button type="button" class="btn" data-act="restart">Back to fundraiser</button></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" data-act="restart">Back to fundraiser</button><button type="button" class="btn" data-cview="ads">See all your ads</button></div></div>
       ${pending ? openQ('Compliance is still reviewing this auto-added fundraiser. If it rejects it now, what happens to the payment? A live ad can\'t be cancelled or refunded.') : ''}
       <div class="card"><b>After purchase</b><span class="small">A one-question satisfaction survey (CSAT) appears here. Performance updates and credits follow the block, as today.</span></div>`;
   }
@@ -618,6 +642,8 @@
     const d = t.dataset;
     if (d.view) { S.view = d.view; render(); return; }
     if (d.step && !t.closest('.scenario')) { S.step = d.step; render(); return; }
+    if (d.cview) { S.cview = d.cview; S.bell = false; S._adsViewed = false; render(); return; }
+    if (d.promote) { S.who = d.promote; S.cview = 'fundraiser'; S.entry = 'dashboard_ads_page'; S.pkg = null; S._viewed = true; ev('ads_entry_point_clicked', { entry_point: 'dashboard_ads_page' }); S.step = 'packages'; render(); return; }
     if (d.act === 'bell') { S.bell = !S.bell; if (S.bell && entryFor(S.who) && !S.read) { S.read = true; ev('ads_notification_opened', { entry_point: 'in_app_notification' }); } render(); return; }
     if (d.act === 'email') { S.bell = false; S.step = 'email'; ev('ads_email_opened', { entry_point: 'email' }); render(); return; }
     if (d.act === 'start') { S.bell = false; S.entry = d.entry; ev('ads_entry_point_clicked', { entry_point: d.entry }); S.step = 'packages'; render(); return; }
@@ -634,6 +660,7 @@
         if (p.season !== 'test' && !was && soldOut(p.season)) { ev('ads_season_sold_out', { set: p.season, revenue: revenue(p.season) }, true); setTimeout(() => toast(`${SEASONS[p.season].name} just sold out. Offers and emails are off`), 300); }
       }
       const en = entryFor(S.who); if (en) en.status = S.method === 'card' ? `Paid, ${p.name}` : `Bank payment pending, ${p.name}`;
+      S.purchases.unshift({ fid: S.who, pkg: p.name, set: (S.sets.find(x => x.id === p.season) || {}).name || '', amount: p.price, method: S.method === 'card' ? 'Card' : 'Bank', status: S.method === 'bank' ? 'Waiting for bank payment' : (en && en.source === 'auto' && en.review === 'pending') ? 'Compliance review' : 'Booked', at: 'Today' });
       S.step = 'done'; render(); return;
     }
     if (d.act === 'restart') { S.step = 'page'; S.pkg = null; S._viewed = false; S.bell = false; render(); return; }
