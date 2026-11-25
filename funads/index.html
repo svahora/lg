@@ -280,12 +280,12 @@
   };
   const ic = (n, c = 'icon') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[n]}"/></svg>`;
 
-  const SEASONS = {
-    standard: { name: 'Standard', blurb: '14-day blocks, all year', start: 'Dec 16' },
-    winter: { name: 'Winter', blurb: 'Winter appeals block', start: 'Dec 2' },
-    ramadan: { name: 'Ramadan', blurb: 'The 30 nights', start: 'Feb 8' },
-    dhul: { name: 'Dhul Hijjah', blurb: 'First ten days and Qurbani', start: 'May 18' }
-  };
+  const SEASONS = {};
+  function sync() {
+    Object.keys(SEASONS).forEach(k => delete SEASONS[k]);
+    S.sets.filter(x => x.kind !== 'test').forEach(x => { SEASONS[x.id] = x; });
+    const l = S.sets.find(x => x.status === 'live'); S.live = l ? l.id : null;
+  }
   const FUND = {
     'F-20418': { title: 'Winter Coats for Refugee Families', acct: 'A-3102', org: 'Hope Relief Fund', raised: 18400, goal: 40000 },
     'F-20733': { title: 'Masjid Roof Repair', acct: 'A-1877', org: 'Northside Community Center', raised: 9200, goal: 25000 },
@@ -303,7 +303,7 @@
   let S;
   function fresh() {
     S = {
-      view: 'creator', who: 'F-20418', step: 'page', live: 'winter', adminTab: 'lists', listTab: 'seasonal', invTab: 'winter',
+      view: 'creator', who: 'F-20418', step: 'page', live: 'winter', adminTab: 'lists', listTab: 'seasonal', setOpen: null, setSeq: 0,
       pkg: null, method: 'card', video: '', headline: '', contact: '',
       packages: [
         { id: 'w-basic', season: 'winter', name: 'Basic', price: 250, days: 14, slots: 40, sold: 12, on: true, perks: ['Homepage rotation', 'Weekly email mention'] },
@@ -331,7 +331,14 @@
         { aid: 'A-1877', org: 'Northside Community Center', by: 'Lina (Compliance)', at: 'Nov 21', trial: false },
         { aid: 'A-2550', org: 'Riverbend Relief', by: 'Lina (Compliance)', at: 'Nov 22', trial: true }
       ],
-      autoSeq: 0
+      autoSeq: 0,
+      sets: [
+        { id: 'winter', name: 'Winter', blurb: 'Winter appeals block', salesOpen: 'Nov 23', start: 'Dec 2', status: 'live', cap: 45000, open: true },
+        { id: 'standard', name: 'Standard', blurb: '14-day blocks, all year', salesOpen: 'Dec 9', start: 'Dec 16', status: 'scheduled', goLive: 'Dec 9', cap: 105000, open: true },
+        { id: 'ramadan', name: 'Ramadan', blurb: 'The 30 nights', salesOpen: 'Jan 27', start: 'Feb 8', status: 'draft', cap: 250000, open: true },
+        { id: 'dhul', name: 'Dhul Hijjah', blurb: 'First ten days and Qurbani', salesOpen: 'May 4', start: 'May 18', status: 'draft', cap: 120000, open: true },
+        { id: 'test', name: 'Test', kind: 'test', blurb: 'Packages being tested', status: 'always', cap: 0, open: true }
+      ]
     };
   }
   fresh();
@@ -360,11 +367,21 @@
   const entryFor = fid => S.list.find(x => x.fid === fid && x.review !== 'rejected');
   const pkgsFor = season => S.packages.filter(p => p.season === season);
   const left = p => Math.max(0, p.slots - p.sold);
+  const revenue = id => pkgsFor(id).reduce((t, p) => t + p.sold * p.price, 0);
+  const soldOut = id => { const x = S.sets.find(y => y.id === id); return !x || !x.open || revenue(id) >= x.cap; };
+  const offerOn = entry => !!entry && (entry.list === 'test' || (!!S.live && !soldOut(S.live)));
+  function makeLive(id, how) {
+    S.sets.forEach(x => { if (x.status === 'live') x.status = 'ended'; });
+    const x = S.sets.find(y => y.id === id); x.status = 'live'; delete x.goLive;
+    sync(); ev('ads_package_set_live', { set: id, how }, true); toast(`${x.name} is now live`);
+  }
 
   // ---------- creator ----------
   const STEPS = [['page', 'Fundraiser'], ['packages', 'Package'], ['details', 'Details'], ['pay', 'Payment'], ['done', 'Done']];
   function creator() {
-    const f = FUND[S.who], entry = entryFor(S.who);
+    const f = FUND[S.who], real = entryFor(S.who);
+    const entry = offerOn(real) ? real : null;
+    S._closed = !!real && !entry;
     const steps = entry ? `<nav class="steps" aria-label="Steps">${STEPS.map(([k, n], i) => `<button type="button" class="step" data-step="${k}" ${S.step === k ? 'aria-current="step"' : ''}><span class="n">${i + 1}</span> ${n}</button>`).join('')}</nav>` : '';
     let body = '';
     if (S.step === 'email' && entry) body = emailView(f, entry);
@@ -393,7 +410,7 @@
   function pageView(f, entry) {
     const pct = Math.round(f.raised / f.goal * 100);
     const banner = entry ? `<div class="banner green"><span>${ic('mega')}</span><div class="body"><div class="banner-title">Reach more donors this ${entry.list === 'test' ? 'week' : SEASONS[S.live].name + ' season'}</div><p>Feature this fundraiser on the homepage and in donor emails. Pick a package and pay to book your spot.</p></div><button type="button" class="btn btn-brand" data-act="start" data-entry="fundraiser_page_alert">See packages</button></div>` : '';
-    const notOn = !entry ? `<div class="banner neutral"><span>${ic('info')}</span><div class="body"><div class="banner-title">No ad offer shown</div><p>This fundraiser isn't on a seasonal or test list, so it never sees an entry point.</p></div></div>` : '';
+    const notOn = !entry ? `<div class="banner neutral"><span>${ic('info')}</span><div class="body"><div class="banner-title">No ad offer shown</div><p>${S._closed ? `${SEASONS[S.live].name} is sold out, so the page alert, in-app notification and email are all off.` : 'This fundraiser isn\'t on a seasonal or test list, so it never sees an entry point.'}</p></div></div>` : '';
     const reqDash = `<div class="req req-box"><span class="req-tag">Requested Nov 19, not committed</span><b>Creator dashboard: your fundraisers</b><div class="row" style="padding:12px 14px"><div class="row-main"><span class="row-title" style="font-size:15px">${esc(f.title)}</span><span class="muted small">${money(f.raised)} raised</span></div><div class="row-act"><button type="button" class="btn btn-sm" data-act="start" data-entry="dashboard_promote" ${entry ? '' : 'disabled'}>Promote</button></div></div></div>`;
     if (entry && !S._viewed) { S._viewed = true; setTimeout(() => ev('ads_entry_point_viewed', { entry_point: 'fundraiser_page_alert' }), 0); }
     return `
@@ -485,11 +502,11 @@
   }
 
   // ---------- admin ----------
-  const NAV = [['lists', 'Fundraiser lists'], ['review', 'Compliance review'], ['accounts', 'Approved accounts'], ['inventory', 'Package inventory'], ['season', 'Live season']];
+  const NAV = [['lists', 'Fundraiser lists'], ['review', 'Compliance review'], ['accounts', 'Approved accounts'], ['sets', 'Package sets']];
   function admin() {
     const pending = S.list.filter(x => x.review === 'pending').length;
     const nav = NAV.map(([k, n]) => `<button type="button" class="item" data-tab="${k}" ${S.adminTab === k ? 'aria-current="page"' : ''}>${n}${k === 'review' && pending ? `<span class="count">${pending}</span>` : ''}</button>`).join('');
-    const main = { lists: listsView, review: reviewView, accounts: accountsView, inventory: inventoryView, season: seasonView }[S.adminTab]();
+    const main = { lists: listsView, review: reviewView, accounts: accountsView, sets: setsView }[S.adminTab]();
     return `<div class="admin"><nav class="sidebar" aria-label="Admin"><div class="logo"><span class="brand-mark" style="width:24px;height:24px">${ic('heart', 'icon-sm')}</span> Admin</div><div class="grp"><div class="gname">Ads</div>${nav}</div></nav><main class="admin-main">${main}</main></div>`;
   }
 
@@ -528,27 +545,62 @@
       ${eng('Auto-add', ['When an approved account creates a fundraiser, add it to the seasonal list with source "auto-added" and review "waiting".', 'Trial graduates join case by case, approved by Compliance.', 'Fires <code>ads_fundraiser_auto_added</code>.'])}`;
   }
 
-  function inventoryView() {
-    const tabs = [...Object.entries(SEASONS).map(([k, v]) => [k, v.name]), ['test', 'Test']];
-    const rows = pkgsFor(S.invTab).map(p => `<tr><td class="strong">${esc(p.name)}<div class="sub">${p.days} days</div></td><td>${money(p.price)}</td>
+  const setTag = x => x.kind === 'test' ? '<span class="tag t-purple">Always on for the test list</span>'
+    : x.status === 'live' ? '<span class="tag t-green">Live</span>'
+    : x.status === 'scheduled' ? `<span class="tag t-blue">Scheduled for ${esc(x.goLive)}</span>`
+    : x.status === 'ended' ? '<span class="tag t-gray">Ended</span>' : '<span class="tag t-yellow">Draft</span>';
+
+  function setsView() {
+    if (S.setOpen) return setDetail(S.sets.find(x => x.id === S.setOpen));
+    const next = S.sets.find(x => x.status === 'scheduled');
+    const rows = S.sets.map(x => {
+      const rev = revenue(x.id);
+      const out = x.kind !== 'test' && x.status === 'live' && soldOut(x.id) ? ' <span class="tag t-red">Sold out</span>' : '';
+      return `<tr><td class="strong">${esc(x.name)}<div class="sub">${pkgsFor(x.id).length} packages</div></td><td>${setTag(x)}${out}</td>
+        <td>${x.kind === 'test' ? 'Any time' : `Sales open ${esc(x.salesOpen)}<div class="sub">Block starts ${esc(x.start)}</div>`}</td>
+        <td>${x.kind === 'test' ? money(rev) : `${money(rev)} <span class="sub">of ${money(x.cap)}</span>`}</td>
+        <td><div class="acts"><button type="button" class="abtn" data-setopen="${x.id}">Open</button>${x.kind !== 'test' && x.status !== 'live' ? `<button type="button" class="abtn dark" data-golive="${x.id}">Make live now</button>` : ''}<button type="button" class="abtn" data-dup="${x.id}">Duplicate</button></div></td></tr>`;
+    }).join('');
+    return `<div><h1>Package sets</h1><p class="muted">A package set is a season's packages, dates and sales cap. Build sets ahead of time, then make one live or schedule it. Only one set is live at a time; the test set is always on for the test list.</p></div>
+      <div class="addbar"><label class="field" for="newSet">New package set<input class="input" id="newSet" placeholder="Ramadan 2027"></label>
+        <label class="field" for="fromSet" style="flex:0 1 220px">Start from<select class="input" id="fromSet"><option value="">Blank</option>${S.sets.filter(x => x.kind !== 'test').map(x => `<option value="${x.id}">Copy of ${esc(x.name)}</option>`).join('')}</select></label>
+        <button type="button" class="btn btn-primary" data-act="createSet">Create</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Package set</th><th>Status</th><th>Dates</th><th>Sold</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      ${next ? `<div class="banner neutral"><span>${ic('clock')}</span><div class="body"><div class="banner-title">${esc(next.name)} goes live ${esc(next.goLive)}</div><p>On that date it becomes live and ${esc((S.sets.find(x => x.status === 'live') || {}).name || 'the live set')} ends. Every fundraiser on the seasonal list switches to the new packages.</p></div><button type="button" class="btn btn-sm" data-act="jump">Simulate: it's ${esc(next.goLive)}</button></div>` : ''}
+      ${openQ('Confirm with the Ads team that two seasons never need to be live at once.')}
+      ${eng('Package sets', ['A set has: name, sales open date, block start, go-live date (optional), season cap, sales open switch, status (draft, scheduled, live, ended) and its packages.', 'Duplicate a set to start next season from this one. Sold counts reset.', 'A scheduled set goes live on its date and the live set ends, with no engineering.', 'Fires <code>ads_package_set_created</code>, <code>ads_package_set_scheduled</code>, <code>ads_package_set_live</code>.'])}`;
+  }
+
+  function setDetail(x) {
+    const season = x.kind !== 'test';
+    const rev = revenue(x.id), out = season && soldOut(x.id), pct = season ? Math.min(100, Math.round(rev / x.cap * 100)) : 0;
+    const rows = pkgsFor(x.id).map(p => `<tr><td class="strong">${esc(p.name)}<div class="sub">${p.days} days</div></td><td>${money(p.price)}</td>
       <td><span class="stepper"><button type="button" data-slot="${p.id}" data-d="-1" aria-label="Fewer slots">−</button><b>${p.slots}</b><button type="button" data-slot="${p.id}" data-d="1" aria-label="More slots">+</button></span></td>
       <td>${p.sold}</td><td>${left(p) === 0 ? '<span class="tag t-red">Sold out</span>' : left(p)}</td>
       <td><button type="button" class="switch" role="switch" aria-checked="${p.on}" data-toggle="${p.id}" aria-label="Show ${esc(p.name)} at checkout"></button></td></tr>`).join('');
-    return `<div><h1>Package inventory</h1><p class="muted">Set price, length and slots per package, and switch packages on or off at checkout. Slot counting is manual for now.</p></div>
-      <div class="tabs" role="group" aria-label="Season">${tabs.map(([k, n]) => `<button type="button" data-itab="${k}" aria-pressed="${S.invTab === k}">${n}${k === S.live ? ' · live' : ''}</button>`).join('')}</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Package</th><th>Price</th><th>Slots</th><th>Sold</th><th>Left</th><th>Show at checkout</th></tr></thead><tbody>${rows}</tbody></table></div>
-      ${eng('Package inventory', ['Each package: name, season, price, duration, slots, and a show or hide switch.', 'Checkout reads only switched-on packages for the live season, or test packages for the test list.', 'Fires <code>ads_package_visibility_changed</code> and <code>ads_package_slots_changed</code>.'])}`;
-  }
-
-  function seasonView() {
-    return `<div><h1>Live season</h1><p class="muted">Picks which season's packages checkout shows. Only one season is live at a time.</p></div>
-      <div class="seasons">${Object.entries(SEASONS).map(([k, v]) => `<button type="button" class="scard" data-season="${k}" aria-pressed="${S.live === k}"><b>${v.name}</b><span class="muted small">${v.blurb}. Block starts ${v.start}.</span>${S.live === k ? '<span class="tag t-green" style="align-self:flex-start">Live</span>' : ''}</button>`).join('')}</div>
-      ${openQ('Confirm with the Ads team that two seasons never need to be live at once.')}
-      ${eng('Live season setting', ['One admin setting. Switching it changes the seasonal checkout for every fundraiser on the seasonal list.', 'Fires <code>ads_live_season_changed</code>.'])}`;
+    const actions = !season ? '' : x.status === 'live' ? '' : `<div class="addbar">
+        <button type="button" class="btn btn-primary" data-golive="${x.id}">Make live now</button>
+        <label class="field" for="schedDate" style="flex:0 1 220px">Or schedule go-live<input class="input" id="schedDate" type="date"></label>
+        <button type="button" class="btn" data-schedule="${x.id}">${x.status === 'scheduled' ? 'Change date' : 'Schedule'}</button>
+        ${x.status === 'scheduled' ? `<button type="button" class="btn" data-unschedule="${x.id}">Unschedule</button>` : ''}</div>`;
+    const sales = !season ? '' : `<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center"><h3>Season sales</h3>${out ? '<span class="tag t-red">Sold out: offers and emails off</span>' : '<span class="tag t-green">Selling</span>'}</div>
+        <div class="bar"><span style="width:${pct}%;${out ? 'background:var(--red-700)' : ''}"></span></div>
+        <p><b>${money(rev)}</b> <span class="muted">sold of a ${money(x.cap)} season cap</span></p>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center"><span class="stepper">Cap <button type="button" data-cap="-5000" aria-label="Lower cap">−</button><b>${money(x.cap)}</b><button type="button" data-cap="5000" aria-label="Raise cap">+</button></span>
+        <span style="display:inline-flex;gap:8px;align-items:center">Sales open <button type="button" class="switch" role="switch" aria-checked="${x.open}" data-sales="${x.id}" aria-label="Sales open for ${esc(x.name)}"></button></span></div>
+        <p class="muted small">When sales hit the cap, or the Ads team closes them, the whole season is sold out: no page alert, no in-app notification and no email, even for packages with slots left.</p></div>`;
+    return `<div><button type="button" class="link small" data-act="setsBack">← All package sets</button></div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><h1>${esc(x.name)}</h1>${setTag(x)}</div>
+      ${season ? `<p class="muted">Sales open ${esc(x.salesOpen)} · block starts ${esc(x.start)} · applications close 24 hours after the block starts.</p>` : '<p class="muted">Shown only to fundraisers on the test list.</p>'}
+      ${actions}${sales}
+      <div class="tbl-wrap"><table><thead><tr><th>Package</th><th>Price</th><th>Slots</th><th>Sold</th><th>Left</th><th>Show at checkout</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="empty">No packages yet. Add one below.</td></tr>'}</tbody></table></div>
+      <div class="addbar"><label class="field" for="pName" style="flex:1 1 160px">Package<input class="input" id="pName" placeholder="Silver"></label><label class="field" for="pPrice" style="flex:0 1 120px">Price ($)<input class="input" id="pPrice" inputmode="numeric" placeholder="1000"></label><label class="field" for="pDays" style="flex:0 1 100px">Days<input class="input" id="pDays" inputmode="numeric" placeholder="14"></label><label class="field" for="pSlots" style="flex:0 1 100px">Slots<input class="input" id="pSlots" inputmode="numeric" placeholder="10"></label><button type="button" class="btn btn-primary" data-addpkg="${x.id}">Add package</button></div>
+      ${eng('Packages and season cap', ['Each package: name, price, duration, slots, and a show or hide switch.', 'Season cap: total sales for the set. At the cap, or when sales are closed, every entry point, notification and email for that season turns off. Fires <code>ads_season_sold_out</code>.', 'Slot counting is manual for now.'])}`;
   }
 
   // ---------- render + actions ----------
   function render() {
+    sync();
     document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === S.view)));
     $('#who').innerHTML = WHO.map(([id, n]) => `<option value="${id}" ${S.who === id ? 'selected' : ''}>${n}</option>`).join('');
     $('#app').innerHTML = S.view === 'creator' ? creator() : admin();
@@ -569,19 +621,22 @@
     if (d.act === 'pay') {
       const p = S.packages.find(x => x.id === S.pkg);
       ev('ads_payment_started', { package: p.id, method: S.method });
-      if (S.method === 'card') { p.sold = Math.min(p.slots, p.sold + 1); ev('ads_payment_completed', { package: p.id, method: 'card', amount: p.price }); }
+      if (S.method === 'card') {
+        const was = p.season !== 'test' && soldOut(p.season);
+        p.sold = Math.min(p.slots, p.sold + 1); ev('ads_payment_completed', { package: p.id, method: 'card', amount: p.price });
+        if (p.season !== 'test' && !was && soldOut(p.season)) { ev('ads_season_sold_out', { set: p.season, revenue: revenue(p.season) }, true); setTimeout(() => toast(`${SEASONS[p.season].name} just sold out. Offers and emails are off`), 300); }
+      }
       const en = entryFor(S.who); if (en) en.status = S.method === 'card' ? `Paid, ${p.name}` : `Bank payment pending, ${p.name}`;
       S.step = 'done'; render(); return;
     }
     if (d.act === 'restart') { S.step = 'page'; S.pkg = null; S._viewed = false; S.bell = false; render(); return; }
     if (d.tab) { S.adminTab = d.tab; render(); return; }
     if (d.ltab) { S.listTab = d.ltab; render(); return; }
-    if (d.itab) { S.invTab = d.itab; render(); return; }
     if (d.act === 'addIds') {
       const ids = ($('#addIds').value || '').split(/[\s,]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
       let n = 0;
-      ids.forEach(id => { if (!S.list.some(x => x.fid === id && x.list === S.listTab)) { S.list.push({ fid: id, list: S.listTab, source: 'ads', by: 'You (Ads team)', at: 'Today', review: '', status: 'Not purchased' }); n++; ev('ads_list_fundraiser_added', { fundraiser_id: id, list: S.listTab, source: 'ads_team' }, true); ev('ads_creator_notified', { fundraiser_id: id, channels: 'page_alert, in_app, email' }, true); } });
-      toast(n ? `Added ${n} to the ${S.listTab} list. Creators notified` : 'Nothing new to add'); render(); return;
+      ids.forEach(id => { if (!S.list.some(x => x.fid === id && x.list === S.listTab)) { S.list.push({ fid: id, list: S.listTab, source: 'ads', by: 'You (Ads team)', at: 'Today', review: '', status: 'Not purchased' }); n++; ev('ads_list_fundraiser_added', { fundraiser_id: id, list: S.listTab, source: 'ads_team' }, true); if (S.listTab === 'test' || !soldOut(S.live)) ev('ads_creator_notified', { fundraiser_id: id, channels: 'page_alert, in_app, email' }, true); } });
+      toast(n ? `Added ${n} to the ${S.listTab} list. ${S.listTab === 'seasonal' && soldOut(S.live) ? 'Season sold out, so no one was notified' : 'Creators notified'}` : 'Nothing new to add'); render(); return;
     }
     if (d.remove) { S.list = S.list.filter(x => !(x.fid === d.remove && x.list === S.listTab)); ev('ads_list_fundraiser_removed', { fundraiser_id: d.remove, list: S.listTab }, true); toast('Removed'); render(); return; }
     if (d.review) { const x = S.list.find(y => y.fid === d.review && y.source === 'auto'); x.review = d.to; ev('ads_compliance_decision', { fundraiser_id: x.fid, account_id: FUND[x.fid].acct, decision: d.to, purchase: x.status }, true); toast(d.to === 'approved' ? 'Approved' : 'Rejected and removed from the list'); render(); return; }
@@ -592,12 +647,28 @@
       FUND[fid] = { title: 'New fundraiser ' + S.autoSeq, acct: a.aid, org: a.org, raised: 0, goal: 10000 };
       S.list.push({ fid, list: 'seasonal', source: 'auto', by: 'Auto-added', at: 'Just now', review: 'pending', status: 'Not purchased' });
       ev('ads_fundraiser_auto_added', { fundraiser_id: fid, account_id: a.aid, list: 'seasonal' }, true);
-      ev('ads_creator_notified', { fundraiser_id: fid, channels: 'page_alert, in_app, email' }, true);
+      if (!soldOut(S.live)) ev('ads_creator_notified', { fundraiser_id: fid, channels: 'page_alert, in_app, email' }, true);
       toast(`${fid} added to the seasonal list, waiting for Compliance`); render(); return;
     }
     if (d.slot) { const p = S.packages.find(x => x.id === d.slot); p.slots = Math.max(p.sold, p.slots + +d.d); ev('ads_package_slots_changed', { package: p.id, slots: p.slots }, true); render(); return; }
     if (d.toggle) { const p = S.packages.find(x => x.id === d.toggle); p.on = !p.on; ev('ads_package_visibility_changed', { package: p.id, shown: p.on }, true); toast(`${p.name} ${p.on ? 'shown' : 'hidden'} at checkout`); render(); return; }
-    if (d.season) { if (S.live !== d.season) { S.live = d.season; S.invTab = d.season; ev('ads_live_season_changed', { season: d.season }, true); toast(`${SEASONS[d.season].name} is now live`); } render(); return; }
+    if (d.setopen) { S.setOpen = d.setopen; render(); return; }
+    if (d.act === 'setsBack') { S.setOpen = null; render(); return; }
+    if (d.golive) { makeLive(d.golive, 'manual'); render(); return; }
+    if (d.act === 'jump') { const nx = S.sets.find(x => x.status === 'scheduled'); if (nx) makeLive(nx.id, 'schedule'); render(); return; }
+    if (d.schedule) { const v = ($('#schedDate') || {}).value; if (!v) { toast('Pick a date'); return; } const x = S.sets.find(y => y.id === d.schedule); S.sets.forEach(y => { if (y.status === 'scheduled' && y !== x) y.status = 'draft'; }); x.status = 'scheduled'; x.goLive = new Date(v + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }); ev('ads_package_set_scheduled', { set: x.id, go_live: v }, true); toast(`${x.name} scheduled for ${x.goLive}`); render(); return; }
+    if (d.unschedule) { const x = S.sets.find(y => y.id === d.unschedule); x.status = 'draft'; delete x.goLive; toast('Unscheduled'); render(); return; }
+    if (d.dup || d.act === 'createSet') {
+      const from = d.dup || ($('#fromSet') || {}).value; const src = S.sets.find(y => y.id === from);
+      const name = d.dup ? `${src.name} copy` : (($('#newSet') || {}).value || '').trim(); if (!name) { toast('Name the package set'); return; }
+      S.setSeq++; const id = 'set' + S.setSeq;
+      S.sets.push({ id, name, blurb: src ? src.blurb : 'New season', salesOpen: 'TBD', start: 'TBD', status: 'draft', cap: src && src.kind !== 'test' ? src.cap : 50000, open: true, kind: src && src.kind === 'test' ? 'test' : undefined });
+      if (src) pkgsFor(src.id).forEach((p, i) => S.packages.push({ ...p, id: `${id}-${i}`, season: id, sold: 0, perks: [...p.perks] }));
+      ev('ads_package_set_created', { set: id, copied_from: src ? src.id : 'blank' }, true); toast(`${name} created as a draft`); S.setOpen = id; render(); return;
+    }
+    if (d.addpkg) { const nm = ($('#pName').value || '').trim(); const pr = +$('#pPrice').value, dy = +$('#pDays').value || 14, sl = +$('#pSlots').value || 10; if (!nm || !pr) { toast('Add a name and price'); return; } S.packages.push({ id: d.addpkg + '-' + Date.now(), season: d.addpkg, name: nm, price: pr, days: dy, slots: sl, sold: 0, on: true, perks: ['Homepage rotation'] }); ev('ads_package_added', { set: d.addpkg, package: nm }, true); render(); return; }
+    if (d.cap) { const x = S.sets.find(y => y.id === S.setOpen); x.cap = Math.max(5000, x.cap + +d.cap); ev('ads_season_cap_changed', { set: x.id, cap: x.cap }, true); render(); return; }
+    if (d.sales) { const x = S.sets.find(y => y.id === d.sales); x.open = !x.open; ev(x.open ? 'ads_season_sales_opened' : 'ads_season_sales_closed', { set: x.id }, true); toast(`${x.name} sales ${x.open ? 'open' : 'closed'}`); render(); return; }
   });
 
   $('#who').addEventListener('change', e => { S.who = e.target.value; S.step = 'page'; S.pkg = null; S._viewed = false; S.bell = false; S.read = false; S.view = 'creator'; render(); });
