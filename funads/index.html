@@ -411,14 +411,15 @@
     S._closed = !!real && !entry;
     const steps = entry ? `<nav class="steps" aria-label="Steps">${STEPS.map(([k, n], i) => `<button type="button" class="step" data-step="${k}" ${S.step === k ? 'aria-current="step"' : ''}><span class="n">${i + 1}</span> ${n}</button>`).join('')}</nav>` : '';
     let body = '';
-    if (S.cview === 'ads') return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span class="muted small">Signed in as ${esc(f.org)}</span></header>${adsPage(f)}`;
+    const header = `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="tabs" role="group" aria-label="Dashboard"><button type="button" data-cview="fundraiser" aria-pressed="${S.cview === 'fundraiser'}">Fundraiser</button><button type="button" data-cview="ads" aria-pressed="${S.cview === 'ads'}">Ads</button></span><button type="button" class="btn btn-sm" data-act="bell" aria-expanded="${!!S.bell}">Notifications${entry && !S.read ? ' <span class="badge b-red">1</span>' : ''}</button><span class="muted small">Signed in as ${esc(f.org)}</span></span></header>${S.bell ? bellPanel(f, entry) : ''}`;
+    if (S.cview === 'ads') return `${header}${adsPage(f)}`;
     if (S.step === 'email' && entry) body = emailView(f, entry);
     else if (S.step === 'page' || !entry) body = pageView(f, entry);
     else if (S.step === 'packages') body = packagesView(f, entry);
     else if (S.step === 'details') body = detailsView(f, entry);
     else if (S.step === 'pay') body = payView(f, entry);
     else body = doneView(f, entry);
-    return `<header class="site-head"><span class="brand"><span class="brand-mark">${ic('heart', 'icon-sm')}</span>Fundraising</span><span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="tabs" role="group" aria-label="Dashboard"><button type="button" data-cview="fundraiser" aria-pressed="${S.cview === 'fundraiser'}">Fundraiser</button><button type="button" data-cview="ads" aria-pressed="${S.cview === 'ads'}">Ads</button></span><button type="button" class="btn btn-sm" data-act="bell" aria-expanded="${!!S.bell}">Notifications${entry && !S.read ? ' <span class="badge b-red">1</span>' : ''}</button><span class="muted small">Signed in as ${esc(f.org)}</span></span></header>${S.bell ? bellPanel(f, entry) : ''}${steps}<main class="page">${body}</main>`;
+    return `${header}${steps}<main class="page">${body}</main>`;
   }
 
   const STATUS = {
@@ -720,8 +721,8 @@
     if (d.csat) { S.csat = +d.csat; ev('ads_csat_submitted', { score: S.csat, entry_point: 'dashboard_ads_page' }); render(); return; }
     if (d.promote) { S.who = d.promote; S.cview = 'fundraiser'; S.entry = 'dashboard_ads_page'; S.pkg = null; S._viewed = true; ev('ads_entry_point_clicked', { entry_point: 'dashboard_ads_page' }); S.step = 'packages'; render(); return; }
     if (d.act === 'bell') { S.bell = !S.bell; if (S.bell && entryFor(S.who) && !S.read) { S.read = true; ev('ads_notification_opened', { entry_point: 'in_app_notification' }); } render(); return; }
-    if (d.act === 'email') { S.bell = false; S.step = 'email'; ev('ads_email_opened', { entry_point: 'email' }); render(); return; }
-    if (d.act === 'start') { S.bell = false; S.entry = d.entry; ev('ads_entry_point_clicked', { entry_point: d.entry }); S.step = 'packages'; render(); return; }
+    if (d.act === 'email') { S.bell = false; S.cview = 'fundraiser'; S.step = 'email'; ev('ads_email_opened', { entry_point: 'email' }); render(); return; }
+    if (d.act === 'start') { S.bell = false; S.cview = 'fundraiser'; S.entry = d.entry; ev('ads_entry_point_clicked', { entry_point: d.entry }); S.step = 'packages'; render(); return; }
     if (d.pkg) { if (t.getAttribute('aria-disabled') === 'true') return; S.pkg = d.pkg; ev('ads_package_selected', { package: d.pkg }); render(); return; }
     if (d.act === 'toDetails') { S.step = 'details'; ev('ads_application_started', { package: S.pkg }); render(); return; }
     if (d.act === 'toPay') { S.contact = ($('#fContact') || {}).value || ''; S.headline = ($('#fHead') || {}).value || ''; S.video = ($('#fVideo') || {}).value || ''; ev('ads_application_submitted', { package: S.pkg }); S.step = 'pay'; render(); return; }
