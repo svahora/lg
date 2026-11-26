@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FunAds admin</title></head>
+<body>
+<script>
+  // Serves the same prototype as ../ and opens it on the admin view.
+  fetch('../index.html').then(r => r.text()).then(html => { document.open(); document.write(html); document.close(); });
+</script>
+</body></html>
